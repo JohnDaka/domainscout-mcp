@@ -4,6 +4,7 @@ coverage/
 *.log
 .env
 ROADMAP.md
+RELEASE.md
 
 # Local folders and agent settings. Of the scripts, only the release commands are shared.
 /docs
