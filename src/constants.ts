@@ -25,6 +25,23 @@ export const KIB = 1_024;
 export const COMMAND_NAME = 'domainscout-mcp';
 /** Name the MCP server reports to clients. */
 export const SERVER_NAME = 'domainscout';
+/** Name people see for the server, where a client shows one (serverInfo.title). */
+export const SERVER_TITLE = 'DomainScout';
+/** The project's page, reported to clients as serverInfo.websiteUrl. */
+export const WEBSITE_URL = 'https://domainscout.dakaio.com';
+
+/** The server's icon in the package, relative to a module one folder below the package root. */
+export const ICON_PATH = '../../assets/icon-128.png';
+/** The same icon, larger, on the website: for clients that load icons by URL. */
+export const ICON_URL = `${WEBSITE_URL}/icon-512.png`;
+/** Image type of both icons. */
+export const ICON_MIME_TYPE = 'image/png';
+/** Size of the icon in the package. */
+export const ICON_SIZE_PACKAGED = '128x128';
+/** Size of the icon on the website. */
+export const ICON_SIZE_WEBSITE = '512x512';
+/** How the packaged icon is encoded into a data URI. */
+export const ICON_ENCODING = 'base64';
 
 // ── Settings ────────────────────────────────────────────────────────────────
 

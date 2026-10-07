@@ -16,6 +16,7 @@
   "homepage": "https://domainscout.dakaio.com",
   "documentation": "https://github.com/JohnDaka/domainscout-mcp#readme",
   "support": "https://github.com/JohnDaka/domainscout-mcp/issues",
+  "privacy_policies": ["https://domainscout.dakaio.com/privacy.html"],
   "icon": "icon.png",
   "server": {
     "type": "node",

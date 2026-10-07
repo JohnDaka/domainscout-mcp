@@ -19,6 +19,10 @@ export const ToolText = {
     'Things that concern the whole call, e.g. a rejected API key or the confirmation limit',
 } as const;
 
+/** How the server describes itself to a client (serverInfo.description), as in server.json. */
+export const SERVER_DESCRIPTION =
+  'Domain research for AI agents: checks hundreds of names in one call, with prices and where to buy.';
+
 /** What the server tells a client about itself. */
 export const toolInstructions = (defaultTlds: string): string =>
   "Checks whether domain names are free to register, from the user's own machine, and shows prices and " +

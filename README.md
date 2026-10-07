@@ -43,7 +43,15 @@ Node 20 or newer.
 **Claude Desktop:** one click: [download the extension](https://github.com/JohnDaka/domainscout-mcp/releases/latest/download/domainscout.mcpb)
 and open it. Claude Desktop asks to install it, and lets you set the options below.
 
-**Claude Code**
+**Claude Code:** the plugin adds the server and a skill that runs the whole name search
+(brainstorm, check, present the free names with prices):
+
+```
+/plugin marketplace add JohnDaka/domainscout-mcp
+/plugin install domainscout@domainscout
+```
+
+Or the server alone:
 
 ```bash
 claude mcp add domainscout -- npx -y @dakaio/domainscout-mcp
@@ -193,18 +201,24 @@ DomainScout is free and open source under the MIT license. There is no account, 
 usage fee. The prices it shows are the registrars' own standard prices, from public price lists,
 or the exact price from your registrar API.
 
-## Privacy
+## Privacy Policy
 
-Your queries go straight from your machine to:
+The full policy: [domainscout.dakaio.com/privacy.html](https://domainscout.dakaio.com/privacy.html).
 
-- your DNS resolver,
-- the registries (RDAP/WHOIS),
-- two public price lists: the Porkbun price API, and cfdomainpricing.com, a community mirror
-  of Cloudflare's prices,
-- the APIs of registrars whose keys you set.
-
-`DOMAINSCOUT_PRICES=off` turns the price lists off. Nothing goes to a server of this project,
-because there is none.
+- **Data collection:** none. No account, no telemetry, no analytics, and no server of this
+  project. We never receive the names you check, your conversations or your API keys.
+- **Usage:** to answer a check, your machine sends the domain names, and nothing else, to your
+  DNS resolver, the registries (RDAP/WHOIS) and the APIs of the registrars whose keys you set.
+  It also downloads IANA's list of registries and two public price lists, the Porkbun price API
+  and cfdomainpricing.com (a community mirror of Cloudflare's prices); these get no domain names.
+  `DOMAINSCOUT_PRICES=off` turns the price lists off.
+- **Storage:** recent answers are cached in memory while the server runs. Nothing is written to
+  disk. API keys stay in your MCP client's settings and go only to their own registrar.
+- **Third-party sharing:** none by us. The services above see the requests your machine sends
+  them. Buy links open the registrar's site, and some are affiliate links (see below).
+- **Retention:** nothing is kept after the server stops.
+- **Contact:** [GitHub issues](https://github.com/JohnDaka/domainscout-mcp/issues), or the
+  [Security tab](https://github.com/JohnDaka/domainscout-mcp/security) for anything private.
 
 ## Affiliate links
 

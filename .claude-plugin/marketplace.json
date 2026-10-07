@@ -1,0 +1,17 @@
+{
+  "name": "domainscout",
+  "owner": {
+    "name": "dakaio.com",
+    "url": "https://dakaio.com"
+  },
+  "description": "DomainScout: domain research for AI agents.",
+  "plugins": [
+    {
+      "name": "domainscout",
+      "source": "./plugin",
+      "description": "Brainstorm hundreds of names and check them all in one call, with prices and where to buy.",
+      "category": "productivity",
+      "tags": ["domains", "naming", "domain search"]
+    }
+  ]
+}
