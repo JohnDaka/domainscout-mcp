@@ -1,0 +1,96 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.dakaio/domainscout",
+  "title": "DomainScout",
+  "description": "Domain research for AI agents: checks hundreds of names in one call, with prices and where to buy.",
+  "websiteUrl": "https://domainscout.dakaio.com",
+  "repository": {
+    "url": "https://github.com/JohnDaka/domainscout-mcp",
+    "source": "github"
+  },
+  "version": "1.1.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@dakaio/domainscout-mcp",
+      "version": "1.1.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DOMAINSCOUT_TLDS",
+          "description": "TLDs tried for names given without one, comma-separated. Default: com,net,ai",
+          "format": "string"
+        },
+        {
+          "name": "DOMAINSCOUT_REGISTRARS",
+          "description": "Registrars to show buy links for, e.g. cloudflare,porkbun,namecheap. Default: all nine",
+          "format": "string"
+        },
+        {
+          "name": "DOMAINSCOUT_MAX_DOMAINS",
+          "description": "Most domains per call after adding TLDs. Default: 500",
+          "format": "number"
+        },
+        {
+          "name": "DOMAINSCOUT_PRICES",
+          "description": "Public price lists (Cloudflare, Porkbun): on or off. Default: on",
+          "format": "boolean"
+        },
+        {
+          "name": "DOMAINSCOUT_AFFILIATE",
+          "description": "Affiliate buy links: on or off (off gives plain links). Default: on",
+          "format": "boolean"
+        },
+        {
+          "name": "DOMAINSCOUT_NAMECOM_USERNAME",
+          "description": "Optional. Name.com username, to confirm free names with Name.com",
+          "format": "string"
+        },
+        {
+          "name": "DOMAINSCOUT_NAMECOM_TOKEN",
+          "description": "Optional. Name.com API token",
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DOMAINSCOUT_CLOUDFLARE_ACCOUNT_ID",
+          "description": "Optional. Cloudflare account id, to confirm free names with Cloudflare Registrar",
+          "format": "string"
+        },
+        {
+          "name": "DOMAINSCOUT_CLOUDFLARE_API_TOKEN",
+          "description": "Optional. Cloudflare API token with Registrar permission",
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DOMAINSCOUT_SPACESHIP_API_KEY",
+          "description": "Optional. Spaceship API key (domains:read scope), to confirm free names with Spaceship",
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DOMAINSCOUT_SPACESHIP_API_SECRET",
+          "description": "Optional. Spaceship API secret",
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DOMAINSCOUT_PORKBUN_API_KEY",
+          "description": "Optional. Porkbun API key, to confirm free names with Porkbun",
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DOMAINSCOUT_PORKBUN_SECRET_KEY",
+          "description": "Optional. Porkbun secret API key",
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

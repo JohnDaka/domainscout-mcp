@@ -1,0 +1,66 @@
+# A package release: a tag `v<version>` on main, the version being package.json's (manifest.json and
+# server.json say the same). The workflow checks the code, builds the Claude Desktop extension (an
+# MCPB bundle) and publishes a GitHub Release with it attached; the landing page's "Add to Claude
+# Desktop" button downloads it from there. npm and the MCP Registry are published by hand: npm with
+# the account's 2FA, the Registry with mcp-publisher. After the version is raised in a PR and merged:
+#
+#   git tag v1.1.1 && git push origin v1.1.1
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # The tag and every file that names the version must agree, or nothing is released.
+      - name: Check the version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          for other in \
+            "manifest.json:$(node -p "require('./manifest.json').version")" \
+            "server.json:$(node -p "require('./server.json').version")" \
+            "server.json packages:$(node -p "require('./server.json').packages[0].version")"; do
+            if [ "${other##*:}" != "$version" ]; then
+              echo "::error::${other%:*} says ${other##*:}, package.json says $version"
+              exit 1
+            fi
+          done
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::$GITHUB_REF_NAME, but package.json says $version"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run verify
+      - run: npm run build
+      # The bundle holds the build, the production dependencies and the manifest; Claude Desktop
+      # runs it with its own Node.
+      - name: Build the Claude Desktop extension
+        run: |
+          mkdir bundle
+          cp -r dist package.json package-lock.json LICENSE README.md manifest.json bundle/
+          cp site/icon-512.png bundle/icon.png
+          (cd bundle && npm ci --omit=dev --ignore-scripts)
+          npx -y @anthropic-ai/mcpb@2 validate bundle/manifest.json
+          npx -y @anthropic-ai/mcpb@2 pack bundle domainscout.mcpb
+      - name: Publish the GitHub Release
+        run: |
+          gh release create "$GITHUB_REF_NAME" domainscout.mcpb \
+            --title "DomainScout $GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -335,6 +335,25 @@ h3 {
   border-color: rgba(60, 200, 255, 0.4);
 }
 
+/* Under the install buttons: the other ways in. */
+.also {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.also a {
+  color: var(--body);
+  text-decoration: none;
+}
+
+.also a:hover {
+  color: var(--cyan);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -616,7 +635,9 @@ h3 {
   border: 1px solid rgba(255, 255, 255, 0.05);
   color: var(--body);
   font: 13px / 1.6 var(--mono);
-  white-space: pre;
+  /* Long lines (the TAKEN list, URLs) wrap instead of scrolling sideways. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .output:last-child {

@@ -38,6 +38,10 @@ const result = (
 
 const render = (report: Report): string => new TextReport(report).render();
 
+/** Lines and sections of the text report. */
+const LINE_BREAK = '\n';
+const SECTION_BREAK = '\n\n';
+
 const REPORT: Report = {
   tlds: ['com', 'ai'],
   elapsedMs: 1_234,
@@ -107,7 +111,7 @@ describe('TextReport', () => {
 
   it('describes taken, reserved and unverifiable domains', () => {
     expect(text).toContain(
-      'TAKEN: dropping.com (in deletion, may become available soon), dated.com (until 2030-02-03), taken.com',
+      'TAKEN: dropping.com (in deletion, may become available soon), dated.com (until 2030-02-03),\n  taken.com',
     );
     expect(text).toContain('RESERVED: blocked.com');
     expect(text).toContain('- flaky.com: RDAP: HTTP 503; REGISTRAR: timed out');
@@ -197,6 +201,15 @@ describe('TextReport with many free domains', () => {
     );
     expect(text).toContain('- bare.net: Namecheap https://nc.test/bare.net');
     expect(text).toContain('- nolinks.org\n');
+  });
+
+  it('wraps a long list onto indented lines that never get wider than 100 characters', () => {
+    const takenSection = text.slice(text.indexOf('TAKEN:')).split(SECTION_BREAK)[0] ?? '';
+    const takenLines = takenSection.split(LINE_BREAK);
+    expect(takenLines.length).toBeGreaterThan(1);
+    expect(takenLines.every((line) => line.length <= 100)).toBe(true);
+    expect(takenLines.slice(1).every((line) => line.startsWith('  '))).toBe(true);
+    expect(takenLines.at(-1)?.endsWith('taken20.com')).toBe(true);
   });
 
   it('lists many taken domains by name only, still marking the ones being deleted', () => {

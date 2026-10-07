@@ -45,10 +45,6 @@ export const ReportLine = {
   /** "5 available" */
   count: (count: number, label: string): string => `${count} ${label}`,
 
-  /** "TAKEN: a.com, b.com" */
-  inline: (heading: string, items: readonly string[]): string =>
-    `${heading} ${items.join(TextSeparator.List)}`,
-
   /** "- acme.ai (confirmed by Porkbun)" */
   available: (name: string, confirmedBy?: string, premium?: boolean): string => {
     if (!confirmedBy) return `- ${name}`;
