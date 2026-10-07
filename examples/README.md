@@ -29,7 +29,7 @@ The assistant brainstorms the names and calls the tool once with all 500 of them
 The tool answers with this text, plus the same data as structured JSON:
 
 ```text
-Checked 500 domain(s) in 23.0s: 27 available, 473 taken.
+Checked 500 domain(s) in 20.5s: 27 available, 473 taken.
 
 AVAILABLE (cheapest known offer for each):
 - quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
@@ -59,8 +59,10 @@ AVAILABLE (cheapest known offer for each):
 - notchhaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchhaven.com
 - notchforge.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchforge.com
 - notchbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchbloom.com
-Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
-Each line shows the cheapest known offer. Check a few chosen names again to see every registrar, including links for registrars without public prices.
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list
+prices; premium or reserved names look the same, so the registrar's page shows the final price.
+Each line shows the cheapest known offer. Check a few chosen names again to see every registrar,
+including links for registrars without public prices.
 
 TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com,
   quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com,
@@ -153,7 +155,7 @@ npx @dakaio/domainscout-mcp check quillwise quillnest quillflow quillhub "… 49
 ```
 
 ```text
-Checked 500 domain(s) in 23.0s: 27 available, 473 taken.
+Checked 500 domain(s) in 20.5s: 27 available, 473 taken.
 
 AVAILABLE (cheapest known offer for each):
 - quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
@@ -183,8 +185,10 @@ AVAILABLE (cheapest known offer for each):
 - notchhaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchhaven.com
 - notchforge.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchforge.com
 - notchbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchbloom.com
-Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
-Each line shows the cheapest known offer. Check a few chosen names again to see every registrar, including links for registrars without public prices.
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list
+prices; premium or reserved names look the same, so the registrar's page shows the final price.
+Each line shows the cheapest known offer. Check a few chosen names again to see every registrar,
+including links for registrars without public prices.
 
 TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com,
   quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com,
@@ -275,7 +279,7 @@ npx @dakaio/domainscout-mcp check quillfern lumaforge getquillfern
 ```
 
 ```text
-Checked 9 domain(s) in 1.6s: 5 available, 4 taken.
+Checked 9 domain(s) in 1.5s: 5 available, 4 taken.
 
 AVAILABLE (where to buy, cheapest first):
 - quillfern.net
@@ -330,7 +334,8 @@ AVAILABLE (where to buy, cheapest first):
   Dynadot: https://www.dynadot.com/domain/search?domain=getquillfern.ai
   NameSilo: https://www.namesilo.com/domain/search-domains?query=getquillfern.ai
   Hover: https://www.hover.com/domains/results?q=getquillfern.ai
-Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list
+prices; premium or reserved names look the same, so the registrar's page shows the final price.
 
 TAKEN: quillfern.com, lumaforge.com, lumaforge.net (until 2027-08-13), lumaforge.ai
 ```
@@ -344,7 +349,7 @@ npx @dakaio/domainscout-mcp check getacme.io https://www.example.org/about acme 
 ```
 
 ```text
-Checked 4 domain(s) in 1.5s: 1 available, 3 taken.
+Checked 4 domain(s) in 3.0s: 1 available, 3 taken.
 
 AVAILABLE (where to buy, cheapest first):
 - getacme.io
@@ -357,7 +362,8 @@ AVAILABLE (where to buy, cheapest first):
   Dynadot: https://www.dynadot.com/domain/search?domain=getacme.io
   NameSilo: https://www.namesilo.com/domain/search-domains?query=getacme.io
   Hover: https://www.hover.com/domains/results?q=getacme.io
-Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list
+prices; premium or reserved names look the same, so the registrar's page shows the final price.
 
 TAKEN: example.org, acme.dev, acme.app
 ```
@@ -379,7 +385,7 @@ npx @dakaio/domainscout-mcp check getquillfern.com --json
     "reserved": 0,
     "unknown": 0,
     "total": 1,
-    "elapsed_ms": 1034
+    "elapsed_ms": 1049
   },
   "results": [
     {
@@ -393,13 +399,13 @@ npx @dakaio/domainscout-mcp check getquillfern.com --json
         {
           "source": "dns",
           "result": "nxdomain",
-          "ms": 39
+          "ms": 33
         },
         {
           "source": "rdap",
           "result": "not_found",
           "server": "rdap.verisign.com",
-          "ms": 645
+          "ms": 660
         }
       ],
       "buy": [
@@ -473,6 +479,6 @@ npx @dakaio/domainscout-mcp check getquillfern.com --json
     "ai"
   ],
   "warnings": [],
-  "elapsedMs": 1034
+  "elapsedMs": 1049
 }
 ```

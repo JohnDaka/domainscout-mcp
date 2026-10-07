@@ -42,6 +42,13 @@ const render = (report: Report): string => new TextReport(report).render();
 const LINE_BREAK = '\n';
 const SECTION_BREAK = '\n\n';
 
+/** The report with every wrapped line joined back to the one before it. */
+const unwrap = (text: string): string => text.replace(/\n *(?=\S)/g, ' ');
+
+/** Lines wider than the report's width; only a line holding a URL may be. */
+const tooWide = (text: string): string[] =>
+  text.split(LINE_BREAK).filter((line) => line.length > 100 && !line.includes('https://'));
+
 const REPORT: Report = {
   tlds: ['com', 'ai'],
   elapsedMs: 1_234,
@@ -106,7 +113,7 @@ describe('TextReport', () => {
     );
     expect(text).toContain('Namecheap: https://partner.test/gold.ai');
     expect(text).toContain('Cloudflare: $10.46/yr, renews at $10.46/yr: https://cf.test/plain.com');
-    expect(text).not.toContain(ReportText.CompactFootnote);
+    expect(unwrap(text)).not.toContain(ReportText.CompactFootnote);
   });
 
   it('describes taken, reserved and unverifiable domains', () => {
@@ -122,7 +129,12 @@ describe('TextReport', () => {
   it('ends with skipped input, notes and the affiliate disclosure', () => {
     expect(text).toContain('- "foo_bar": only letters, digits and hyphens are allowed');
     expect(text).toContain('NOTES:\n- Porkbun API: API key rejected');
-    expect(text.endsWith(AFFILIATE_DISCLOSURE)).toBe(true);
+    expect(unwrap(text).endsWith(AFFILIATE_DISCLOSURE)).toBe(true);
+  });
+
+  it('keeps footnotes, notes and the disclosure within 100 characters a line', () => {
+    expect(tooWide(text)).toEqual([]);
+    expect(unwrap(text)).toContain(ReportText.AvailableFootnote);
   });
 
   it('leaves out the disclosure and empty sections', () => {
@@ -192,7 +204,7 @@ describe('TextReport with many free domains', () => {
       '- name0.com: $5.98/yr at Porkbun (renews at $11.08/yr) https://porkbun.test/name0.com',
     );
     expect(text).not.toContain('hover.test');
-    expect(text).toContain(ReportText.CompactFootnote);
+    expect(unwrap(text)).toContain(ReportText.CompactFootnote);
   });
 
   it('keeps the confirmation, the minimum term and unpriced offers on that line', () => {
