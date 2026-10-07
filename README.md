@@ -186,7 +186,7 @@ npm run build
 | `src/scout/`, `src/server/`, `src/cli/` | The check as a whole, the MCP server and the command line |
 | `test/` | Vitest tests; the network is faked, except for a local WHOIS server |
 | `examples/` | Real output of the tool |
-| `site/` | The landing page at domainscout.dakaio.com: static HTML, deployed as is |
+| `site/` | The landing page at domainscout.dakaio.com: static HTML, released by a `landing-v<version>` tag (`npm --prefix site run release`) |
 
 ## License
 

@@ -1,0 +1,76 @@
+# The landing page goes out only when it is released: a tag `landing-v<version>`, the version being
+# site/package.json's. Merges into `main` never touch it: the page is the shop window, so putting
+# it out is a step of its own. After the version is raised in a PR and merged:
+#
+#   npm --prefix site run release   # checks out main, pulls, tags landing-v<version>, pushes the tag
+#
+# The tag's site/ goes to a new release folder on the box and `current` is pointed at it; nginx
+# serves `current` to domainscout.dakaio.com. Running it by hand (Actions → Run workflow) on a tag
+# puts that tag out again – the way back to an earlier one.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST      the box: its IP (not a name behind Cloudflare's proxy)
+#   DEPLOY_USER      deploy
+#   DEPLOY_SSH_KEY   the private half of a key in deploy's authorized_keys
+name: landing
+
+on:
+  push:
+    tags: ['landing-v*']
+  workflow_dispatch:
+
+concurrency:
+  group: landing-deploy
+  cancel-in-progress: false
+
+env:
+  RELEASES_DIR: /var/www/domainscout/releases
+  CURRENT_LINK: /var/www/domainscout/current
+
+jobs:
+  deploy:
+    # A tag only: a run by hand on a branch would put out whatever the branch has.
+    if: startsWith(github.ref, 'refs/tags/landing-v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://domainscout.dakaio.com
+    steps:
+      - uses: actions/checkout@v4
+      # The tag says the version package.json has: a tag made by hand on the wrong commit stops
+      # here, not on the site.
+      - name: Check the version
+        run: |
+          version=$(node -p "require('./site/package.json').version")
+          if [ "$GITHUB_REF_NAME" != "landing-v$version" ]; then
+            echo "::error::$GITHUB_REF_NAME, but site/package.json says $version"
+            exit 1
+          fi
+      # Which release this is, for the browser console (site/version.js).
+      - name: Stamp the version
+        run: |
+          node -e "
+            const { version } = require('./site/package.json');
+            const stamp = { version, commit: process.env.GITHUB_SHA, built: new Date().toISOString() };
+            require('fs').writeFileSync('site/version.json', JSON.stringify(stamp) + '\n');
+          "
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Trust the box
+        run: ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+      # The release's own files stay behind: the version and the release command are not pages.
+      - name: Upload as a new release
+        run: |
+          rsync -az --delete --exclude package.json --exclude release.mjs site/ \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$RELEASES_DIR/$GITHUB_REF_NAME/"
+      # The heredoc is unquoted on purpose: the variables are the runner's. Five releases stay.
+      - name: Go live
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" bash -s <<EOF
+            set -e
+            ln -sfn "$RELEASES_DIR/$GITHUB_REF_NAME" "$CURRENT_LINK"
+            ls -1dt "$RELEASES_DIR"/*/ | tail -n +6 | xargs -r rm -rf
+            curl -fsSk --resolve domainscout.dakaio.com:443:127.0.0.1 https://domainscout.dakaio.com/version.json
+          EOF
