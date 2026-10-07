@@ -250,12 +250,12 @@ npm run build
 | `site/` | The landing page at domainscout.dakaio.com: static HTML, released by a `landing-v<version>` tag (`npm --prefix site run release`) |
 | `server.json`, `manifest.json`, `glama.json` | Listings: the MCP Registry, the Claude Desktop extension, Glama |
 
-Releases: raise the version in a pull request with `npm version patch --no-git-tag-version` (or
-`minor`, or an exact version); it updates `package.json`, `package-lock.json`, `manifest.json` and
-`server.json` together. Then run `npm run release` on the merged `main`. It pushes the tag `v<version>`, and
+Releases: raise the version in a pull request with `npm run bump patch` (or `minor`, or an exact
+version such as `npm run bump 1.2.0`); it updates `package.json`, `package-lock.json`,
+`manifest.json` and `server.json` together. Then run `npm run release` on the merged `main`. It pushes the tag `v<version>`, and
 `.github/workflows/publish.yml` publishes to npm (trusted publishing), creates a GitHub Release
 with the Claude Desktop extension and publishes to the MCP Registry. The landing page goes out the
-same way with `npm --prefix site run release`.
+same way: `npm run bump:site patch` in a pull request, then `npm --prefix site run release`.
 
 ## License
 
