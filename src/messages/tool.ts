@@ -23,7 +23,8 @@ export const ToolText = {
 export const toolInstructions = (defaultTlds: string): string =>
   "Checks whether domain names are free to register, from the user's own machine, and shows prices and " +
   `where to buy them. Built for bulk search: pass a whole brainstorm of names in one ${TOOL_CHECK_DOMAINS} ` +
-  `call. Names without a TLD are tried in: ${defaultTlds}.`;
+  `call. Names without a TLD are tried in: ${defaultTlds}. When you present the results, give each free ` +
+  "domain its price and its buy link from the tool's answer, so the user can register it in one click.";
 
 /** The tool description the model reads before calling it. */
 export const toolDescription = (defaultTlds: string): string => `\
@@ -47,9 +48,12 @@ price is on the registrar's page.
 
 Free domains come with buy links, cheapest first, with standard per-year prices where public price lists exist, \
 or the exact price when a registrar confirmed the name. When many names are free, the text lists each on one \
-line with its cheapest offer; check the user's favourites again to get every registrar's link. Show the user the \
-first-year and the renewal price and any minimum term. Pass on the NOTES and, when present, the affiliate \
-disclosure line.`;
+line with its cheapest offer; check the user's favourites again to get every registrar's link.
+
+How to present the answer: list the free domains with their price and their buy link from this result - a table \
+with a link column works well - so the user can register a name in one click. Keep the links; do not replace \
+them with links of your own. Mention the renewal price when it differs from the first year, and any minimum term. \
+Pass on the NOTES and, when present, the affiliate disclosure line.`;
 
 /** Describes the `tlds` parameter, including the configured defaults. */
 export const tldsParamText = (defaultTlds: string): string =>

@@ -79,7 +79,7 @@ describe('DomainChecker funnel', () => {
   });
 
   it('falls back to WHOIS when the TLD has no RDAP', async () => {
-    const { result } = await check({ rdap: { state: LookupState.Unsupported } }, 'acme.ru');
+    const { result } = await check({ rdap: { state: LookupState.Unsupported } }, 'acme.de');
     expect(result.status).toBe(DomainStatus.LikelyAvailable);
   });
 

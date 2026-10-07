@@ -29,7 +29,7 @@ The assistant brainstorms the names and calls the tool once with all 500 of them
 The tool answers with this text, plus the same data as structured JSON:
 
 ```text
-Checked 500 domain(s) in 21.8s: 27 available, 473 taken.
+Checked 500 domain(s) in 23.0s: 27 available, 473 taken.
 
 AVAILABLE (cheapest known offer for each):
 - quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
@@ -62,7 +62,84 @@ AVAILABLE (cheapest known offer for each):
 Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
 Each line shows the cheapest known offer. Check a few chosen names again to see every registrar, including links for registrars without public prices.
 
-TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com, quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com, quillstack.com, quillvault.com, quillwave.com, quillgrove.com, quillhaven.com, quillforge.com, quillbloom.com, jotwise.com, jotnest.com, jotflow.com, jothub.com, jotloom.com, jotpad.com, jotbox.com, jotbase.com, jotkit.com, jotlab.com, jotcraft.com, jotmint.com, jotspark.com, jotstack.com, jotvault.com, jotwave.com, jotgrove.com, jothaven.com, jotforge.com, jotbloom.com, notewise.com, notenest.com, noteflow.com, notehub.com, noteloom.com, notepad.com, notebox.com, notebase.com, notekit.com, notelab.com, notecraft.com, notemint.com, notespark.com, notestack.com, notevault.com, notewave.com, notegrove.com, notehaven.com, noteforge.com, notebloom.com, inkwise.com, inknest.com, inkflow.com, inkhub.com, inkloom.com, inkpad.com, inkbox.com, inkbase.com, inkkit.com, inklab.com, inkcraft.com, inkmint.com, inkspark.com, inkstack.com, inkvault.com, inkwave.com, inkgrove.com, inkhaven.com, inkforge.com, inkbloom.com, pagewise.com, pagenest.com, pageflow.com, pagehub.com, pageloom.com, pagepad.com, pagebox.com, pagebase.com, pagekit.com, pagelab.com, pagecraft.com, pagemint.com, pagespark.com, pagestack.com, pagevault.com, pagewave.com, pagegrove.com, pagehaven.com, pageforge.com, pagebloom.com, memowise.com, memonest.com, memoflow.com, memohub.com, memoloom.com, memopad.com, memobox.com, memobase.com, memokit.com, memolab.com, memocraft.com, memomint.com, memospark.com, memostack.com, memovault.com, memowave.com, memogrove.com, memohaven.com, memoforge.com, memobloom.com, scribewise.com, scribenest.com, scribeflow.com, scribehub.com, scribepad.com, scribebox.com, scribebase.com, scribekit.com, scribelab.com, scribecraft.com, scribemint.com, scribespark.com, scribestack.com, scribevault.com, scribewave.com, scribegrove.com, scribehaven.com, scribeforge.com, draftwise.com, draftnest.com, draftflow.com, drafthub.com, draftloom.com, draftpad.com, draftbox.com, draftbase.com, draftkit.com, draftlab.com, draftcraft.com, draftmint.com, draftspark.com, draftstack.com, draftvault.com, draftwave.com, draftgrove.com, drafthaven.com, draftforge.com, draftbloom.com, ideawise.com, ideanest.com, ideaflow.com, ideahub.com, idealoom.com, ideapad.com, ideabox.com, ideabase.com, ideakit.com, idealab.com, ideacraft.com, ideamint.com, ideaspark.com, ideastack.com, ideavault.com, ideawave.com, ideagrove.com, ideahaven.com, ideaforge.com, ideabloom.com, mindwise.com, mindnest.com, mindflow.com, mindhub.com, mindloom.com, mindpad.com, mindbox.com, mindbase.com, mindkit.com, mindlab.com, mindcraft.com, mindmint.com, mindspark.com, mindstack.com, mindvault.com, mindwave.com, mindgrove.com, mindhaven.com, mindforge.com, mindbloom.com, brainwise.com, brainnest.com, brainflow.com, brainhub.com, brainloom.com, brainpad.com, brainbox.com, brainbase.com, brainkit.com, brainlab.com, braincraft.com, brainmint.com, brainspark.com, brainstack.com, brainvault.com, brainwave.com, braingrove.com, brainhaven.com, brainforge.com, brainbloom.com, thinkwise.com, thinknest.com, thinkflow.com, thinkhub.com, thinkloom.com, thinkpad.com, thinkbox.com, thinkbase.com, thinkkit.com, thinklab.com, thinkcraft.com, thinkmint.com, thinkspark.com, thinkstack.com, thinkvault.com, thinkwave.com, thinkgrove.com, thinkhaven.com, thinkforge.com, thinkbloom.com, clipwise.com, clipnest.com, clipflow.com, cliphub.com, cliploom.com (in deletion, may become available soon), clippad.com, clipbox.com, clipbase.com, clipkit.com, cliplab.com, clipcraft.com, clipmint.com, clipspark.com, clipstack.com, clipvault.com, clipwave.com, clipgrove.com, cliphaven.com, clipforge.com, clipbloom.com, snapwise.com, snapnest.com, snapflow.com, snaphub.com, snaploom.com, snappad.com, snapbox.com, snapbase.com, snapkit.com, snaplab.com, snapcraft.com, snapmint.com, snapspark.com, snapstack.com, snapvault.com, snapwave.com, snapgrove.com, snaphaven.com, snapforge.com, snapbloom.com, storywise.com, storynest.com, storyflow.com, storyhub.com, storyloom.com, storypad.com, storybox.com, storybase.com, storykit.com, storylab.com, storycraft.com, storymint.com, storyspark.com, storystack.com, storyvault.com, storywave.com, storygrove.com, storyhaven.com, storyforge.com, storybloom.com, leafwise.com, leafnest.com, leafflow.com, leafhub.com, leafloom.com, leafpad.com, leafbox.com, leafbase.com, leafkit.com, leaflab.com, leafcraft.com, leafmint.com, leafspark.com, leafstack.com, leafvault.com, leafwave.com, leafgrove.com, leafhaven.com, leafforge.com, leafbloom.com, foliowise.com, folionest.com, folioflow.com, foliohub.com, folioloom.com, foliopad.com, foliobox.com, foliobase.com, foliokit.com, foliolab.com, foliocraft.com, foliomint.com, foliospark.com, foliostack.com, foliovault.com, foliowave.com, foliogrove.com, foliohaven.com, folioforge.com, glyphwise.com, glyphnest.com (in deletion, may become available soon), glyphflow.com, glyphhub.com, glyphloom.com, glyphpad.com, glyphbox.com, glyphbase.com, glyphkit.com, glyphlab.com, glyphcraft.com, glyphmint.com, glyphspark.com, glyphstack.com, glyphvault.com, glyphwave.com, glyphgrove.com, glyphhaven.com, glyphforge.com, marginwise.com, marginnest.com, marginflow.com, marginhub.com, marginloom.com, marginpad.com, marginbox.com, marginbase.com, marginkit.com, marginlab.com, margincraft.com, marginmint.com, marginspark.com, marginstack.com, marginvault.com, marginwave.com, margingrove.com, marginhaven.com, marginforge.com, marginbloom.com, outlinewise.com, outlineflow.com, outlinehub.com, outlinepad.com, outlinebox.com, outlinebase.com, outlinekit.com, outlinelab.com, outlinecraft.com, outlinevault.com, outlineforge.com, outlinebloom.com, pencilwise.com, pencilnest.com, pencilflow.com, pencilhub.com, pencilpad.com, pencilbox.com, pencilbase.com, pencilkit.com, pencillab.com, pencilcraft.com, pencilspark.com, pencilvault.com, pencilgrove.com, pencilforge.com, paperwise.com, papernest.com, paperflow.com, paperhub.com, paperloom.com, paperpad.com, paperbox.com, paperbase.com, paperkit.com, paperlab.com, papercraft.com, papermint.com, paperspark.com, paperstack.com, papervault.com, paperwave.com, papergrove.com, paperhaven.com, paperforge.com, paperbloom.com, notchwise.com, notchnest.com, notchflow.com, notchhub.com, notchpad.com, notchbox.com, notchbase.com, notchkit.com, notchlab.com, notchcraft.com, notchstack.com, notchwave.com, versewise.com, versenest.com, verseflow.com, versehub.com, verseloom.com, versepad.com, versebox.com, versebase.com, versekit.com, verselab.com, versecraft.com, versemint.com, versespark.com, versestack.com, versevault.com, versewave.com, versegrove.com, versehaven.com, verseforge.com, versebloom.com, threadwise.com, threadnest.com, threadflow.com, threadhub.com, threadloom.com, threadpad.com, threadbox.com, threadbase.com, threadkit.com, threadlab.com, threadcraft.com, threadmint.com, threadspark.com, threadstack.com, threadvault.com, threadwave.com, threadgrove.com, threadhaven.com, threadforge.com, threadbloom.com
+TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com,
+  quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com,
+  quillstack.com, quillvault.com, quillwave.com, quillgrove.com, quillhaven.com, quillforge.com,
+  quillbloom.com, jotwise.com, jotnest.com, jotflow.com, jothub.com, jotloom.com, jotpad.com,
+  jotbox.com, jotbase.com, jotkit.com, jotlab.com, jotcraft.com, jotmint.com, jotspark.com,
+  jotstack.com, jotvault.com, jotwave.com, jotgrove.com, jothaven.com, jotforge.com, jotbloom.com,
+  notewise.com, notenest.com, noteflow.com, notehub.com, noteloom.com, notepad.com, notebox.com,
+  notebase.com, notekit.com, notelab.com, notecraft.com, notemint.com, notespark.com, notestack.com,
+  notevault.com, notewave.com, notegrove.com, notehaven.com, noteforge.com, notebloom.com,
+  inkwise.com, inknest.com, inkflow.com, inkhub.com, inkloom.com, inkpad.com, inkbox.com,
+  inkbase.com, inkkit.com, inklab.com, inkcraft.com, inkmint.com, inkspark.com, inkstack.com,
+  inkvault.com, inkwave.com, inkgrove.com, inkhaven.com, inkforge.com, inkbloom.com, pagewise.com,
+  pagenest.com, pageflow.com, pagehub.com, pageloom.com, pagepad.com, pagebox.com, pagebase.com,
+  pagekit.com, pagelab.com, pagecraft.com, pagemint.com, pagespark.com, pagestack.com,
+  pagevault.com, pagewave.com, pagegrove.com, pagehaven.com, pageforge.com, pagebloom.com,
+  memowise.com, memonest.com, memoflow.com, memohub.com, memoloom.com, memopad.com, memobox.com,
+  memobase.com, memokit.com, memolab.com, memocraft.com, memomint.com, memospark.com, memostack.com,
+  memovault.com, memowave.com, memogrove.com, memohaven.com, memoforge.com, memobloom.com,
+  scribewise.com, scribenest.com, scribeflow.com, scribehub.com, scribepad.com, scribebox.com,
+  scribebase.com, scribekit.com, scribelab.com, scribecraft.com, scribemint.com, scribespark.com,
+  scribestack.com, scribevault.com, scribewave.com, scribegrove.com, scribehaven.com,
+  scribeforge.com, draftwise.com, draftnest.com, draftflow.com, drafthub.com, draftloom.com,
+  draftpad.com, draftbox.com, draftbase.com, draftkit.com, draftlab.com, draftcraft.com,
+  draftmint.com, draftspark.com, draftstack.com, draftvault.com, draftwave.com, draftgrove.com,
+  drafthaven.com, draftforge.com, draftbloom.com, ideawise.com, ideanest.com, ideaflow.com,
+  ideahub.com, idealoom.com, ideapad.com, ideabox.com, ideabase.com, ideakit.com, idealab.com,
+  ideacraft.com, ideamint.com, ideaspark.com, ideastack.com, ideavault.com, ideawave.com,
+  ideagrove.com, ideahaven.com, ideaforge.com, ideabloom.com, mindwise.com, mindnest.com,
+  mindflow.com, mindhub.com, mindloom.com, mindpad.com, mindbox.com, mindbase.com, mindkit.com,
+  mindlab.com, mindcraft.com, mindmint.com, mindspark.com, mindstack.com, mindvault.com,
+  mindwave.com, mindgrove.com, mindhaven.com, mindforge.com, mindbloom.com, brainwise.com,
+  brainnest.com, brainflow.com, brainhub.com, brainloom.com, brainpad.com, brainbox.com,
+  brainbase.com, brainkit.com, brainlab.com, braincraft.com, brainmint.com, brainspark.com,
+  brainstack.com, brainvault.com, brainwave.com, braingrove.com, brainhaven.com, brainforge.com,
+  brainbloom.com, thinkwise.com, thinknest.com, thinkflow.com, thinkhub.com, thinkloom.com,
+  thinkpad.com, thinkbox.com, thinkbase.com, thinkkit.com, thinklab.com, thinkcraft.com,
+  thinkmint.com, thinkspark.com, thinkstack.com, thinkvault.com, thinkwave.com, thinkgrove.com,
+  thinkhaven.com, thinkforge.com, thinkbloom.com, clipwise.com, clipnest.com, clipflow.com,
+  cliphub.com, cliploom.com (in deletion, may become available soon), clippad.com, clipbox.com,
+  clipbase.com, clipkit.com, cliplab.com, clipcraft.com, clipmint.com, clipspark.com, clipstack.com,
+  clipvault.com, clipwave.com, clipgrove.com, cliphaven.com, clipforge.com, clipbloom.com,
+  snapwise.com, snapnest.com, snapflow.com, snaphub.com, snaploom.com, snappad.com, snapbox.com,
+  snapbase.com, snapkit.com, snaplab.com, snapcraft.com, snapmint.com, snapspark.com, snapstack.com,
+  snapvault.com, snapwave.com, snapgrove.com, snaphaven.com, snapforge.com, snapbloom.com,
+  storywise.com, storynest.com, storyflow.com, storyhub.com, storyloom.com, storypad.com,
+  storybox.com, storybase.com, storykit.com, storylab.com, storycraft.com, storymint.com,
+  storyspark.com, storystack.com, storyvault.com, storywave.com, storygrove.com, storyhaven.com,
+  storyforge.com, storybloom.com, leafwise.com, leafnest.com, leafflow.com, leafhub.com,
+  leafloom.com, leafpad.com, leafbox.com, leafbase.com, leafkit.com, leaflab.com, leafcraft.com,
+  leafmint.com, leafspark.com, leafstack.com, leafvault.com, leafwave.com, leafgrove.com,
+  leafhaven.com, leafforge.com, leafbloom.com, foliowise.com, folionest.com, folioflow.com,
+  foliohub.com, folioloom.com, foliopad.com, foliobox.com, foliobase.com, foliokit.com,
+  foliolab.com, foliocraft.com, foliomint.com, foliospark.com, foliostack.com, foliovault.com,
+  foliowave.com, foliogrove.com, foliohaven.com, folioforge.com, glyphwise.com,
+  glyphnest.com (in deletion, may become available soon), glyphflow.com, glyphhub.com,
+  glyphloom.com, glyphpad.com, glyphbox.com, glyphbase.com, glyphkit.com, glyphlab.com,
+  glyphcraft.com, glyphmint.com, glyphspark.com, glyphstack.com, glyphvault.com, glyphwave.com,
+  glyphgrove.com, glyphhaven.com, glyphforge.com, marginwise.com, marginnest.com, marginflow.com,
+  marginhub.com, marginloom.com, marginpad.com, marginbox.com, marginbase.com, marginkit.com,
+  marginlab.com, margincraft.com, marginmint.com, marginspark.com, marginstack.com, marginvault.com,
+  marginwave.com, margingrove.com, marginhaven.com, marginforge.com, marginbloom.com,
+  outlinewise.com, outlineflow.com, outlinehub.com, outlinepad.com, outlinebox.com, outlinebase.com,
+  outlinekit.com, outlinelab.com, outlinecraft.com, outlinevault.com, outlineforge.com,
+  outlinebloom.com, pencilwise.com, pencilnest.com, pencilflow.com, pencilhub.com, pencilpad.com,
+  pencilbox.com, pencilbase.com, pencilkit.com, pencillab.com, pencilcraft.com, pencilspark.com,
+  pencilvault.com, pencilgrove.com, pencilforge.com, paperwise.com, papernest.com, paperflow.com,
+  paperhub.com, paperloom.com, paperpad.com, paperbox.com, paperbase.com, paperkit.com,
+  paperlab.com, papercraft.com, papermint.com, paperspark.com, paperstack.com, papervault.com,
+  paperwave.com, papergrove.com, paperhaven.com, paperforge.com, paperbloom.com, notchwise.com,
+  notchnest.com, notchflow.com, notchhub.com, notchpad.com, notchbox.com, notchbase.com,
+  notchkit.com, notchlab.com, notchcraft.com, notchstack.com, notchwave.com, versewise.com,
+  versenest.com, verseflow.com, versehub.com, verseloom.com, versepad.com, versebox.com,
+  versebase.com, versekit.com, verselab.com, versecraft.com, versemint.com, versespark.com,
+  versestack.com, versevault.com, versewave.com, versegrove.com, versehaven.com, verseforge.com,
+  versebloom.com, threadwise.com, threadnest.com, threadflow.com, threadhub.com, threadloom.com,
+  threadpad.com, threadbox.com, threadbase.com, threadkit.com, threadlab.com, threadcraft.com,
+  threadmint.com, threadspark.com, threadstack.com, threadvault.com, threadwave.com,
+  threadgrove.com, threadhaven.com, threadforge.com, threadbloom.com
 ```
 
 ## Command line
@@ -76,7 +153,7 @@ npx @dakaio/domainscout-mcp check quillwise quillnest quillflow quillhub "… 49
 ```
 
 ```text
-Checked 500 domain(s) in 21.8s: 27 available, 473 taken.
+Checked 500 domain(s) in 23.0s: 27 available, 473 taken.
 
 AVAILABLE (cheapest known offer for each):
 - quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
@@ -109,7 +186,84 @@ AVAILABLE (cheapest known offer for each):
 Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
 Each line shows the cheapest known offer. Check a few chosen names again to see every registrar, including links for registrars without public prices.
 
-TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com, quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com, quillstack.com, quillvault.com, quillwave.com, quillgrove.com, quillhaven.com, quillforge.com, quillbloom.com, jotwise.com, jotnest.com, jotflow.com, jothub.com, jotloom.com, jotpad.com, jotbox.com, jotbase.com, jotkit.com, jotlab.com, jotcraft.com, jotmint.com, jotspark.com, jotstack.com, jotvault.com, jotwave.com, jotgrove.com, jothaven.com, jotforge.com, jotbloom.com, notewise.com, notenest.com, noteflow.com, notehub.com, noteloom.com, notepad.com, notebox.com, notebase.com, notekit.com, notelab.com, notecraft.com, notemint.com, notespark.com, notestack.com, notevault.com, notewave.com, notegrove.com, notehaven.com, noteforge.com, notebloom.com, inkwise.com, inknest.com, inkflow.com, inkhub.com, inkloom.com, inkpad.com, inkbox.com, inkbase.com, inkkit.com, inklab.com, inkcraft.com, inkmint.com, inkspark.com, inkstack.com, inkvault.com, inkwave.com, inkgrove.com, inkhaven.com, inkforge.com, inkbloom.com, pagewise.com, pagenest.com, pageflow.com, pagehub.com, pageloom.com, pagepad.com, pagebox.com, pagebase.com, pagekit.com, pagelab.com, pagecraft.com, pagemint.com, pagespark.com, pagestack.com, pagevault.com, pagewave.com, pagegrove.com, pagehaven.com, pageforge.com, pagebloom.com, memowise.com, memonest.com, memoflow.com, memohub.com, memoloom.com, memopad.com, memobox.com, memobase.com, memokit.com, memolab.com, memocraft.com, memomint.com, memospark.com, memostack.com, memovault.com, memowave.com, memogrove.com, memohaven.com, memoforge.com, memobloom.com, scribewise.com, scribenest.com, scribeflow.com, scribehub.com, scribepad.com, scribebox.com, scribebase.com, scribekit.com, scribelab.com, scribecraft.com, scribemint.com, scribespark.com, scribestack.com, scribevault.com, scribewave.com, scribegrove.com, scribehaven.com, scribeforge.com, draftwise.com, draftnest.com, draftflow.com, drafthub.com, draftloom.com, draftpad.com, draftbox.com, draftbase.com, draftkit.com, draftlab.com, draftcraft.com, draftmint.com, draftspark.com, draftstack.com, draftvault.com, draftwave.com, draftgrove.com, drafthaven.com, draftforge.com, draftbloom.com, ideawise.com, ideanest.com, ideaflow.com, ideahub.com, idealoom.com, ideapad.com, ideabox.com, ideabase.com, ideakit.com, idealab.com, ideacraft.com, ideamint.com, ideaspark.com, ideastack.com, ideavault.com, ideawave.com, ideagrove.com, ideahaven.com, ideaforge.com, ideabloom.com, mindwise.com, mindnest.com, mindflow.com, mindhub.com, mindloom.com, mindpad.com, mindbox.com, mindbase.com, mindkit.com, mindlab.com, mindcraft.com, mindmint.com, mindspark.com, mindstack.com, mindvault.com, mindwave.com, mindgrove.com, mindhaven.com, mindforge.com, mindbloom.com, brainwise.com, brainnest.com, brainflow.com, brainhub.com, brainloom.com, brainpad.com, brainbox.com, brainbase.com, brainkit.com, brainlab.com, braincraft.com, brainmint.com, brainspark.com, brainstack.com, brainvault.com, brainwave.com, braingrove.com, brainhaven.com, brainforge.com, brainbloom.com, thinkwise.com, thinknest.com, thinkflow.com, thinkhub.com, thinkloom.com, thinkpad.com, thinkbox.com, thinkbase.com, thinkkit.com, thinklab.com, thinkcraft.com, thinkmint.com, thinkspark.com, thinkstack.com, thinkvault.com, thinkwave.com, thinkgrove.com, thinkhaven.com, thinkforge.com, thinkbloom.com, clipwise.com, clipnest.com, clipflow.com, cliphub.com, cliploom.com (in deletion, may become available soon), clippad.com, clipbox.com, clipbase.com, clipkit.com, cliplab.com, clipcraft.com, clipmint.com, clipspark.com, clipstack.com, clipvault.com, clipwave.com, clipgrove.com, cliphaven.com, clipforge.com, clipbloom.com, snapwise.com, snapnest.com, snapflow.com, snaphub.com, snaploom.com, snappad.com, snapbox.com, snapbase.com, snapkit.com, snaplab.com, snapcraft.com, snapmint.com, snapspark.com, snapstack.com, snapvault.com, snapwave.com, snapgrove.com, snaphaven.com, snapforge.com, snapbloom.com, storywise.com, storynest.com, storyflow.com, storyhub.com, storyloom.com, storypad.com, storybox.com, storybase.com, storykit.com, storylab.com, storycraft.com, storymint.com, storyspark.com, storystack.com, storyvault.com, storywave.com, storygrove.com, storyhaven.com, storyforge.com, storybloom.com, leafwise.com, leafnest.com, leafflow.com, leafhub.com, leafloom.com, leafpad.com, leafbox.com, leafbase.com, leafkit.com, leaflab.com, leafcraft.com, leafmint.com, leafspark.com, leafstack.com, leafvault.com, leafwave.com, leafgrove.com, leafhaven.com, leafforge.com, leafbloom.com, foliowise.com, folionest.com, folioflow.com, foliohub.com, folioloom.com, foliopad.com, foliobox.com, foliobase.com, foliokit.com, foliolab.com, foliocraft.com, foliomint.com, foliospark.com, foliostack.com, foliovault.com, foliowave.com, foliogrove.com, foliohaven.com, folioforge.com, glyphwise.com, glyphnest.com (in deletion, may become available soon), glyphflow.com, glyphhub.com, glyphloom.com, glyphpad.com, glyphbox.com, glyphbase.com, glyphkit.com, glyphlab.com, glyphcraft.com, glyphmint.com, glyphspark.com, glyphstack.com, glyphvault.com, glyphwave.com, glyphgrove.com, glyphhaven.com, glyphforge.com, marginwise.com, marginnest.com, marginflow.com, marginhub.com, marginloom.com, marginpad.com, marginbox.com, marginbase.com, marginkit.com, marginlab.com, margincraft.com, marginmint.com, marginspark.com, marginstack.com, marginvault.com, marginwave.com, margingrove.com, marginhaven.com, marginforge.com, marginbloom.com, outlinewise.com, outlineflow.com, outlinehub.com, outlinepad.com, outlinebox.com, outlinebase.com, outlinekit.com, outlinelab.com, outlinecraft.com, outlinevault.com, outlineforge.com, outlinebloom.com, pencilwise.com, pencilnest.com, pencilflow.com, pencilhub.com, pencilpad.com, pencilbox.com, pencilbase.com, pencilkit.com, pencillab.com, pencilcraft.com, pencilspark.com, pencilvault.com, pencilgrove.com, pencilforge.com, paperwise.com, papernest.com, paperflow.com, paperhub.com, paperloom.com, paperpad.com, paperbox.com, paperbase.com, paperkit.com, paperlab.com, papercraft.com, papermint.com, paperspark.com, paperstack.com, papervault.com, paperwave.com, papergrove.com, paperhaven.com, paperforge.com, paperbloom.com, notchwise.com, notchnest.com, notchflow.com, notchhub.com, notchpad.com, notchbox.com, notchbase.com, notchkit.com, notchlab.com, notchcraft.com, notchstack.com, notchwave.com, versewise.com, versenest.com, verseflow.com, versehub.com, verseloom.com, versepad.com, versebox.com, versebase.com, versekit.com, verselab.com, versecraft.com, versemint.com, versespark.com, versestack.com, versevault.com, versewave.com, versegrove.com, versehaven.com, verseforge.com, versebloom.com, threadwise.com, threadnest.com, threadflow.com, threadhub.com, threadloom.com, threadpad.com, threadbox.com, threadbase.com, threadkit.com, threadlab.com, threadcraft.com, threadmint.com, threadspark.com, threadstack.com, threadvault.com, threadwave.com, threadgrove.com, threadhaven.com, threadforge.com, threadbloom.com
+TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com,
+  quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com,
+  quillstack.com, quillvault.com, quillwave.com, quillgrove.com, quillhaven.com, quillforge.com,
+  quillbloom.com, jotwise.com, jotnest.com, jotflow.com, jothub.com, jotloom.com, jotpad.com,
+  jotbox.com, jotbase.com, jotkit.com, jotlab.com, jotcraft.com, jotmint.com, jotspark.com,
+  jotstack.com, jotvault.com, jotwave.com, jotgrove.com, jothaven.com, jotforge.com, jotbloom.com,
+  notewise.com, notenest.com, noteflow.com, notehub.com, noteloom.com, notepad.com, notebox.com,
+  notebase.com, notekit.com, notelab.com, notecraft.com, notemint.com, notespark.com, notestack.com,
+  notevault.com, notewave.com, notegrove.com, notehaven.com, noteforge.com, notebloom.com,
+  inkwise.com, inknest.com, inkflow.com, inkhub.com, inkloom.com, inkpad.com, inkbox.com,
+  inkbase.com, inkkit.com, inklab.com, inkcraft.com, inkmint.com, inkspark.com, inkstack.com,
+  inkvault.com, inkwave.com, inkgrove.com, inkhaven.com, inkforge.com, inkbloom.com, pagewise.com,
+  pagenest.com, pageflow.com, pagehub.com, pageloom.com, pagepad.com, pagebox.com, pagebase.com,
+  pagekit.com, pagelab.com, pagecraft.com, pagemint.com, pagespark.com, pagestack.com,
+  pagevault.com, pagewave.com, pagegrove.com, pagehaven.com, pageforge.com, pagebloom.com,
+  memowise.com, memonest.com, memoflow.com, memohub.com, memoloom.com, memopad.com, memobox.com,
+  memobase.com, memokit.com, memolab.com, memocraft.com, memomint.com, memospark.com, memostack.com,
+  memovault.com, memowave.com, memogrove.com, memohaven.com, memoforge.com, memobloom.com,
+  scribewise.com, scribenest.com, scribeflow.com, scribehub.com, scribepad.com, scribebox.com,
+  scribebase.com, scribekit.com, scribelab.com, scribecraft.com, scribemint.com, scribespark.com,
+  scribestack.com, scribevault.com, scribewave.com, scribegrove.com, scribehaven.com,
+  scribeforge.com, draftwise.com, draftnest.com, draftflow.com, drafthub.com, draftloom.com,
+  draftpad.com, draftbox.com, draftbase.com, draftkit.com, draftlab.com, draftcraft.com,
+  draftmint.com, draftspark.com, draftstack.com, draftvault.com, draftwave.com, draftgrove.com,
+  drafthaven.com, draftforge.com, draftbloom.com, ideawise.com, ideanest.com, ideaflow.com,
+  ideahub.com, idealoom.com, ideapad.com, ideabox.com, ideabase.com, ideakit.com, idealab.com,
+  ideacraft.com, ideamint.com, ideaspark.com, ideastack.com, ideavault.com, ideawave.com,
+  ideagrove.com, ideahaven.com, ideaforge.com, ideabloom.com, mindwise.com, mindnest.com,
+  mindflow.com, mindhub.com, mindloom.com, mindpad.com, mindbox.com, mindbase.com, mindkit.com,
+  mindlab.com, mindcraft.com, mindmint.com, mindspark.com, mindstack.com, mindvault.com,
+  mindwave.com, mindgrove.com, mindhaven.com, mindforge.com, mindbloom.com, brainwise.com,
+  brainnest.com, brainflow.com, brainhub.com, brainloom.com, brainpad.com, brainbox.com,
+  brainbase.com, brainkit.com, brainlab.com, braincraft.com, brainmint.com, brainspark.com,
+  brainstack.com, brainvault.com, brainwave.com, braingrove.com, brainhaven.com, brainforge.com,
+  brainbloom.com, thinkwise.com, thinknest.com, thinkflow.com, thinkhub.com, thinkloom.com,
+  thinkpad.com, thinkbox.com, thinkbase.com, thinkkit.com, thinklab.com, thinkcraft.com,
+  thinkmint.com, thinkspark.com, thinkstack.com, thinkvault.com, thinkwave.com, thinkgrove.com,
+  thinkhaven.com, thinkforge.com, thinkbloom.com, clipwise.com, clipnest.com, clipflow.com,
+  cliphub.com, cliploom.com (in deletion, may become available soon), clippad.com, clipbox.com,
+  clipbase.com, clipkit.com, cliplab.com, clipcraft.com, clipmint.com, clipspark.com, clipstack.com,
+  clipvault.com, clipwave.com, clipgrove.com, cliphaven.com, clipforge.com, clipbloom.com,
+  snapwise.com, snapnest.com, snapflow.com, snaphub.com, snaploom.com, snappad.com, snapbox.com,
+  snapbase.com, snapkit.com, snaplab.com, snapcraft.com, snapmint.com, snapspark.com, snapstack.com,
+  snapvault.com, snapwave.com, snapgrove.com, snaphaven.com, snapforge.com, snapbloom.com,
+  storywise.com, storynest.com, storyflow.com, storyhub.com, storyloom.com, storypad.com,
+  storybox.com, storybase.com, storykit.com, storylab.com, storycraft.com, storymint.com,
+  storyspark.com, storystack.com, storyvault.com, storywave.com, storygrove.com, storyhaven.com,
+  storyforge.com, storybloom.com, leafwise.com, leafnest.com, leafflow.com, leafhub.com,
+  leafloom.com, leafpad.com, leafbox.com, leafbase.com, leafkit.com, leaflab.com, leafcraft.com,
+  leafmint.com, leafspark.com, leafstack.com, leafvault.com, leafwave.com, leafgrove.com,
+  leafhaven.com, leafforge.com, leafbloom.com, foliowise.com, folionest.com, folioflow.com,
+  foliohub.com, folioloom.com, foliopad.com, foliobox.com, foliobase.com, foliokit.com,
+  foliolab.com, foliocraft.com, foliomint.com, foliospark.com, foliostack.com, foliovault.com,
+  foliowave.com, foliogrove.com, foliohaven.com, folioforge.com, glyphwise.com,
+  glyphnest.com (in deletion, may become available soon), glyphflow.com, glyphhub.com,
+  glyphloom.com, glyphpad.com, glyphbox.com, glyphbase.com, glyphkit.com, glyphlab.com,
+  glyphcraft.com, glyphmint.com, glyphspark.com, glyphstack.com, glyphvault.com, glyphwave.com,
+  glyphgrove.com, glyphhaven.com, glyphforge.com, marginwise.com, marginnest.com, marginflow.com,
+  marginhub.com, marginloom.com, marginpad.com, marginbox.com, marginbase.com, marginkit.com,
+  marginlab.com, margincraft.com, marginmint.com, marginspark.com, marginstack.com, marginvault.com,
+  marginwave.com, margingrove.com, marginhaven.com, marginforge.com, marginbloom.com,
+  outlinewise.com, outlineflow.com, outlinehub.com, outlinepad.com, outlinebox.com, outlinebase.com,
+  outlinekit.com, outlinelab.com, outlinecraft.com, outlinevault.com, outlineforge.com,
+  outlinebloom.com, pencilwise.com, pencilnest.com, pencilflow.com, pencilhub.com, pencilpad.com,
+  pencilbox.com, pencilbase.com, pencilkit.com, pencillab.com, pencilcraft.com, pencilspark.com,
+  pencilvault.com, pencilgrove.com, pencilforge.com, paperwise.com, papernest.com, paperflow.com,
+  paperhub.com, paperloom.com, paperpad.com, paperbox.com, paperbase.com, paperkit.com,
+  paperlab.com, papercraft.com, papermint.com, paperspark.com, paperstack.com, papervault.com,
+  paperwave.com, papergrove.com, paperhaven.com, paperforge.com, paperbloom.com, notchwise.com,
+  notchnest.com, notchflow.com, notchhub.com, notchpad.com, notchbox.com, notchbase.com,
+  notchkit.com, notchlab.com, notchcraft.com, notchstack.com, notchwave.com, versewise.com,
+  versenest.com, verseflow.com, versehub.com, verseloom.com, versepad.com, versebox.com,
+  versebase.com, versekit.com, verselab.com, versecraft.com, versemint.com, versespark.com,
+  versestack.com, versevault.com, versewave.com, versegrove.com, versehaven.com, verseforge.com,
+  versebloom.com, threadwise.com, threadnest.com, threadflow.com, threadhub.com, threadloom.com,
+  threadpad.com, threadbox.com, threadbase.com, threadkit.com, threadlab.com, threadcraft.com,
+  threadmint.com, threadspark.com, threadstack.com, threadvault.com, threadwave.com,
+  threadgrove.com, threadhaven.com, threadforge.com, threadbloom.com
 ```
 
 ### A few names, every registrar
@@ -121,7 +275,7 @@ npx @dakaio/domainscout-mcp check quillfern lumaforge getquillfern
 ```
 
 ```text
-Checked 9 domain(s) in 1.5s: 5 available, 4 taken.
+Checked 9 domain(s) in 1.6s: 5 available, 4 taken.
 
 AVAILABLE (where to buy, cheapest first):
 - quillfern.net
@@ -190,7 +344,7 @@ npx @dakaio/domainscout-mcp check getacme.io https://www.example.org/about acme 
 ```
 
 ```text
-Checked 4 domain(s) in 1.8s: 1 available, 3 taken.
+Checked 4 domain(s) in 1.5s: 1 available, 3 taken.
 
 AVAILABLE (where to buy, cheapest first):
 - getacme.io
@@ -225,7 +379,7 @@ npx @dakaio/domainscout-mcp check getquillfern.com --json
     "reserved": 0,
     "unknown": 0,
     "total": 1,
-    "elapsed_ms": 922
+    "elapsed_ms": 1034
   },
   "results": [
     {
@@ -239,13 +393,13 @@ npx @dakaio/domainscout-mcp check getquillfern.com --json
         {
           "source": "dns",
           "result": "nxdomain",
-          "ms": 6
+          "ms": 39
         },
         {
           "source": "rdap",
           "result": "not_found",
           "server": "rdap.verisign.com",
-          "ms": 631
+          "ms": 645
         }
       ],
       "buy": [
@@ -319,6 +473,6 @@ npx @dakaio/domainscout-mcp check getquillfern.com --json
     "ai"
   ],
   "warnings": [],
-  "elapsedMs": 922
+  "elapsedMs": 1034
 }
 ```

@@ -1,74 +1,47 @@
-# DomainScout (@dakaio/domainscout-mcp)
+# DomainScout
 
-Every good .com is taken. Find the ones that aren't.
+**Domain research for AI agents.** Every good .com is taken. Find the ones that aren't.
+
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=domainscout&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBkYWthaW8vZG9tYWluc2NvdXQtbWNwIl19)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_DomainScout-0098FF?logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=domainscout&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40dakaio%2Fdomainscout-mcp%22%5D%7D)
+[![Add to Claude Desktop](https://img.shields.io/badge/Claude_Desktop-Add_DomainScout-D97757?logo=claude&logoColor=white)](https://github.com/JohnDaka/domainscout-mcp/releases/latest/download/domainscout.mcpb)
+[![npm](https://img.shields.io/npm/v/@dakaio/domainscout-mcp)](https://www.npmjs.com/package/@dakaio/domainscout-mcp)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+![DomainScout in an AI assistant: 500 brainstormed names checked in one call, the free .com domains with their prices](assets/domainscout-bulk.png)
 
 DomainScout is an MCP server for bulk domain search. Your AI assistant brainstorms hundreds of
 names, and DomainScout checks all of them in one call: which are free, what they cost and where
 to buy them. It runs on your own machine. You need no account and no server of ours, and API keys
 are optional.
 
-Website: [domainscout.dakaio.com](https://domainscout.dakaio.com)
+[Website](https://domainscout.dakaio.com) ·
+[npm](https://www.npmjs.com/package/@dakaio/domainscout-mcp) ·
+[MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=com.dakaio/domainscout) ·
+[Examples](examples/README.md)
 
-You ask your assistant *"I'm naming a note-taking app. Brainstorm 500 names and tell me which .com
-domains are free."* The assistant calls `check_domains` once with all 500 names and gets back:
+## What it does
 
-```text
-Checked 500 domain(s) in 21.8s: 27 available, 473 taken.
+- **Finds the free names in a long list.** Hundreds of names in one call; 500 .com names take
+  about 20 seconds.
+- **Checks for real.** DNS first, then the registry itself over RDAP, or WHOIS where a TLD has no
+  RDAP. A bought but unused domain is still reported as taken.
+- **Compares prices at nine registrars:** Cloudflare, Porkbun, Namecheap, Spaceship, GoDaddy,
+  Name.com, Dynadot, NameSilo and Hover. The first year, the renewal and any minimum term, cheapest
+  to own first.
+- **Spots the traps.** Premium and reserved names (with a registrar API key), and taken names that
+  are being deleted and may become available soon.
+- **Any TLD.** `.com`, `.net` and `.ai` by default; ask for any other.
 
-AVAILABLE (cheapest known offer for each):
-- quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
-- scribeloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribeloom.com
-- scribebloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribebloom.com
-...
-TAKEN: quillwise.com, quillnest.com, quillflow.com, ...
-```
-
-Ask about a few favourites afterwards and each one gets every registrar's link and price. More
-real output, including the command line and JSON: [examples](examples/README.md).
-
-## Built for long lists
-
-- **One call for the whole brainstorm.** Up to 500 domains per call by default
-  (`DOMAINSCOUT_MAX_DOMAINS`); 500 .com names take about 20 seconds.
-- **Readable answers.** With more than five free domains, each one gets a single line with its
-  cheapest offer, so the answer stays short; every registrar's link is still in the structured
-  result.
-- **Polite to the registries.** Taken names usually stop at DNS, so the registries only see the
-  names that might be free. Every server gets its own rate limit.
-
-## How it checks
-
-For each domain, in parallel and within polite rate limits:
-
-1. **DNS.** If the TLD zone delegates the name, it is taken. This step is free and saves the
-   registries' rate limits.
-2. **The registry over RDAP**, the authoritative source. If the domain is found, it is taken;
-   the result includes expiry, and a note when the domain is being deleted and may become
-   available soon. A 404 means it is likely available.
-3. **WHOIS**, only for TLDs without RDAP (for example `.io`, `.ru`, `.de`) or when RDAP fails.
-4. **Your registrar API, optional.** If you set an API key, the registrar confirms that each
-   free-looking name can really be bought, flags premium names and gives the exact price.
-
-Having no DNS never proves a domain is free: a bought but unused domain has no DNS either.
-Without a registrar API key, "not in the registry" is reported as `likely_available`. Premium
-and registry-reserved names look the same there, so the registrar's page has the final price.
-
-| Status | Meaning |
-|---|---|
-| `available` | A registrar API confirmed it can be registered; `premium` says whether it costs extra |
-| `likely_available` | Not in the registry or DNS, not confirmed by a registrar |
-| `taken` | Registered |
-| `reserved` | Blocked by the registry, or the registrar cannot sell it |
-| `unknown` | Could not verify right now (timeout, rate limit); try again |
-
-Free domains come with buy links for Cloudflare, Porkbun, Namecheap, Spaceship, GoDaddy,
-Name.com, Dynadot, NameSilo and Hover. Links are sorted by the cost of the first term plus one
-renewal year, using public price lists (Cloudflare, Porkbun) or the exact price from your
-registrar API.
+DomainScout does not invent names: your assistant does that, and DomainScout tells it which of
+them are really free.
 
 ## Install
 
 Node 20 or newer.
+
+**Claude Desktop:** one click: [download the extension](https://github.com/JohnDaka/domainscout-mcp/releases/latest/download/domainscout.mcpb)
+and open it. Claude Desktop asks to install it, and lets you set the options below.
 
 **Claude Code**
 
@@ -76,7 +49,9 @@ Node 20 or newer.
 claude mcp add domainscout -- npx -y @dakaio/domainscout-mcp
 ```
 
-**Claude Desktop / Cursor**: add to the MCP config:
+**Cursor and VS Code:** use the buttons at the top, or add the server to the MCP config.
+
+**Any MCP client:** add to the MCP config:
 
 ```json
 {
@@ -99,6 +74,87 @@ domains are free."*
 **From source:** `npm install && npm run build`, then run `node /path/to/domainscout-mcp/dist/index.js`
 in place of `npx -y @dakaio/domainscout-mcp`.
 
+## Tools
+
+### `check_domains`
+
+Checks whether domain names are free to register, and shows prices and where to buy the free
+ones. Read-only: it never registers or changes anything.
+
+| Parameter | Type | Default | What it is |
+|---|---|---|---|
+| `domains` | string[] (1 to 1,000 entries) | required | Names or domains: `acme`, `acme.io`, `https://acme.dev`. A name without a TLD is tried in every TLD from `tlds` |
+| `tlds` | string[] | `DOMAINSCOUT_TLDS` (`com,net,ai`) | TLDs for names given without one, e.g. `["com"]` for a long list |
+| `confirm` | boolean | `true` | Confirm free-looking names with registrar APIs, when you set keys |
+| `details` | boolean | `false` | Include the evidence from every source (DNS, RDAP, WHOIS, registrar API) |
+
+It returns a short text report for the model and the same data as structured content: a summary
+with counts per status, one result per domain (status, note, registration dates, buy links with
+prices), skipped entries and warnings.
+
+| Status | Meaning |
+|---|---|
+| `available` | A registrar API confirmed it can be registered; `premium` says whether it costs extra |
+| `likely_available` | Not in the registry or DNS, not confirmed by a registrar |
+| `taken` | Registered |
+| `reserved` | Blocked by the registry, or the registrar cannot sell it |
+| `unknown` | Could not verify right now (timeout, rate limit); try again |
+
+## Example
+
+You ask your assistant *"I'm naming a note-taking app. Brainstorm 500 names and tell me which .com
+domains are free."* The assistant calls `check_domains` once with all 500 names and gets back:
+
+```text
+Checked 500 domain(s) in 23.0s: 27 available, 473 taken.
+
+AVAILABLE (cheapest known offer for each):
+- quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
+- scribeloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribeloom.com
+- scribebloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribebloom.com
+...
+TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com,
+  quillbase.com, quillkit.com, ...
+```
+
+Ask about a few favourites afterwards and each one gets every registrar's link and price. More
+real output, including the command line and JSON: [examples](examples/README.md).
+
+## How it checks
+
+For each domain, in parallel and within polite rate limits:
+
+1. **DNS.** If the TLD zone delegates the name, it is taken. This step is free and saves the
+   registries' rate limits.
+2. **The registry over RDAP**, the authoritative source. If the domain is found, it is taken;
+   the result includes expiry, and a note when the domain is being deleted and may become
+   available soon. A 404 means it is likely available.
+3. **WHOIS**, only for TLDs without RDAP (for example `.io` and `.de`) or when RDAP fails.
+4. **Your registrar API, optional.** If you set an API key, the registrar confirms that each
+   free-looking name can really be bought, flags premium names and gives the exact price.
+
+Having no DNS never proves a domain is free: a bought but unused domain has no DNS either.
+Without a registrar API key, "not in the registry" is reported as `likely_available`. Premium
+and registry-reserved names look the same there, so the registrar's page has the final price.
+
+## Authentication
+
+None. DomainScout works without an account or API keys. Registrar API keys are optional: with
+one, free-looking names are confirmed by the registrar, premium names are flagged and the exact
+price is shown. One key is enough. With several, the APIs are asked in this order, each name only
+until one answers.
+
+| Registrar | Variables | Where to get it |
+|---|---|---|
+| Name.com | `DOMAINSCOUT_NAMECOM_USERNAME`, `DOMAINSCOUT_NAMECOM_TOKEN` | Account Settings → Security → API Tokens |
+| Cloudflare | `DOMAINSCOUT_CLOUDFLARE_ACCOUNT_ID`, `DOMAINSCOUT_CLOUDFLARE_API_TOKEN` | API token with Registrar permission. The Registrar API is in beta |
+| Spaceship | `DOMAINSCOUT_SPACESHIP_API_KEY`, `DOMAINSCOUT_SPACESHIP_API_SECRET` | API Manager; the key needs the `domains:read` scope |
+| Porkbun | `DOMAINSCOUT_PORKBUN_API_KEY`, `DOMAINSCOUT_PORKBUN_SECRET_KEY` | porkbun.com/account/api |
+
+Each key is sent only to its own registrar's API, and it never appears in output, logs or error
+messages. If a registrar rejects a key, the result says so in its notes, and the check still
+works without that registrar.
+
 ## Settings
 
 Set these as environment variables in the MCP config. All are optional.
@@ -117,30 +173,25 @@ Set these as environment variables in the MCP config. All are optional.
 | `DOMAINSCOUT_PRICES` | `on` | Public price lists |
 | `DOMAINSCOUT_AFFILIATE` | `on` | Affiliate buy links (`off` gives plain links) |
 
-Each RDAP server gets at most 5 requests per second. Each WHOIS server gets one query at a
-time, at most one per second. A server that answers "too many requests" is left alone for a while.
+## Rate limits
 
-## Registrar API keys (optional)
+- **Per call:** up to 500 domains after adding TLDs (`DOMAINSCOUT_MAX_DOMAINS`, at most 10,000)
+  and 1,000 input entries.
+- **Registries:** each RDAP server gets at most 2 requests in flight and 5 per second; each WHOIS
+  server one query at a time, at most one per second. A server that answers "too many requests"
+  is left alone for as long as it asks, and the request is retried.
+- **Registrar APIs:** every API gets its documented limit (Name.com 10 requests per second,
+  Cloudflare 4, Spaceship 30 per 30 seconds, Porkbun 8 batches per minute), and at most
+  `DOMAINSCOUT_CONFIRM_MAX` names per call are confirmed. Porkbun throttles an account to 50 names
+  per 5 minutes for a day once it has checked about 1,800 names in 3 hours while registering few
+  of them; the limit keeps every call well below that. A tool call can pass `confirm: false` to
+  skip confirmation for a large list.
 
-With a key, free-looking names are confirmed: you get `available` or `reserved` instead of
-`likely_available`, premium names are flagged, and the registrar's exact price is shown. One
-key is enough. With several, the APIs are asked in this order, each name only until one answers.
+## Pricing
 
-| Registrar | Variables | Where to get it |
-|---|---|---|
-| Name.com | `DOMAINSCOUT_NAMECOM_USERNAME`, `DOMAINSCOUT_NAMECOM_TOKEN` | Account Settings → Security → API Tokens |
-| Cloudflare | `DOMAINSCOUT_CLOUDFLARE_ACCOUNT_ID`, `DOMAINSCOUT_CLOUDFLARE_API_TOKEN` | API token with Registrar permission. The Registrar API is in beta |
-| Spaceship | `DOMAINSCOUT_SPACESHIP_API_KEY`, `DOMAINSCOUT_SPACESHIP_API_SECRET` | API Manager; the key needs the `domains:read` scope |
-| Porkbun | `DOMAINSCOUT_PORKBUN_API_KEY`, `DOMAINSCOUT_PORKBUN_SECRET_KEY` | porkbun.com/account/api |
-
-Porkbun throttles an account to 50 names per 5 minutes for a day once it has checked about
-1,800 names in 3 hours while registering few of them. `DOMAINSCOUT_CONFIRM_MAX` keeps every
-call well below that. A tool call can also pass `confirm: false` to skip confirmation for a
-large list.
-
-Each key is sent only to its own registrar's API, and it never appears in output, logs or error
-messages. If a registrar rejects a key, the result says so in its notes, and the check still
-works without that registrar.
+DomainScout is free and open source under the MIT license. There is no account, subscription or
+usage fee. The prices it shows are the registrars' own standard prices, from public price lists,
+or the exact price from your registrar API.
 
 ## Privacy
 
@@ -160,6 +211,16 @@ because there is none.
 Some buy links may be affiliate links. When they are, the result says so, and buying through
 them earns the project a commission at no extra cost to you. Links are always ordered by price
 and never by commission. `DOMAINSCOUT_AFFILIATE=off` turns them off.
+
+## Security
+
+The tool is read-only, runs on your machine, and sends each API key only to its own registrar.
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
+
+## Support
+
+- Questions, bugs and ideas: [GitHub issues](https://github.com/JohnDaka/domainscout-mcp/issues)
+- Website: [domainscout.dakaio.com](https://domainscout.dakaio.com)
 
 ## Command line
 
@@ -187,7 +248,14 @@ npm run build
 | `test/` | Vitest tests; the network is faked, except for a local WHOIS server |
 | `examples/` | Real output of the tool |
 | `site/` | The landing page at domainscout.dakaio.com: static HTML, released by a `landing-v<version>` tag (`npm --prefix site run release`) |
+| `server.json`, `manifest.json`, `glama.json` | Listings: the MCP Registry, the Claude Desktop extension, Glama |
+
+Releases: raise the version in `package.json`, `manifest.json` and `server.json` in a pull request,
+then run `npm run release` on the merged `main`. It pushes the tag `v<version>`, and
+`.github/workflows/publish.yml` publishes to npm (trusted publishing), creates a GitHub Release
+with the Claude Desktop extension and publishes to the MCP Registry. The landing page goes out the
+same way with `npm --prefix site run release`.
 
 ## License
 
-MIT
+MIT © [dakaio.com](https://dakaio.com)

@@ -1,0 +1,109 @@
+name: publish
+
+# A `v<version>` tag, pushed by `npm run release` from main. The version is package.json's, and
+# manifest.json and server.json must say the same. One run puts the release everywhere:
+#   1. npm, with trusted publishing;
+#   2. a GitHub Release with the Claude Desktop extension, which the landing page's
+#      "Add to Claude Desktop" button downloads;
+#   3. the official MCP Registry, once the MCP_REGISTRY_KEY secret is set.
+# A step whose work is already done (a version on npm, a release on GitHub, a version in the
+# Registry) says so and moves on: a re-run or a version published by hand is not an error.
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # The GitHub Release.
+      contents: write
+      # npm trusted publishing: npm takes this workflow's identity instead of a stored token, and
+      # the package page shows which commit and workflow built it (provenance).
+      id-token: write
+    env:
+      # The private half of the key whose public half is in dakaio.com's TXT record (hex). Without
+      # it the Registry step is skipped.
+      MCP_REGISTRY_KEY: ${{ secrets.MCP_REGISTRY_KEY }}
+      # Where server.json's name lives in the Registry.
+      MCP_REGISTRY_SERVER: com.dakaio%2Fdomainscout
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          # No registry-url: it writes an .npmrc with a placeholder token, which npm then sends
+          # instead of the workflow's identity. npm's own registry is the default anyway.
+      - name: The tag and every version agree
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "::error::Tag ${GITHUB_REF_NAME} is not v${version}"; exit 1; }
+          for other in \
+            "manifest.json:$(node -p "require('./manifest.json').version")" \
+            "server.json:$(node -p "require('./server.json').version")" \
+            "server.json packages:$(node -p "require('./server.json').packages[0].version")"; do
+            test "${other##*:}" = "${version}" || { echo "::error::${other%:*} says ${other##*:}, package.json says ${version}"; exit 1; }
+          done
+          echo "NAME=$(node -p "require('./package.json').name")" >> "$GITHUB_ENV"
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+      - run: npm ci
+      # Types, lint and the tests with their coverage thresholds: below them nothing is published.
+      - run: npm run verify
+      - run: npm run build
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install --global npm@latest
+      - name: Publish to npm, unless this version is on npm already
+        run: |
+          if npm view "${NAME}@${VERSION}" version > /dev/null 2>&1; then
+            echo "::notice::${NAME}@${VERSION} is on npm already: nothing to publish."
+          else
+            npm publish
+          fi
+      # The bundle holds the build, the production dependencies and the manifest; Claude Desktop
+      # runs it with its own Node.
+      - name: Build the Claude Desktop extension
+        run: |
+          mkdir bundle
+          cp -r dist package.json package-lock.json LICENSE README.md manifest.json bundle/
+          cp site/icon-512.png bundle/icon.png
+          (cd bundle && npm ci --omit=dev --ignore-scripts)
+          npx -y @anthropic-ai/mcpb@2 validate bundle/manifest.json
+          npx -y @anthropic-ai/mcpb@2 pack bundle domainscout.mcpb
+      - name: Publish the GitHub Release, unless it exists already
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            echo "::notice::The release ${GITHUB_REF_NAME} exists already."
+          else
+            gh release create "${GITHUB_REF_NAME}" domainscout.mcpb \
+              --title "DomainScout ${GITHUB_REF_NAME}" --generate-notes
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      # The Registry checks the package on npm, and a new version can take a few minutes to appear.
+      - name: Wait until npm serves this version
+        if: env.MCP_REGISTRY_KEY != ''
+        run: |
+          for attempt in $(seq 1 30); do
+            npm view "${NAME}@${VERSION}" version > /dev/null 2>&1 && exit 0
+            sleep 20
+          done
+          echo "::error::${NAME}@${VERSION} did not appear on npm in 10 minutes"
+          exit 1
+      - name: Publish to the MCP Registry, unless this version is there already
+        if: env.MCP_REGISTRY_KEY != ''
+        run: |
+          registry="https://registry.modelcontextprotocol.io/v0.1/servers/${MCP_REGISTRY_SERVER}/versions/${VERSION}"
+          if curl -fsS -o /dev/null "${registry}"; then
+            echo "::notice::Version ${VERSION} is in the MCP Registry already."
+            exit 0
+          fi
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher login dns --domain dakaio.com --private-key "${MCP_REGISTRY_KEY}"
+          ./mcp-publisher publish

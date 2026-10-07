@@ -334,6 +334,15 @@ export const FULL_LINKS_MAX_DOMAINS = 5;
  * ones being deleted): expiry dates for hundreds of names would only cost the model tokens.
  */
 export const TAKEN_DATES_MAX_DOMAINS = 20;
+/**
+ * Lists of names (TAKEN, RESERVED) wrap onto more lines at this width, so a long list reads well
+ * in a terminal, in a chat and on a web page instead of running off to the side.
+ */
+export const REPORT_LINE_WIDTH = 100;
+/** Indentation of a list's continuation lines. */
+export const CONTINUATION_INDENT = '  ';
+/** Ends every item of a wrapped list but the last. */
+export const LIST_ITEM_END = ',';
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
 

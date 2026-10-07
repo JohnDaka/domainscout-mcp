@@ -18,7 +18,7 @@ describe('normalizeTld', () => {
     ['.AI', 'ai'],
     ['com', 'com'],
     ['Co.Uk.', 'co.uk'],
-    ['xn--p1ai', 'xn--p1ai'],
+    ['xn--j1amh', 'xn--j1amh'],
   ])('%s -> %s', (raw, expected) => {
     expect(normalizeTld(raw)).toBe(expected);
   });
@@ -82,7 +82,7 @@ describe('TargetParser', () => {
   });
 
   it('accepts punycode labels despite the hyphens in positions 3-4', () => {
-    expect(domains(['xn--e1afmkfd.com'])).toEqual(['xn--e1afmkfd.com']);
+    expect(domains(['xn--mnchen-3ya.com'])).toEqual(['xn--mnchen-3ya.com']);
   });
 
   it('asks for a TLD when a bare name has none to try', () => {

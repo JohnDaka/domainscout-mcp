@@ -1,8 +1,11 @@
 import {
+  CONTINUATION_INDENT,
   DEFAULT_MIN_YEARS,
   ELAPSED_SECONDS_DECIMALS,
   FULL_LINKS_MAX_DOMAINS,
   ISO_DATE_LENGTH,
+  LIST_ITEM_END,
+  REPORT_LINE_WIDTH,
   SECOND_MS,
   TAKEN_DATES_MAX_DOMAINS,
   TextSeparator,
@@ -159,7 +162,7 @@ export class TextReport {
     if (this.taken.length === 0) return [];
     const withDates = this.taken.length <= TAKEN_DATES_MAX_DOMAINS;
     const names = this.taken.map((result) => this.takenName(result, withDates));
-    return [ReportLine.inline(ReportHeading.Taken, names)];
+    return this.wrappedList(ReportHeading.Taken, names);
   }
 
   /** The name, marked when it is being deleted, and with its expiry date when dates are shown. */
@@ -172,7 +175,28 @@ export class TextReport {
   private reservedSection(): Section {
     if (this.reserved.length === 0) return [];
     const names = this.reserved.map((result) => result.display);
-    return [ReportLine.inline(ReportHeading.Reserved, names)];
+    return this.wrappedList(ReportHeading.Reserved, names);
+  }
+
+  /**
+   * "TAKEN: a.com, b.com," and then indented lines, none wider than REPORT_LINE_WIDTH (an item
+   * longer than that still gets a line of its own).
+   */
+  private wrappedList(heading: string, items: readonly string[]): string[] {
+    const lines: string[] = [];
+    let line = heading;
+    for (const [index, item] of items.entries()) {
+      const piece = index < items.length - 1 ? `${item}${LIST_ITEM_END}` : item;
+      const fits = line.length + 1 + piece.length <= REPORT_LINE_WIDTH;
+      if (fits || line === heading) {
+        line = `${line} ${piece}`;
+        continue;
+      }
+      lines.push(line);
+      line = `${CONTINUATION_INDENT}${piece}`;
+    }
+    lines.push(line);
+    return lines;
   }
 
   /** Each unverified domain, with what went wrong. */
