@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DomainScout - check hundreds of domain names from your AI assistant</title>
+    <meta
+      name="description"
+      content="Free, open-source MCP server for bulk domain search: your AI assistant brainstorms hundreds of names and DomainScout checks them all - DNS, RDAP and WHOIS from your own machine - with prices and buy links."
+    />
+    <meta
+      name="keywords"
+      content="domain availability, domain checker, MCP server, Model Context Protocol, Claude, Cursor, RDAP, WHOIS, domain name search, bulk domain check, open source"
+    />
+    <meta name="author" content="Ivan Daka" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://domainscout.dakaio.com/" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#00030a" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://domainscout.dakaio.com/" />
+    <meta property="og:site_name" content="DomainScout" />
+    <meta property="og:title" content="DomainScout - every good .com is taken. Find the ones that aren't." />
+    <meta
+      property="og:description"
+      content="Your AI assistant brainstorms 500 names and DomainScout checks them all against the registries in about 20 seconds: which are free, what they cost and where to buy. Open source, runs on your machine."
+    />
+    <meta property="og:image" content="https://domainscout.dakaio.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DomainScout: 500 names checked in one call, the free .com domains with prices" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DomainScout - every good .com is taken. Find the ones that aren't." />
+    <meta
+      name="twitter:description"
+      content="Your AI assistant brainstorms 500 names and DomainScout checks them all against the registries in about 20 seconds: which are free, what they cost and where to buy. Open source, runs on your machine."
+    />
+    <meta name="twitter:image" content="https://domainscout.dakaio.com/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "DomainScout",
+        "alternateName": "@dakaio/domainscout-mcp",
+        "url": "https://domainscout.dakaio.com/",
+        "image": "https://domainscout.dakaio.com/og-image.png",
+        "description": "Free, open-source MCP server for bulk domain search: it checks hundreds of names in one call - DNS, RDAP and WHOIS from your own machine - and shows which are free, with prices and links to buy, cheapest first.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Windows, macOS, Linux",
+        "license": "https://opensource.org/licenses/MIT",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Ivan Daka", "url": "https://dakaio.com/" },
+        "sameAs": ["https://github.com/JohnDaka/domainscout-mcp", "https://www.npmjs.com/package/@dakaio/domainscout-mcp"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "If a domain is not in WHOIS, is it really free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Almost always. Premium and registry-reserved names look the same in the registry, so DomainScout reports them as likely available, and confirms them when you add a registrar API key."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is a domain without a website free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. A domain that was bought but never set up has no DNS, but the registry still lists it, so DomainScout reports it as taken."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How many names can I check at once?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Up to 500 domains in one call by default - a whole AI brainstorm at once - and a setting raises the limit to 10,000. Names that are already taken are settled in DNS within seconds; only the rest go to the registries."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need an account or an API key?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Everything works without keys. A registrar API key is optional and makes the answer exact for premium names and prices."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is DomainScout free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. It is open source under the MIT license. Some buy links may be affiliate links; links are always sorted by price, never by commission, and affiliate links can be turned off."
+            }
+          }
+        ]
+      }
+    </script>
+
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/main.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="/" aria-label="DomainScout home">
+          <img src="/icon-192.png" alt="" width="32" height="32" />
+          <span>DomainScout</span>
+        </a>
+        <nav class="nav" aria-label="Main" data-nav-frame>
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#examples">Examples</a>
+          <a href="#install">Install</a>
+          <a href="https://github.com/JohnDaka/domainscout-mcp" rel="noopener">GitHub</a>
+          <svg class="nav__frame" aria-hidden="true">
+            <defs>
+              <linearGradient id="nav-frame-gradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#3cc8ff" />
+                <stop offset="0.5" stop-color="#bd5fff" />
+                <stop offset="1" stop-color="#f472b6" />
+              </linearGradient>
+            </defs>
+            <rect pathLength="100" stroke="url(#nav-frame-gradient)" />
+          </svg>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero container">
+        <div class="hero__copy">
+          <p class="eyebrow">Open-source MCP server</p>
+          <h1>Every good .com is taken. <span class="gradient-text">Find the ones that aren't.</span></h1>
+          <p class="lead">
+            Ask your AI assistant for 500 name ideas, and DomainScout checks every one of them against the registries -
+            which are free, what they cost and where to buy them.
+          </p>
+          <p>
+            It runs in Claude, Cursor or any MCP client, on your own machine: hundreds of names in parallel within
+            polite rate limits, DNS first, then the registry itself over RDAP or WHOIS. No account, no API keys, no
+            server in the middle.
+          </p>
+          <div class="actions">
+            <a class="button-gradient" href="#install"><span>Install in a minute</span></a>
+            <a class="button-glass" href="https://github.com/JohnDaka/domainscout-mcp" rel="noopener">View on GitHub</a>
+          </div>
+          <ul class="badges" aria-label="Facts">
+            <li>MIT license</li>
+            <li>No API keys needed</li>
+            <li>Node 20+</li>
+            <li>v<!-- generated:version -->1.1.0<!-- /generated:version --></li>
+          </ul>
+        </div>
+
+        <figure class="hero__card glass" aria-label="Example: checking 500 brainstormed names">
+          <figcaption class="chat__prompt">
+            <span class="chat__who">You</span>
+            <!-- generated:prompt -->I'm naming a note-taking app. Brainstorm 500 names and tell me which .com domains are free.<!-- /generated:prompt -->
+          </figcaption>
+          <div class="chat__tool"><span class="chat__who">DomainScout</span> check_domains</div>
+          <!-- generated:hero --><p class="results__summary">500 names checked in 22s: 27 free .com, 473 taken</p>
+<ul class="results">
+<li class="result result--likely_available"><span class="result__domain">quillloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
+<li class="result result--likely_available"><span class="result__domain">scribeloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
+<li class="result result--likely_available"><span class="result__domain">scribebloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
+<li class="result result--likely_available"><span class="result__domain">foliobloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
+<li class="result result--likely_available"><span class="result__domain">glyphbloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
+</ul>
+<p class="results__more">…and 22 more free</p><!-- /generated:hero -->
+        </figure>
+      </section>
+
+      <section id="features" class="section container">
+        <h2>Why DomainScout</h2>
+        <div class="grid grid--3">
+          <article class="card glass">
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h12" /><path d="M18 4l2 2-2 2" /></svg>
+            <h3>Hundreds of names at once</h3>
+            <p>
+              Finding a free .com one name at a time is hopeless. Hand over the whole brainstorm - 500 names in one call -
+              and get back the short list that is actually free.
+            </p>
+          </article>
+          <article class="card glass">
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7l8-4z" /><path d="M8.5 12l2.5 2.5 4.5-5" /></svg>
+            <h3>Registry-accurate</h3>
+            <p>
+              Answers come from the registry itself over RDAP or WHOIS, not from a guess based on DNS. A domain bought but
+              never set up still shows as taken.
+            </p>
+          </article>
+          <article class="card glass">
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H4z" /><path d="M9 19h6M12 15v4" /></svg>
+            <h3>Runs on your machine</h3>
+            <p>
+              No server in the middle: queries go straight from your computer to DNS, the registries and public price
+              lists, in parallel within limits per registry, so nobody gets flooded.
+            </p>
+          </article>
+          <article class="card glass">
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12l-8 8-8-8V4h8l8 8z" /><path d="M8.5 8.5h.01" /></svg>
+            <h3>Prices and where to buy</h3>
+            <p>
+              Standard prices from public price lists and links to nine registrars, sorted by what the first years really
+              cost - promos included.
+            </p>
+          </article>
+          <article class="card glass">
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z" /></svg>
+            <h3>Premium names caught</h3>
+            <p>
+              Add a registrar API key - Name.com, Cloudflare, Spaceship or Porkbun - and every free-looking name is
+              confirmed, premium names flagged, prices exact.
+            </p>
+          </article>
+          <article class="card glass">
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></svg>
+            <h3>Works wherever MCP does</h3>
+            <p>
+              Claude Desktop, Claude Code, Cursor and any other MCP client - plus a command line for scripts and quick
+              checks.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="how" class="section container">
+        <h2>How a domain is checked</h2>
+        <p class="section__lead">
+          Each name goes through the cheapest step that can answer for sure, and only moves on when it cannot.
+        </p>
+        <ol class="steps">
+          <li class="step glass">
+            <h3>Normalize</h3>
+            <p>URLs, www, capitals and international names become clean domains. Names without a TLD get .com, .net and .ai - or yours.</p>
+          </li>
+          <li class="step glass">
+            <h3>DNS</h3>
+            <p>A domain with nameservers is taken. Fast, free, and it spares the registries.</p>
+          </li>
+          <li class="step glass">
+            <h3>Registry (RDAP)</h3>
+            <p>The authoritative answer, with expiry dates, and domains that are about to be deleted.</p>
+          </li>
+          <li class="step glass">
+            <h3>WHOIS</h3>
+            <p>For TLDs without RDAP, such as .io or .de - read with care, so a rate-limit notice never passes for "free".</p>
+          </li>
+          <li class="step glass">
+            <h3>Registrar API <span class="tag">optional</span></h3>
+            <p>Confirms the name can be bought, flags premium names and gives the exact price.</p>
+          </li>
+          <li class="step glass">
+            <h3>Prices and links</h3>
+            <p>Cheapest first, with first-year and renewal prices and any minimum term.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="examples" class="section container">
+        <h2>Examples</h2>
+        <p class="section__lead">
+          Real output, generated on <!-- generated:date -->2026-10-07<!-- /generated:date -->. Availability and prices change over time.
+        </p>
+        <div class="tabs" data-tabs>
+          <div class="tabs__list" role="tablist" aria-label="Examples">
+            <button role="tab" aria-selected="true" aria-controls="example-chat" id="tab-chat">In Claude: 500 names</button>
+            <button role="tab" aria-selected="false" aria-controls="example-bulk" id="tab-bulk">Command line</button>
+            <button role="tab" aria-selected="false" aria-controls="example-names" id="tab-names">A few names</button>
+            <button role="tab" aria-selected="false" aria-controls="example-mixed" id="tab-mixed">URLs and other TLDs</button>
+            <button role="tab" aria-selected="false" aria-controls="example-json" id="tab-json">JSON</button>
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="example-chat" aria-labelledby="tab-chat">
+            <p class="example__note">The assistant calls the tool:</p>
+            <!-- generated:tool-call --><pre class="output"><code>{
+  "name": "check_domains",
+  "arguments": {
+    "domains": [
+      "quillwise",
+      "quillnest",
+      "quillflow",
+      "quillhub",
+      "… 496 more"
+    ],
+    "tlds": [
+      "com"
+    ]
+  }
+}</code></pre><!-- /generated:tool-call -->
+            <p class="example__note">The tool answers with this text, plus the same data as structured JSON:</p>
+            <!-- generated:tool-result --><pre class="output"><code>Checked 500 domain(s) in 21.8s: 27 available, 473 taken.
+
+AVAILABLE (cheapest known offer for each):
+- quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
+- scribeloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribeloom.com
+- scribebloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribebloom.com
+- foliobloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=foliobloom.com
+- glyphbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=glyphbloom.com
+- outlinenest.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinenest.com
+- outlineloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlineloom.com
+- outlinemint.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinemint.com
+- outlinespark.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinespark.com
+- outlinestack.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinestack.com
+- outlinewave.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinewave.com
+- outlinegrove.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinegrove.com
+- outlinehaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinehaven.com
+- pencilloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilloom.com
+- pencilmint.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilmint.com
+- pencilstack.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilstack.com
+- pencilwave.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilwave.com
+- pencilhaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilhaven.com
+- pencilbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilbloom.com
+- notchloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchloom.com
+- notchmint.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchmint.com
+- notchspark.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchspark.com
+- notchvault.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchvault.com
+- notchgrove.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchgrove.com
+- notchhaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchhaven.com
+- notchforge.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchforge.com
+- notchbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchbloom.com
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
+Each line shows the cheapest known offer. Check a few chosen names again to see every registrar, including links for registrars without public prices.
+
+TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com, quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com, quillstack.com, quillvault.com, quillwave.com, quillgrove.com, quillhaven.com, quillforge.com, quillbloom.com, jotwise.com, jotnest.com, jotflow.com, jothub.com, jotloom.com, jotpad.com, jotbox.com, jotbase.com, jotkit.com, jotlab.com, jotcraft.com, jotmint.com, jotspark.com, jotstack.com, jotvault.com, jotwave.com, jotgrove.com, jothaven.com, jotforge.com, jotbloom.com, notewise.com, notenest.com, noteflow.com, notehub.com, noteloom.com, notepad.com, notebox.com, notebase.com, notekit.com, notelab.com, notecraft.com, notemint.com, notespark.com, notestack.com, notevault.com, notewave.com, notegrove.com, notehaven.com, noteforge.com, notebloom.com, inkwise.com, inknest.com, inkflow.com, inkhub.com, inkloom.com, inkpad.com, inkbox.com, inkbase.com, inkkit.com, inklab.com, inkcraft.com, inkmint.com, inkspark.com, inkstack.com, inkvault.com, inkwave.com, inkgrove.com, inkhaven.com, inkforge.com, inkbloom.com, pagewise.com, pagenest.com, pageflow.com, pagehub.com, pageloom.com, pagepad.com, pagebox.com, pagebase.com, pagekit.com, pagelab.com, pagecraft.com, pagemint.com, pagespark.com, pagestack.com, pagevault.com, pagewave.com, pagegrove.com, pagehaven.com, pageforge.com, pagebloom.com, memowise.com, memonest.com, memoflow.com, memohub.com, memoloom.com, memopad.com, memobox.com, memobase.com, memokit.com, memolab.com, memocraft.com, memomint.com, memospark.com, memostack.com, memovault.com, memowave.com, memogrove.com, memohaven.com, memoforge.com, memobloom.com, scribewise.com, scribenest.com, scribeflow.com, scribehub.com, scribepad.com, scribebox.com, scribebase.com, scribekit.com, scribelab.com, scribecraft.com, scribemint.com, scribespark.com, scribestack.com, scribevault.com, scribewave.com, scribegrove.com, scribehaven.com, scribeforge.com, draftwise.com, draftnest.com, draftflow.com, drafthub.com, draftloom.com, draftpad.com, draftbox.com, draftbase.com, draftkit.com, draftlab.com, draftcraft.com, draftmint.com, draftspark.com, draftstack.com, draftvault.com, draftwave.com, draftgrove.com, drafthaven.com, draftforge.com, draftbloom.com, ideawise.com, ideanest.com, ideaflow.com, ideahub.com, idealoom.com, ideapad.com, ideabox.com, ideabase.com, ideakit.com, idealab.com, ideacraft.com, ideamint.com, ideaspark.com, ideastack.com, ideavault.com, ideawave.com, ideagrove.com, ideahaven.com, ideaforge.com, ideabloom.com, mindwise.com, mindnest.com, mindflow.com, mindhub.com, mindloom.com, mindpad.com, mindbox.com, mindbase.com, mindkit.com, mindlab.com, mindcraft.com, mindmint.com, mindspark.com, mindstack.com, mindvault.com, mindwave.com, mindgrove.com, mindhaven.com, mindforge.com, mindbloom.com, brainwise.com, brainnest.com, brainflow.com, brainhub.com, brainloom.com, brainpad.com, brainbox.com, brainbase.com, brainkit.com, brainlab.com, braincraft.com, brainmint.com, brainspark.com, brainstack.com, brainvault.com, brainwave.com, braingrove.com, brainhaven.com, brainforge.com, brainbloom.com, thinkwise.com, thinknest.com, thinkflow.com, thinkhub.com, thinkloom.com, thinkpad.com, thinkbox.com, thinkbase.com, thinkkit.com, thinklab.com, thinkcraft.com, thinkmint.com, thinkspark.com, thinkstack.com, thinkvault.com, thinkwave.com, thinkgrove.com, thinkhaven.com, thinkforge.com, thinkbloom.com, clipwise.com, clipnest.com, clipflow.com, cliphub.com, cliploom.com (in deletion, may become available soon), clippad.com, clipbox.com, clipbase.com, clipkit.com, cliplab.com, clipcraft.com, clipmint.com, clipspark.com, clipstack.com, clipvault.com, clipwave.com, clipgrove.com, cliphaven.com, clipforge.com, clipbloom.com, snapwise.com, snapnest.com, snapflow.com, snaphub.com, snaploom.com, snappad.com, snapbox.com, snapbase.com, snapkit.com, snaplab.com, snapcraft.com, snapmint.com, snapspark.com, snapstack.com, snapvault.com, snapwave.com, snapgrove.com, snaphaven.com, snapforge.com, snapbloom.com, storywise.com, storynest.com, storyflow.com, storyhub.com, storyloom.com, storypad.com, storybox.com, storybase.com, storykit.com, storylab.com, storycraft.com, storymint.com, storyspark.com, storystack.com, storyvault.com, storywave.com, storygrove.com, storyhaven.com, storyforge.com, storybloom.com, leafwise.com, leafnest.com, leafflow.com, leafhub.com, leafloom.com, leafpad.com, leafbox.com, leafbase.com, leafkit.com, leaflab.com, leafcraft.com, leafmint.com, leafspark.com, leafstack.com, leafvault.com, leafwave.com, leafgrove.com, leafhaven.com, leafforge.com, leafbloom.com, foliowise.com, folionest.com, folioflow.com, foliohub.com, folioloom.com, foliopad.com, foliobox.com, foliobase.com, foliokit.com, foliolab.com, foliocraft.com, foliomint.com, foliospark.com, foliostack.com, foliovault.com, foliowave.com, foliogrove.com, foliohaven.com, folioforge.com, glyphwise.com, glyphnest.com (in deletion, may become available soon), glyphflow.com, glyphhub.com, glyphloom.com, glyphpad.com, glyphbox.com, glyphbase.com, glyphkit.com, glyphlab.com, glyphcraft.com, glyphmint.com, glyphspark.com, glyphstack.com, glyphvault.com, glyphwave.com, glyphgrove.com, glyphhaven.com, glyphforge.com, marginwise.com, marginnest.com, marginflow.com, marginhub.com, marginloom.com, marginpad.com, marginbox.com, marginbase.com, marginkit.com, marginlab.com, margincraft.com, marginmint.com, marginspark.com, marginstack.com, marginvault.com, marginwave.com, margingrove.com, marginhaven.com, marginforge.com, marginbloom.com, outlinewise.com, outlineflow.com, outlinehub.com, outlinepad.com, outlinebox.com, outlinebase.com, outlinekit.com, outlinelab.com, outlinecraft.com, outlinevault.com, outlineforge.com, outlinebloom.com, pencilwise.com, pencilnest.com, pencilflow.com, pencilhub.com, pencilpad.com, pencilbox.com, pencilbase.com, pencilkit.com, pencillab.com, pencilcraft.com, pencilspark.com, pencilvault.com, pencilgrove.com, pencilforge.com, paperwise.com, papernest.com, paperflow.com, paperhub.com, paperloom.com, paperpad.com, paperbox.com, paperbase.com, paperkit.com, paperlab.com, papercraft.com, papermint.com, paperspark.com, paperstack.com, papervault.com, paperwave.com, papergrove.com, paperhaven.com, paperforge.com, paperbloom.com, notchwise.com, notchnest.com, notchflow.com, notchhub.com, notchpad.com, notchbox.com, notchbase.com, notchkit.com, notchlab.com, notchcraft.com, notchstack.com, notchwave.com, versewise.com, versenest.com, verseflow.com, versehub.com, verseloom.com, versepad.com, versebox.com, versebase.com, versekit.com, verselab.com, versecraft.com, versemint.com, versespark.com, versestack.com, versevault.com, versewave.com, versegrove.com, versehaven.com, verseforge.com, versebloom.com, threadwise.com, threadnest.com, threadflow.com, threadhub.com, threadloom.com, threadpad.com, threadbox.com, threadbase.com, threadkit.com, threadlab.com, threadcraft.com, threadmint.com, threadspark.com, threadstack.com, threadvault.com, threadwave.com, threadgrove.com, threadhaven.com, threadforge.com, threadbloom.com</code></pre><!-- /generated:tool-result -->
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="example-bulk" aria-labelledby="tab-bulk">
+            <!-- generated:bulk --><p class="example__note">The everyday case: almost every good .com is taken, so an assistant brainstorms hundreds of names and checks them all in one call.</p>
+<pre class="output"><code>$ npx @dakaio/domainscout-mcp check quillwise quillnest quillflow quillhub "… 496 more" --tlds com</code></pre>
+<pre class="output"><code>Checked 500 domain(s) in 21.8s: 27 available, 473 taken.
+
+AVAILABLE (cheapest known offer for each):
+- quillloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=quillloom.com
+- scribeloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribeloom.com
+- scribebloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=scribebloom.com
+- foliobloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=foliobloom.com
+- glyphbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=glyphbloom.com
+- outlinenest.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinenest.com
+- outlineloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlineloom.com
+- outlinemint.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinemint.com
+- outlinespark.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinespark.com
+- outlinestack.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinestack.com
+- outlinewave.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinewave.com
+- outlinegrove.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinegrove.com
+- outlinehaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=outlinehaven.com
+- pencilloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilloom.com
+- pencilmint.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilmint.com
+- pencilstack.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilstack.com
+- pencilwave.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilwave.com
+- pencilhaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilhaven.com
+- pencilbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=pencilbloom.com
+- notchloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchloom.com
+- notchmint.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchmint.com
+- notchspark.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchspark.com
+- notchvault.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchvault.com
+- notchgrove.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchgrove.com
+- notchhaven.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchhaven.com
+- notchforge.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchforge.com
+- notchbloom.com: $10.46/yr at Cloudflare https://www.cloudflare.com/domains/search/?q=notchbloom.com
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
+Each line shows the cheapest known offer. Check a few chosen names again to see every registrar, including links for registrars without public prices.
+
+TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, quillbox.com, quillbase.com, quillkit.com, quilllab.com, quillcraft.com, quillmint.com, quillspark.com, quillstack.com, quillvault.com, quillwave.com, quillgrove.com, quillhaven.com, quillforge.com, quillbloom.com, jotwise.com, jotnest.com, jotflow.com, jothub.com, jotloom.com, jotpad.com, jotbox.com, jotbase.com, jotkit.com, jotlab.com, jotcraft.com, jotmint.com, jotspark.com, jotstack.com, jotvault.com, jotwave.com, jotgrove.com, jothaven.com, jotforge.com, jotbloom.com, notewise.com, notenest.com, noteflow.com, notehub.com, noteloom.com, notepad.com, notebox.com, notebase.com, notekit.com, notelab.com, notecraft.com, notemint.com, notespark.com, notestack.com, notevault.com, notewave.com, notegrove.com, notehaven.com, noteforge.com, notebloom.com, inkwise.com, inknest.com, inkflow.com, inkhub.com, inkloom.com, inkpad.com, inkbox.com, inkbase.com, inkkit.com, inklab.com, inkcraft.com, inkmint.com, inkspark.com, inkstack.com, inkvault.com, inkwave.com, inkgrove.com, inkhaven.com, inkforge.com, inkbloom.com, pagewise.com, pagenest.com, pageflow.com, pagehub.com, pageloom.com, pagepad.com, pagebox.com, pagebase.com, pagekit.com, pagelab.com, pagecraft.com, pagemint.com, pagespark.com, pagestack.com, pagevault.com, pagewave.com, pagegrove.com, pagehaven.com, pageforge.com, pagebloom.com, memowise.com, memonest.com, memoflow.com, memohub.com, memoloom.com, memopad.com, memobox.com, memobase.com, memokit.com, memolab.com, memocraft.com, memomint.com, memospark.com, memostack.com, memovault.com, memowave.com, memogrove.com, memohaven.com, memoforge.com, memobloom.com, scribewise.com, scribenest.com, scribeflow.com, scribehub.com, scribepad.com, scribebox.com, scribebase.com, scribekit.com, scribelab.com, scribecraft.com, scribemint.com, scribespark.com, scribestack.com, scribevault.com, scribewave.com, scribegrove.com, scribehaven.com, scribeforge.com, draftwise.com, draftnest.com, draftflow.com, drafthub.com, draftloom.com, draftpad.com, draftbox.com, draftbase.com, draftkit.com, draftlab.com, draftcraft.com, draftmint.com, draftspark.com, draftstack.com, draftvault.com, draftwave.com, draftgrove.com, drafthaven.com, draftforge.com, draftbloom.com, ideawise.com, ideanest.com, ideaflow.com, ideahub.com, idealoom.com, ideapad.com, ideabox.com, ideabase.com, ideakit.com, idealab.com, ideacraft.com, ideamint.com, ideaspark.com, ideastack.com, ideavault.com, ideawave.com, ideagrove.com, ideahaven.com, ideaforge.com, ideabloom.com, mindwise.com, mindnest.com, mindflow.com, mindhub.com, mindloom.com, mindpad.com, mindbox.com, mindbase.com, mindkit.com, mindlab.com, mindcraft.com, mindmint.com, mindspark.com, mindstack.com, mindvault.com, mindwave.com, mindgrove.com, mindhaven.com, mindforge.com, mindbloom.com, brainwise.com, brainnest.com, brainflow.com, brainhub.com, brainloom.com, brainpad.com, brainbox.com, brainbase.com, brainkit.com, brainlab.com, braincraft.com, brainmint.com, brainspark.com, brainstack.com, brainvault.com, brainwave.com, braingrove.com, brainhaven.com, brainforge.com, brainbloom.com, thinkwise.com, thinknest.com, thinkflow.com, thinkhub.com, thinkloom.com, thinkpad.com, thinkbox.com, thinkbase.com, thinkkit.com, thinklab.com, thinkcraft.com, thinkmint.com, thinkspark.com, thinkstack.com, thinkvault.com, thinkwave.com, thinkgrove.com, thinkhaven.com, thinkforge.com, thinkbloom.com, clipwise.com, clipnest.com, clipflow.com, cliphub.com, cliploom.com (in deletion, may become available soon), clippad.com, clipbox.com, clipbase.com, clipkit.com, cliplab.com, clipcraft.com, clipmint.com, clipspark.com, clipstack.com, clipvault.com, clipwave.com, clipgrove.com, cliphaven.com, clipforge.com, clipbloom.com, snapwise.com, snapnest.com, snapflow.com, snaphub.com, snaploom.com, snappad.com, snapbox.com, snapbase.com, snapkit.com, snaplab.com, snapcraft.com, snapmint.com, snapspark.com, snapstack.com, snapvault.com, snapwave.com, snapgrove.com, snaphaven.com, snapforge.com, snapbloom.com, storywise.com, storynest.com, storyflow.com, storyhub.com, storyloom.com, storypad.com, storybox.com, storybase.com, storykit.com, storylab.com, storycraft.com, storymint.com, storyspark.com, storystack.com, storyvault.com, storywave.com, storygrove.com, storyhaven.com, storyforge.com, storybloom.com, leafwise.com, leafnest.com, leafflow.com, leafhub.com, leafloom.com, leafpad.com, leafbox.com, leafbase.com, leafkit.com, leaflab.com, leafcraft.com, leafmint.com, leafspark.com, leafstack.com, leafvault.com, leafwave.com, leafgrove.com, leafhaven.com, leafforge.com, leafbloom.com, foliowise.com, folionest.com, folioflow.com, foliohub.com, folioloom.com, foliopad.com, foliobox.com, foliobase.com, foliokit.com, foliolab.com, foliocraft.com, foliomint.com, foliospark.com, foliostack.com, foliovault.com, foliowave.com, foliogrove.com, foliohaven.com, folioforge.com, glyphwise.com, glyphnest.com (in deletion, may become available soon), glyphflow.com, glyphhub.com, glyphloom.com, glyphpad.com, glyphbox.com, glyphbase.com, glyphkit.com, glyphlab.com, glyphcraft.com, glyphmint.com, glyphspark.com, glyphstack.com, glyphvault.com, glyphwave.com, glyphgrove.com, glyphhaven.com, glyphforge.com, marginwise.com, marginnest.com, marginflow.com, marginhub.com, marginloom.com, marginpad.com, marginbox.com, marginbase.com, marginkit.com, marginlab.com, margincraft.com, marginmint.com, marginspark.com, marginstack.com, marginvault.com, marginwave.com, margingrove.com, marginhaven.com, marginforge.com, marginbloom.com, outlinewise.com, outlineflow.com, outlinehub.com, outlinepad.com, outlinebox.com, outlinebase.com, outlinekit.com, outlinelab.com, outlinecraft.com, outlinevault.com, outlineforge.com, outlinebloom.com, pencilwise.com, pencilnest.com, pencilflow.com, pencilhub.com, pencilpad.com, pencilbox.com, pencilbase.com, pencilkit.com, pencillab.com, pencilcraft.com, pencilspark.com, pencilvault.com, pencilgrove.com, pencilforge.com, paperwise.com, papernest.com, paperflow.com, paperhub.com, paperloom.com, paperpad.com, paperbox.com, paperbase.com, paperkit.com, paperlab.com, papercraft.com, papermint.com, paperspark.com, paperstack.com, papervault.com, paperwave.com, papergrove.com, paperhaven.com, paperforge.com, paperbloom.com, notchwise.com, notchnest.com, notchflow.com, notchhub.com, notchpad.com, notchbox.com, notchbase.com, notchkit.com, notchlab.com, notchcraft.com, notchstack.com, notchwave.com, versewise.com, versenest.com, verseflow.com, versehub.com, verseloom.com, versepad.com, versebox.com, versebase.com, versekit.com, verselab.com, versecraft.com, versemint.com, versespark.com, versestack.com, versevault.com, versewave.com, versegrove.com, versehaven.com, verseforge.com, versebloom.com, threadwise.com, threadnest.com, threadflow.com, threadhub.com, threadloom.com, threadpad.com, threadbox.com, threadbase.com, threadkit.com, threadlab.com, threadcraft.com, threadmint.com, threadspark.com, threadstack.com, threadvault.com, threadwave.com, threadgrove.com, threadhaven.com, threadforge.com, threadbloom.com</code></pre><!-- /generated:bulk -->
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="example-names" aria-labelledby="tab-names">
+            <!-- generated:names --><p class="example__note">Names without a TLD are tried in .com, .net and .ai. With only a few free domains, each gets links to every registrar.</p>
+<pre class="output"><code>$ npx @dakaio/domainscout-mcp check quillfern lumaforge getquillfern</code></pre>
+<pre class="output"><code>Checked 9 domain(s) in 1.5s: 5 available, 4 taken.
+
+AVAILABLE (where to buy, cheapest first):
+- quillfern.net
+  Cloudflare: $11.86/yr, renews at $11.86/yr: https://www.cloudflare.com/domains/search/?q=quillfern.net
+  Porkbun: $12.52/yr, renews at $12.52/yr: https://porkbun.com/checkout/search?q=quillfern.net
+  Namecheap: https://www.namecheap.com/domains/registration/results/?domain=quillfern.net
+  Spaceship: https://www.spaceship.com/domain-search/?query=quillfern.net
+  GoDaddy: https://www.godaddy.com/domainsearch/find?domainToCheck=quillfern.net
+  Name.com: https://www.name.com/domain/search/quillfern.net
+  Dynadot: https://www.dynadot.com/domain/search?domain=quillfern.net
+  NameSilo: https://www.namesilo.com/domain/search-domains?query=quillfern.net
+  Hover: https://www.hover.com/domains/results?q=quillfern.net
+- quillfern.ai
+  Sold for at least 2 years at a time.
+  Cloudflare: $80.00/yr, renews at $80.00/yr: https://www.cloudflare.com/domains/search/?q=quillfern.ai
+  Porkbun: $82.70/yr, renews at $82.70/yr: https://porkbun.com/checkout/search?q=quillfern.ai
+  Namecheap: https://www.namecheap.com/domains/registration/results/?domain=quillfern.ai
+  Spaceship: https://www.spaceship.com/domain-search/?query=quillfern.ai
+  GoDaddy: https://www.godaddy.com/domainsearch/find?domainToCheck=quillfern.ai
+  Name.com: https://www.name.com/domain/search/quillfern.ai
+  Dynadot: https://www.dynadot.com/domain/search?domain=quillfern.ai
+  NameSilo: https://www.namesilo.com/domain/search-domains?query=quillfern.ai
+  Hover: https://www.hover.com/domains/results?q=quillfern.ai
+- getquillfern.com
+  Cloudflare: $10.46/yr, renews at $10.46/yr: https://www.cloudflare.com/domains/search/?q=getquillfern.com
+  Porkbun: $11.08/yr, renews at $11.08/yr: https://porkbun.com/checkout/search?q=getquillfern.com
+  Namecheap: https://www.namecheap.com/domains/registration/results/?domain=getquillfern.com
+  Spaceship: https://www.spaceship.com/domain-search/?query=getquillfern.com
+  GoDaddy: https://www.godaddy.com/domainsearch/find?domainToCheck=getquillfern.com
+  Name.com: https://www.name.com/domain/search/getquillfern.com
+  Dynadot: https://www.dynadot.com/domain/search?domain=getquillfern.com
+  NameSilo: https://www.namesilo.com/domain/search-domains?query=getquillfern.com
+  Hover: https://www.hover.com/domains/results?q=getquillfern.com
+- getquillfern.net
+  Cloudflare: $11.86/yr, renews at $11.86/yr: https://www.cloudflare.com/domains/search/?q=getquillfern.net
+  Porkbun: $12.52/yr, renews at $12.52/yr: https://porkbun.com/checkout/search?q=getquillfern.net
+  Namecheap: https://www.namecheap.com/domains/registration/results/?domain=getquillfern.net
+  Spaceship: https://www.spaceship.com/domain-search/?query=getquillfern.net
+  GoDaddy: https://www.godaddy.com/domainsearch/find?domainToCheck=getquillfern.net
+  Name.com: https://www.name.com/domain/search/getquillfern.net
+  Dynadot: https://www.dynadot.com/domain/search?domain=getquillfern.net
+  NameSilo: https://www.namesilo.com/domain/search-domains?query=getquillfern.net
+  Hover: https://www.hover.com/domains/results?q=getquillfern.net
+- getquillfern.ai
+  Sold for at least 2 years at a time.
+  Cloudflare: $80.00/yr, renews at $80.00/yr: https://www.cloudflare.com/domains/search/?q=getquillfern.ai
+  Porkbun: $82.70/yr, renews at $82.70/yr: https://porkbun.com/checkout/search?q=getquillfern.ai
+  Namecheap: https://www.namecheap.com/domains/registration/results/?domain=getquillfern.ai
+  Spaceship: https://www.spaceship.com/domain-search/?query=getquillfern.ai
+  GoDaddy: https://www.godaddy.com/domainsearch/find?domainToCheck=getquillfern.ai
+  Name.com: https://www.name.com/domain/search/getquillfern.ai
+  Dynadot: https://www.dynadot.com/domain/search?domain=getquillfern.ai
+  NameSilo: https://www.namesilo.com/domain/search-domains?query=getquillfern.ai
+  Hover: https://www.hover.com/domains/results?q=getquillfern.ai
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
+
+TAKEN: quillfern.com, lumaforge.com, lumaforge.net (until 2027-08-13), lumaforge.ai</code></pre><!-- /generated:names -->
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="example-mixed" aria-labelledby="tab-mixed">
+            <!-- generated:mixed --><p class="example__note">A name with a TLD is checked exactly as given; URLs are reduced to their domain.</p>
+<pre class="output"><code>$ npx @dakaio/domainscout-mcp check getacme.io https://www.example.org/about acme --tlds dev,app</code></pre>
+<pre class="output"><code>Checked 4 domain(s) in 1.8s: 1 available, 3 taken.
+
+AVAILABLE (where to buy, cheapest first):
+- getacme.io
+  Porkbun: $28.12/yr, renews at $51.80/yr: https://porkbun.com/checkout/search?q=getacme.io
+  Cloudflare: $32.00/yr, renews at $50.00/yr: https://www.cloudflare.com/domains/search/?q=getacme.io
+  Namecheap: https://www.namecheap.com/domains/registration/results/?domain=getacme.io
+  Spaceship: https://www.spaceship.com/domain-search/?query=getacme.io
+  GoDaddy: https://www.godaddy.com/domainsearch/find?domainToCheck=getacme.io
+  Name.com: https://www.name.com/domain/search/getacme.io
+  Dynadot: https://www.dynadot.com/domain/search?domain=getacme.io
+  NameSilo: https://www.namesilo.com/domain/search-domains?query=getacme.io
+  Hover: https://www.hover.com/domains/results?q=getacme.io
+Not confirmed by a registrar means: not found in the registry or DNS. Prices are standard list prices; premium or reserved names look the same, so the registrar's page shows the final price.
+
+TAKEN: example.org, acme.dev, acme.app</code></pre><!-- /generated:mixed -->
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="example-json" aria-labelledby="tab-json">
+            <!-- generated:json --><p class="example__note">The same data the MCP tool returns as structured content.</p>
+<pre class="output"><code>$ npx @dakaio/domainscout-mcp check getquillfern.com --json</code></pre>
+<pre class="output"><code>{
+  "summary": {
+    "available": 0,
+    "likely_available": 1,
+    "taken": 0,
+    "reserved": 0,
+    "unknown": 0,
+    "total": 1,
+    "elapsed_ms": 922
+  },
+  "results": [
+    {
+      "domain": "getquillfern.com",
+      "display": "getquillfern.com",
+      "input": "getquillfern.com",
+      "tld": "com",
+      "status": "likely_available",
+      "note": "Not in the registry. Premium or reserved names can look the same; the registrar shows the final price.",
+      "evidence": [
+        {
+          "source": "dns",
+          "result": "nxdomain",
+          "ms": 6
+        },
+        {
+          "source": "rdap",
+          "result": "not_found",
+          "server": "rdap.verisign.com",
+          "ms": 631
+        }
+      ],
+      "buy": [
+        {
+          "registrar": "Cloudflare",
+          "url": "https://www.cloudflare.com/domains/search/?q=getquillfern.com",
+          "affiliate": false,
+          "price": {
+            "registration": 10.46,
+            "renewal": 10.46,
+            "currency": "USD",
+            "minYears": 1,
+            "source": "cfdomainpricing.com (community mirror of Cloudflare's prices)",
+            "updated": "2026-10-06"
+          }
+        },
+        {
+          "registrar": "Porkbun",
+          "url": "https://porkbun.com/checkout/search?q=getquillfern.com",
+          "affiliate": false,
+          "price": {
+            "registration": 11.08,
+            "renewal": 11.08,
+            "currency": "USD",
+            "minYears": 1,
+            "source": "Porkbun price API"
+          }
+        },
+        {
+          "registrar": "Namecheap",
+          "url": "https://www.namecheap.com/domains/registration/results/?domain=getquillfern.com",
+          "affiliate": false
+        },
+        {
+          "registrar": "Spaceship",
+          "url": "https://www.spaceship.com/domain-search/?query=getquillfern.com",
+          "affiliate": false
+        },
+        {
+          "registrar": "GoDaddy",
+          "url": "https://www.godaddy.com/domainsearch/find?domainToCheck=getquillfern.com",
+          "affiliate": false
+        },
+        {
+          "registrar": "Name.com",
+          "url": "https://www.name.com/domain/search/getquillfern.com",
+          "affiliate": false
+        },
+        {
+          "registrar": "Dynadot",
+          "url": "https://www.dynadot.com/domain/search?domain=getquillfern.com",
+          "affiliate": false
+        },
+        {
+          "registrar": "NameSilo",
+          "url": "https://www.namesilo.com/domain/search-domains?query=getquillfern.com",
+          "affiliate": false
+        },
+        {
+          "registrar": "Hover",
+          "url": "https://www.hover.com/domains/results?q=getquillfern.com",
+          "affiliate": false
+        }
+      ]
+    }
+  ],
+  "invalid": [],
+  "tlds": [
+    "com",
+    "net",
+    "ai"
+  ],
+  "warnings": [],
+  "elapsedMs": 922
+}</code></pre><!-- /generated:json -->
+          </div>
+        </div>
+      </section>
+
+      <section id="install" class="section container">
+        <h2>Install</h2>
+        <p class="section__lead">Node 20 or newer. Then add the server to your MCP client and ask about any names.</p>
+        <div class="tabs" data-tabs>
+          <div class="tabs__list" role="tablist" aria-label="MCP clients">
+            <button role="tab" aria-selected="true" aria-controls="install-code" id="tab-code">Claude Code</button>
+            <button role="tab" aria-selected="false" aria-controls="install-desktop" id="tab-desktop">Claude Desktop</button>
+            <button role="tab" aria-selected="false" aria-controls="install-cursor" id="tab-cursor">Cursor</button>
+            <button role="tab" aria-selected="false" aria-controls="install-cli" id="tab-cli">Command line</button>
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="install-code" aria-labelledby="tab-code">
+            <pre class="output" data-copy><code>claude mcp add domainscout -- npx -y @dakaio/domainscout-mcp</code></pre>
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="install-desktop" aria-labelledby="tab-desktop">
+            <p class="example__note">Add to <code>claude_desktop_config.json</code> (Settings → Developer → Edit Config):</p>
+            <pre class="output" data-copy><code>{
+  "mcpServers": {
+    "domainscout": {
+      "command": "npx",
+      "args": ["-y", "@dakaio/domainscout-mcp"],
+      "env": { "DOMAINSCOUT_TLDS": "com,net,ai,io" }
+    }
+  }
+}</code></pre>
+            <p class="example__note">On Windows, if <code>npx</code> is not found, use <code>"command": "cmd"</code> with <code>"args": ["/c", "npx", "-y", "@dakaio/domainscout-mcp"]</code>.</p>
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="install-cursor" aria-labelledby="tab-cursor">
+            <p class="example__note">Add to <code>.cursor/mcp.json</code> in your project, or to the global MCP settings:</p>
+            <pre class="output" data-copy><code>{
+  "mcpServers": {
+    "domainscout": {
+      "command": "npx",
+      "args": ["-y", "@dakaio/domainscout-mcp"]
+    }
+  }
+}</code></pre>
+          </div>
+          <div class="tabs__panel glass" role="tabpanel" id="install-cli" aria-labelledby="tab-cli">
+            <pre class="output" data-copy><code>npx @dakaio/domainscout-mcp check acme getacme --tlds com,io,dev</code></pre>
+          </div>
+        </div>
+
+        <h3 class="subheading">Settings</h3>
+        <p class="section__lead">All optional, set as environment variables in the MCP config.</p>
+        <div class="table-wrap glass">
+          <table>
+            <thead>
+              <tr><th>Variable</th><th>Default</th><th>What it does</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>DOMAINSCOUT_TLDS</code></td><td>com,net,ai</td><td>TLDs tried for names given without one</td></tr>
+              <tr><td><code>DOMAINSCOUT_REGISTRARS</code></td><td>all</td><td>Registrars to show buy links for</td></tr>
+              <tr><td><code>DOMAINSCOUT_MAX_CONCURRENCY</code></td><td>10</td><td>Network requests in flight at once</td></tr>
+              <tr><td><code>DOMAINSCOUT_CONFIRM_MAX</code></td><td>50</td><td>Free domains per call confirmed through your registrar API</td></tr>
+              <tr><td><code>DOMAINSCOUT_PRICES</code></td><td>on</td><td>Public price lists</td></tr>
+              <tr><td><code>DOMAINSCOUT_AFFILIATE</code></td><td>on</td><td>Affiliate buy links; off gives plain links</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="section__lead">
+          Registrar API keys (Name.com, Cloudflare, Spaceship, Porkbun) and every other setting are described in the
+          <a href="https://github.com/JohnDaka/domainscout-mcp#readme" rel="noopener">README</a>.
+        </p>
+      </section>
+
+      <section id="faq" class="section container faq">
+        <h2>Questions and answers</h2>
+        <details>
+          <summary>If a domain is not in WHOIS, is it really free?</summary>
+          <p>
+            Almost always. Premium and registry-reserved names look the same in the registry, so DomainScout reports
+            them as likely available, and confirms them when you add a registrar API key.
+          </p>
+        </details>
+        <details>
+          <summary>Is a domain without a website free?</summary>
+          <p>
+            No. A domain that was bought but never set up has no DNS, but the registry still lists it, so DomainScout
+            reports it as taken.
+          </p>
+        </details>
+        <details>
+          <summary>How many names can I check at once?</summary>
+          <p>
+            Up to 500 domains in one call by default - a whole AI brainstorm at once - and
+            <code>DOMAINSCOUT_MAX_DOMAINS</code> raises the limit to 10,000. Names that are already taken are settled in
+            DNS within seconds; only the rest go to the registries, at a polite pace.
+          </p>
+        </details>
+        <details>
+          <summary>Do I need an account or an API key?</summary>
+          <p>No. Everything works without keys. A registrar API key is optional and makes the answer exact for premium names and prices.</p>
+        </details>
+        <details>
+          <summary>Which TLDs can it check?</summary>
+          <p>
+            Any TLD with RDAP or WHOIS, which is nearly all of them. Names without a TLD are tried in .com, .net and .ai
+            unless you set others.
+          </p>
+        </details>
+        <details>
+          <summary>Is DomainScout free?</summary>
+          <p>
+            Yes, open source under the MIT license. Some buy links may be affiliate links: buying through them can
+            support the project at no extra cost to you. Links are always sorted by price, never by commission, and
+            <code>DOMAINSCOUT_AFFILIATE=off</code> turns them off.
+          </p>
+        </details>
+        <details>
+          <summary>Where does my data go?</summary>
+          <p>
+            Straight from your machine to DNS, the registries, two public price lists and, if you add keys, your
+            registrar's API. There is no DomainScout server.
+          </p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <p class="footer-credit">
+          © 2026 DomainScout · Made by
+          <a href="https://dakaio.com" target="_blank" rel="noopener"
+            ><img src="https://cdn.dakaio.com/dakaio-logo.webp" alt="" width="20" height="20" loading="lazy" decoding="async" />Dakaio.com</a
+          >
+        </p>
+        <nav aria-label="Project links">
+          <a href="https://github.com/JohnDaka/domainscout-mcp" rel="noopener">GitHub</a>
+          <a href="https://www.npmjs.com/package/@dakaio/domainscout-mcp" rel="noopener">npm</a>
+          <a href="https://github.com/JohnDaka/domainscout-mcp/tree/main/examples" rel="noopener">Examples</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

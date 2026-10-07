@@ -1,0 +1,69 @@
+{
+  "name": "@dakaio/domainscout-mcp",
+  "version": "1.1.0",
+  "description": "MCP server that checks hundreds of domain names at once from your own machine (DNS + RDAP/WHOIS) and shows prices and where to buy.",
+  "author": "dakaio.com",
+  "homepage": "https://domainscout.dakaio.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JohnDaka/domainscout-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JohnDaka/domainscout-mcp/issues"
+  },
+  "type": "module",
+  "bin": {
+    "domainscout-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+    "prebuild": "npm run clean",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "start": "node dist/index.js",
+    "domains": "node dist/index.js check",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "verify": "npm run typecheck && npm run lint && npm run coverage",
+    "prepublishOnly": "npm run verify && npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "domain",
+    "domain-availability",
+    "domain-search",
+    "bulk",
+    "naming",
+    "whois",
+    "rdap"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "p-queue": "^9.3.3",
+    "tldts": "^7.4.16",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^5.0.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

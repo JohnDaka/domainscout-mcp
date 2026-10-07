@@ -1,0 +1,5 @@
+# Every text file uses LF line endings, on every platform (as Biome formats them).
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.webp binary

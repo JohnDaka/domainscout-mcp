@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+ROADMAP.md
+
+# Local folders and agent settings
+/docs
+/scripts
+
+# Local editor and agent settings (the site preview server lives here).
+.claude/
+.idea/

@@ -1,0 +1,874 @@
+/*
+ * DomainScout landing page. Palette, type and surfaces follow dakaio.com so the product reads as
+ * part of the same portfolio: the #00030a field, glass panels, and the cyan-violet-pink gradient.
+ */
+:root {
+  --bg: #00030a;
+  --text: #e7e7f2;
+  --body: #c7c9ea;
+  --muted: #a3a6d1;
+  --heading: #ffffff;
+  --cyan: #3cc8ff;
+  --violet: #bd5fff;
+  --pink: #f472b6;
+  --magenta: #e7029a;
+  --teal: #11edda;
+  --amber: #facc15;
+  --orange: #fb923c;
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-strong: rgba(255, 255, 255, 0.07);
+  --radius: 16px;
+  --radius-small: 10px;
+  --container: 1100px;
+  --gutter: 24px;
+  --header-height: 64px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --brand-gradient: linear-gradient(90deg, var(--cyan), var(--violet) 50%, var(--pink));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height) + 16px);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.625;
+  color: var(--text);
+  background:
+    radial-gradient(900px 640px at 8% 6%, rgba(34, 195, 245, 0.14), transparent 62%),
+    radial-gradient(840px 620px at 96% 30%, rgba(255, 79, 216, 0.1), transparent 62%),
+    radial-gradient(760px 520px at 50% 100%, rgba(139, 92, 246, 0.1), transparent 62%), var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A very faint grid behind the hero, as on the dakaio.com link cards. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(199, 201, 234, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(199, 201, 234, 0.035) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(900px 600px at 50% 10%, #000 20%, transparent 80%);
+  z-index: -1;
+}
+
+a {
+  color: var(--text);
+  text-underline-offset: 4px;
+}
+
+a:hover {
+  color: var(--heading);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  left: 16px;
+  top: 16px;
+  z-index: 10;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-small);
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Header: the same bar as dakaio.com - a blurred strip with a pill of links. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 3, 10, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  gap: 16px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: var(--heading);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.brand img {
+  width: 32px;
+  height: 32px;
+}
+
+/*
+ * The nav pill is dakaio.com's site header: a lit outline runs along the pill's edge to frame an
+ * item from above and below - the section in view at rest, the item under the cursor on hover.
+ * The frame is one SVG rect with pathLength=100; main.js computes its dash pattern.
+ */
+.nav {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--body);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.nav a:hover,
+.nav a[aria-current='true'] {
+  color: var(--heading);
+}
+
+.nav a:hover {
+  background: rgba(244, 114, 182, 0.15);
+}
+
+.nav__frame {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.nav__frame rect {
+  fill: transparent;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition:
+    stroke-dasharray 0.5s ease,
+    stroke-dashoffset 0.5s ease;
+}
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  padding-top: 88px;
+  padding-bottom: 72px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #8f93c4;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--heading);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(36px, 5vw, 52px);
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: clamp(26px, 3.4vw, 36px);
+}
+
+h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.gradient-text {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lead {
+  margin: 20px 0 12px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.hero__copy > p:not(.lead):not(.eyebrow) {
+  color: var(--body);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+/* The primary button: dakaio.com's contact button - a spinning conic border around a dark face. */
+.button-gradient {
+  position: relative;
+  display: inline-flex;
+  height: 48px;
+  padding: 1px;
+  overflow: hidden;
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.button-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -1000%;
+  background: conic-gradient(
+    from 90deg at 50% 50%,
+    var(--magenta) 0%,
+    var(--pink) 50%,
+    var(--violet) 100%
+  );
+  animation: spin 2s linear infinite;
+}
+
+.button-gradient span {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 28px;
+  border-radius: 9px;
+  background: #020617;
+  color: var(--heading);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 300ms ease;
+}
+
+.button-gradient:hover span {
+  background: linear-gradient(120deg, var(--magenta), var(--pink) 50%, var(--violet));
+}
+
+.button-glass {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 24px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass);
+  color: var(--body);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.button-glass:hover {
+  border-color: rgba(60, 200, 255, 0.4);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badges li {
+  padding: 4px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* The hero card: a short conversation and the tool's answer. */
+.hero__card {
+  margin: 0;
+  padding: 24px;
+  box-shadow:
+    0 0 44px rgba(124, 92, 255, 0.18),
+    0 0 110px rgba(34, 195, 245, 0.08);
+}
+
+.chat__prompt {
+  padding: 14px 16px;
+  border-radius: var(--radius-small);
+  background: var(--glass-strong);
+  color: var(--body);
+  font-size: 15px;
+}
+
+.chat__who {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chat__tool {
+  margin: 20px 0 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--cyan);
+}
+
+.chat__tool .chat__who {
+  display: inline;
+  margin-right: 8px;
+}
+
+.results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* "500 names checked in 41s: 36 free .com, 464 taken" above the short list. */
+.results__summary {
+  margin: 0 0 6px;
+  color: var(--body);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.results__more {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.result__domain {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--heading);
+  overflow-wrap: anywhere;
+}
+
+.result__price {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.result__price:empty {
+  display: none;
+}
+
+.pill {
+  align-self: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.pill--available,
+.pill--likely_available {
+  color: var(--teal);
+}
+
+.pill--taken {
+  color: var(--muted);
+}
+
+.pill--reserved {
+  color: var(--amber);
+}
+
+.pill--unknown {
+  color: var(--orange);
+}
+
+/* Sections */
+.section {
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+
+.section__lead {
+  max-width: 720px;
+  margin: 0 0 28px;
+  color: var(--muted);
+}
+
+.subheading {
+  margin-top: 48px;
+  font-size: 22px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card {
+  padding: 24px;
+}
+
+.card p {
+  margin: 0;
+  color: var(--body);
+  font-size: 15px;
+}
+
+.card__icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 14px;
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.step {
+  position: relative;
+  padding: 24px 24px 24px 64px;
+  counter-increment: step;
+}
+
+.step::before {
+  content: counter(step);
+  position: absolute;
+  left: 20px;
+  top: 22px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand-gradient);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.step p {
+  margin: 0;
+  color: var(--body);
+  font-size: 15px;
+}
+
+.tag {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  vertical-align: middle;
+}
+
+/* Tabs: every panel is visible until main.js takes over, so the page works without scripts. */
+.tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.tabs__list button {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--body);
+  font: 500 14px var(--font);
+  cursor: pointer;
+}
+
+.tabs__list button[aria-selected='true'] {
+  border-color: transparent;
+  background: rgba(244, 114, 182, 0.15);
+  color: var(--heading);
+}
+
+.tabs__panel {
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.tabs--ready .tabs__panel[hidden] {
+  display: none;
+}
+
+.example__note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Real tool output can run to hundreds of lines; it scrolls inside its block, not down the page. */
+.output {
+  position: relative;
+  max-height: 520px;
+  margin: 0 0 16px;
+  padding: 16px;
+  overflow: auto;
+  border-radius: var(--radius-small);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--body);
+  font: 13px / 1.6 var(--mono);
+  white-space: pre;
+}
+
+.output:last-child {
+  margin-bottom: 0;
+}
+
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: rgba(0, 3, 10, 0.8);
+  color: var(--muted);
+  font: 500 12px var(--font);
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  color: var(--heading);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+td {
+  color: var(--body);
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+/*
+ * Questions and answers, the same component as the BelaDay landing page: glass cards; the round
+ * plus turns into a cross and fills with the accent, the open card is lit along its edge, and the
+ * answer slides open (main.js). Without the script each card is a plain <details>.
+ */
+.faq details {
+  margin-bottom: 10px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+
+.faq details:hover {
+  border-color: rgba(60, 200, 255, 0.25);
+}
+
+.faq details[open] {
+  border-color: rgba(60, 200, 255, 0.45);
+  background: rgba(139, 92, 246, 0.12);
+}
+
+.faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  list-style: none;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--heading);
+  cursor: pointer;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: '';
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--cyan);
+  background:
+    linear-gradient(currentColor, currentColor) center / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 2px 12px no-repeat,
+    rgba(60, 200, 255, 0.12);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.3s,
+    color 0.3s;
+}
+
+.faq details[open] summary::after {
+  color: #ffffff;
+  background-color: var(--violet);
+  transform: rotate(45deg);
+}
+
+/* Closing: the card and its cross go back at once, while the height follows. */
+.faq details.faq-closing {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.faq details.faq-closing summary::after {
+  color: var(--cyan);
+  background-color: rgba(60, 200, 255, 0.12);
+  transform: none;
+}
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+  border-radius: 16px;
+}
+
+.faq details p {
+  margin: 0;
+  padding: 0 20px 18px;
+  color: var(--body);
+}
+
+.faq details[open] p {
+  animation: faq-in 0.35s ease both;
+}
+
+@keyframes faq-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq summary::after {
+    transition: none;
+  }
+
+  .faq details[open] p {
+    animation: none;
+  }
+}
+
+.site-footer {
+  margin-top: 48px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 28px;
+  padding-bottom: 40px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.site-footer nav {
+  display: flex;
+  gap: 20px;
+}
+
+.site-footer a {
+  color: var(--body);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--heading);
+}
+
+/* "Made by [D] Dakaio.com", as on the BelaDay footer: the studio's mark before its name. */
+.footer-credit {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.footer-credit a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 5px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-credit img {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.footer-credit a:hover {
+  color: var(--cyan);
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 56px;
+  }
+
+  .grid--3,
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --gutter: 16px;
+  }
+
+  .brand span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .button-gradient::before {
+    animation: none;
+  }
+}
