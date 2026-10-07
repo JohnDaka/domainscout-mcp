@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "domainscout": {
+      "command": "npx",
+      "args": ["-y", "@dakaio/domainscout-mcp@1.2.0"],
+      "env": {
+        "DOMAINSCOUT_TLDS": "${user_config.tlds}",
+        "DOMAINSCOUT_NAMECOM_USERNAME": "${user_config.namecom_username}",
+        "DOMAINSCOUT_NAMECOM_TOKEN": "${user_config.namecom_token}",
+        "DOMAINSCOUT_CLOUDFLARE_ACCOUNT_ID": "${user_config.cloudflare_account_id}",
+        "DOMAINSCOUT_CLOUDFLARE_API_TOKEN": "${user_config.cloudflare_api_token}",
+        "DOMAINSCOUT_SPACESHIP_API_KEY": "${user_config.spaceship_api_key}",
+        "DOMAINSCOUT_SPACESHIP_API_SECRET": "${user_config.spaceship_api_secret}",
+        "DOMAINSCOUT_PORKBUN_API_KEY": "${user_config.porkbun_api_key}",
+        "DOMAINSCOUT_PORKBUN_SECRET_KEY": "${user_config.porkbun_secret_key}"
+      }
+    }
+  }
+}

@@ -10,6 +10,8 @@
       "site/**/*.mjs",
       "site/**/*.css",
       "*.json",
+      ".claude-plugin/*.json",
+      "plugin/**/*.json",
       "*.ts"
     ]
   },

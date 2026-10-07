@@ -1,0 +1,80 @@
+{
+  "name": "domainscout",
+  "displayName": "DomainScout",
+  "version": "1.2.0",
+  "description": "Domain research for AI agents: brainstorm hundreds of names and check them all in one call, with prices and where to buy.",
+  "author": {
+    "name": "dakaio.com",
+    "url": "https://dakaio.com"
+  },
+  "homepage": "https://domainscout.dakaio.com",
+  "repository": "https://github.com/JohnDaka/domainscout-mcp",
+  "license": "MIT",
+  "keywords": ["domains", "domain search", "domain availability", "naming", "rdap", "whois"],
+  "icon": "./icon.png",
+  "documentationUrl": "https://github.com/JohnDaka/domainscout-mcp/tree/main/plugin#readme",
+  "supportUrl": "https://github.com/JohnDaka/domainscout-mcp/issues",
+  "privacyPolicyUrl": "https://domainscout.dakaio.com/privacy.html",
+  "userConfig": {
+    "tlds": {
+      "type": "string",
+      "title": "Default TLDs",
+      "description": "TLDs tried for names given without one, comma-separated.",
+      "default": "com,net,ai"
+    },
+    "namecom_username": {
+      "type": "string",
+      "title": "Name.com username (optional)",
+      "description": "With a Name.com API token, free names are confirmed by Name.com, with exact prices.",
+      "default": ""
+    },
+    "namecom_token": {
+      "type": "string",
+      "title": "Name.com API token (optional)",
+      "description": "Account Settings → Security → API Tokens on name.com.",
+      "default": "",
+      "sensitive": true
+    },
+    "cloudflare_account_id": {
+      "type": "string",
+      "title": "Cloudflare account id (optional)",
+      "description": "With a Cloudflare API token, free names are confirmed by Cloudflare Registrar.",
+      "default": ""
+    },
+    "cloudflare_api_token": {
+      "type": "string",
+      "title": "Cloudflare API token (optional)",
+      "description": "A token with Registrar permission.",
+      "default": "",
+      "sensitive": true
+    },
+    "spaceship_api_key": {
+      "type": "string",
+      "title": "Spaceship API key (optional)",
+      "description": "With the key and its secret, free names are confirmed by Spaceship. Needs the domains:read scope.",
+      "default": "",
+      "sensitive": true
+    },
+    "spaceship_api_secret": {
+      "type": "string",
+      "title": "Spaceship API secret (optional)",
+      "description": "The secret of the Spaceship API key.",
+      "default": "",
+      "sensitive": true
+    },
+    "porkbun_api_key": {
+      "type": "string",
+      "title": "Porkbun API key (optional)",
+      "description": "With the key and its secret, free names are confirmed by Porkbun.",
+      "default": "",
+      "sensitive": true
+    },
+    "porkbun_secret_key": {
+      "type": "string",
+      "title": "Porkbun secret API key (optional)",
+      "description": "The secret key of the Porkbun API key.",
+      "default": "",
+      "sensitive": true
+    }
+  }
+}

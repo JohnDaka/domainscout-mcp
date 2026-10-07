@@ -12,7 +12,6 @@ import { VERSION } from '../config/version.js';
 import {
   MCP_PROGRESS_METHOD,
   McpContentType,
-  SERVER_NAME,
   TextSeparator,
   TOOL_CHECK_DOMAINS,
 } from '../constants.js';
@@ -28,6 +27,7 @@ import { hasAffiliateLinks, rejectionText, summarize } from '../report/summary.j
 import { TextReport } from '../report/text-report.js';
 import { DomainScout } from '../scout/domain-scout.js';
 import { checkDomainsTool } from './schemas.js';
+import { serverInfo } from './server-info.js';
 
 /** What a tool handler gets besides its arguments: the cancel signal, progress token and notifications. */
 type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
@@ -36,10 +36,7 @@ type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 export function createServer(config: Config, services: Partial<ScoutServices> = {}): McpServer {
   const scout = new DomainScout(config, services);
   const defaultTlds = config.defaultTlds.join(TextSeparator.List);
-  const server = new McpServer(
-    { name: SERVER_NAME, version: VERSION },
-    { instructions: toolInstructions(defaultTlds) },
-  );
+  const server = new McpServer(serverInfo(), { instructions: toolInstructions(defaultTlds) });
   server.registerTool(TOOL_CHECK_DOMAINS, checkDomainsTool(defaultTlds), async (input, extra) => {
     const { domains, tlds, confirm, details = false } = input;
     const options = { signal: extra.signal, onProgress: progressReporter(extra) };

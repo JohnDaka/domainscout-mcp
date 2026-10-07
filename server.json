@@ -4,6 +4,13 @@
   "title": "DomainScout",
   "description": "Domain research for AI agents: checks hundreds of names in one call, with prices and where to buy.",
   "websiteUrl": "https://domainscout.dakaio.com",
+  "icons": [
+    {
+      "src": "https://domainscout.dakaio.com/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
   "repository": {
     "url": "https://github.com/JohnDaka/domainscout-mcp",
     "source": "github"

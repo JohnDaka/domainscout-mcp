@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy - DomainScout</title>
+    <meta
+      name="description"
+      content="DomainScout's privacy policy: what the MCP server and this website collect, where the domain names you check go, and how long anything is kept."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://domainscout.dakaio.com/privacy.html" />
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#00030a" />
+
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/version.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="/" aria-label="DomainScout home">
+          <img src="/icon-192.png" alt="" width="32" height="32" />
+          <span>DomainScout</span>
+        </a>
+      </div>
+    </header>
+
+    <main id="main" class="section container legal">
+      <p class="eyebrow">DomainScout</p>
+      <h1>Privacy Policy</h1>
+      <p class="legal__updated">Last updated: October 8, 2026</p>
+
+      <p>
+        DomainScout is an open-source MCP server that checks whether domain names are free to register. It runs on
+        your own computer, inside your AI assistant (Claude, Cursor, VS Code or another MCP client). This policy covers
+        the DomainScout server, its Claude Desktop extension and Claude plugin, and this website. It is published by
+        <a href="https://dakaio.com" rel="noopener">dakaio.com</a>.
+      </p>
+
+      <h2>What we collect</h2>
+      <p>
+        Nothing. DomainScout has no account, no sign-up, no telemetry, no analytics and no server of its own. We never
+        receive the domain names you check, your conversations with your assistant, or your registrar API keys.
+      </p>
+
+      <h2>How the server uses your data</h2>
+      <p>
+        To answer a check, the server on your computer sends the domain names you asked about, and nothing else, to
+        the services that know the answer:
+      </p>
+      <ul>
+        <li>your DNS resolver, the one your computer already uses, or the DNS servers you set;</li>
+        <li>the registry of each domain's top-level domain, over RDAP, or WHOIS where the registry has no RDAP;</li>
+        <li>
+          IANA, for the public list of which registry serves which top-level domain (a download: no domain names are
+          sent);
+        </li>
+        <li>
+          two public price lists: the Porkbun price API and cfdomainpricing.com, a community mirror of Cloudflare's
+          prices (also downloads, with no domain names); you can turn them off with
+          <code>DOMAINSCOUT_PRICES=off</code>;
+        </li>
+        <li>
+          the APIs of the registrars whose keys you set (Name.com, Cloudflare, Spaceship, Porkbun), only if you set
+          them, to confirm that a free-looking domain is free and get its exact price.
+        </li>
+      </ul>
+
+      <h2>Storage</h2>
+      <p>
+        The server keeps recent answers in memory for a short time, so it doesn't ask the same question twice, and
+        forgets them when it stops. It writes nothing to disk. Registrar API keys stay in your MCP client's settings:
+        Claude Desktop and Claude Code keep keys marked as sensitive in your system's secure storage. Each key is sent
+        only to its own registrar's API.
+      </p>
+
+      <h2>Third-party sharing</h2>
+      <p>
+        We don't sell, share or receive your data. The services listed above see the requests your computer sends
+        them, as with any website you visit, under their own privacy policies. Buy links take you to a registrar's
+        website; some are affiliate links, which tell the registrar that you came from DomainScout. Affiliate links
+        never change which registrars are shown or their order, and <code>DOMAINSCOUT_AFFILIATE=off</code> turns them
+        off.
+      </p>
+
+      <h2>Data retention</h2>
+      <p>
+        The server keeps nothing after it stops. This website sets no cookies and runs no analytics. It is served
+        through Cloudflare, and its web server keeps standard access logs (IP address, time, page requested) for
+        security and troubleshooting, which routine log rotation deletes automatically.
+      </p>
+
+      <h2>Children</h2>
+      <p>DomainScout is a developer tool and is not directed at children under 13.</p>
+
+      <h2>Changes</h2>
+      <p>
+        If this policy changes, the new version is published on this page with a new date. The history of every change
+        is public in the
+        <a href="https://github.com/JohnDaka/domainscout-mcp" rel="noopener">GitHub repository</a>.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about privacy: open an issue on
+        <a href="https://github.com/JohnDaka/domainscout-mcp/issues" rel="noopener">GitHub</a>. To report a security
+        problem privately, use the repository's
+        <a href="https://github.com/JohnDaka/domainscout-mcp/security" rel="noopener">Security tab</a>.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <p class="footer-credit">
+          © 2026 DomainScout · Made by
+          <a href="https://dakaio.com" target="_blank" rel="noopener"
+            ><img src="https://cdn.dakaio.com/dakaio-logo.webp" alt="" width="20" height="20" loading="lazy" decoding="async" />Dakaio.com</a
+          >
+        </p>
+        <nav aria-label="Project links">
+          <a href="/">Home</a>
+          <a href="https://github.com/JohnDaka/domainscout-mcp" rel="noopener">GitHub</a>
+          <a href="https://www.npmjs.com/package/@dakaio/domainscout-mcp" rel="noopener">npm</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

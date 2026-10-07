@@ -1,8 +1,15 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EnvVar, TOOL_CHECK_DOMAINS } from '../src/constants.js';
+import {
+  EnvVar,
+  ICON_URL,
+  SERVER_TITLE,
+  TOOL_CHECK_DOMAINS,
+  WEBSITE_URL,
+} from '../src/constants.js';
 import { DnsState, DomainStatus, RegistrarId } from '../src/core/types.js';
+import { SERVER_DESCRIPTION, ToolText } from '../src/messages/index.js';
 import { toPriceList } from '../src/pricing/price.js';
 import { createServer, startServer } from '../src/server/server.js';
 import { fakeServices, testConfig } from './fakes.js';
@@ -18,13 +25,28 @@ async function connect(lookups: Parameters<typeof fakeServices>[0] = {}) {
 }
 
 describe('MCP server', () => {
+  it('introduces itself with a title, a description, its website and icons', async () => {
+    const client = await connect();
+    const info = client.getServerVersion();
+    expect(info?.title).toBe(SERVER_TITLE);
+    expect(info?.description).toBe(SERVER_DESCRIPTION);
+    expect(info?.websiteUrl).toBe(WEBSITE_URL);
+    const [packaged, website] = info?.icons ?? [];
+    expect(packaged?.src).toMatch(/^data:image\/png;base64,iVBOR/);
+    expect(website?.src).toBe(ICON_URL);
+  });
+
   it('lists the check_domains tool with input and output schemas', async () => {
     const client = await connect();
     const { tools } = await client.listTools();
     const tool = tools.find((candidate) => candidate.name === TOOL_CHECK_DOMAINS);
     expect(tool?.inputSchema.properties).toHaveProperty('domains');
     expect(tool?.outputSchema?.properties).toHaveProperty('results');
-    expect(tool?.annotations?.readOnlyHint).toBe(true);
+    expect(tool?.annotations).toMatchObject({
+      title: ToolText.Title,
+      readOnlyHint: true,
+      destructiveHint: false,
+    });
   });
 
   it('checks names and returns text plus structured results that match the schema', async () => {

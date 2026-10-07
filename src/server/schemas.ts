@@ -91,6 +91,14 @@ export function checkDomainsTool(defaultTlds: string) {
       warnings: z.array(z.string()).describe(ToolText.WarningsInfo),
       disclosure: z.string().optional(),
     },
-    annotations: { readOnlyHint: true, openWorldHint: true },
+    // Looks things up and changes nothing, asks the same question again on a repeat call, and
+    // talks to DNS, the registries and registrars on the internet.
+    annotations: {
+      title: ToolText.Title,
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
   };
 }

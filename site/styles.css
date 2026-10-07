@@ -851,7 +851,33 @@ tr:last-child td {
 
 .site-footer nav {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+/* The privacy policy: one readable column of text. */
+.legal {
+  max-width: 760px;
+}
+
+.legal h2 {
+  margin-top: 40px;
+  font-size: 24px;
+}
+
+.legal p,
+.legal li {
+  color: var(--body);
+  line-height: 1.65;
+}
+
+.legal li + li {
+  margin-top: 8px;
+}
+
+.legal__updated {
+  margin-top: 12px;
+  font-size: 14px;
 }
 
 .site-footer a {

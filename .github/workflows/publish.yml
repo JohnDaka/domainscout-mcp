@@ -1,7 +1,8 @@
 name: publish
 
 # A `v<version>` tag, pushed by `npm run release` from main. The version is package.json's, and
-# manifest.json and server.json must say the same. One run puts the release everywhere:
+# manifest.json, server.json and the Claude plugin (plugin/) must say the same. The plugin itself
+# needs no step: Claude's plugin directory reads it from main. One run puts the release everywhere:
 #   1. npm, with trusted publishing;
 #   2. a GitHub Release with the Claude Desktop extension, which the landing page's
 #      "Add to Claude Desktop" button downloads;
@@ -47,7 +48,9 @@ jobs:
           for other in \
             "manifest.json:$(node -p "require('./manifest.json').version")" \
             "server.json:$(node -p "require('./server.json').version")" \
-            "server.json packages:$(node -p "require('./server.json').packages[0].version")"; do
+            "server.json packages:$(node -p "require('./server.json').packages[0].version")" \
+            "plugin.json:$(node -p "require('./plugin/.claude-plugin/plugin.json').version")" \
+            "plugin .mcp.json:$(node -p "require('./plugin/.mcp.json').mcpServers.domainscout.args.at(-1).split('@').at(-1)")"; do
             test "${other##*:}" = "${version}" || { echo "::error::${other%:*} says ${other##*:}, package.json says ${version}"; exit 1; }
           done
           echo "NAME=$(node -p "require('./package.json').name")" >> "$GITHUB_ENV"
@@ -69,8 +72,9 @@ jobs:
       # runs it with its own Node.
       - name: Build the Claude Desktop extension
         run: |
-          mkdir bundle
+          mkdir -p bundle/assets
           cp -r dist package.json package-lock.json LICENSE README.md manifest.json bundle/
+          cp assets/icon-128.png bundle/assets/
           cp site/icon-512.png bundle/icon.png
           (cd bundle && npm ci --omit=dev --ignore-scripts)
           npx -y @anthropic-ai/mcpb@2 validate bundle/manifest.json
