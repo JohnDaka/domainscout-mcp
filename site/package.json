@@ -1,6 +1,6 @@
 {
   "name": "domainscout-site",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "The DomainScout landing page at domainscout.dakaio.com: plain HTML, CSS and JS, no build",
   "author": "dakaio.com",
   "private": true,
