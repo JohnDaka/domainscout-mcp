@@ -5,9 +5,10 @@ coverage/
 .env
 ROADMAP.md
 
-# Local folders and agent settings
+# Local folders and agent settings. Of the scripts, only the release command is shared.
 /docs
-/scripts
+/scripts/*
+!/scripts/release.mjs
 
 # Local editor and agent settings (the site preview server lives here).
 .claude/

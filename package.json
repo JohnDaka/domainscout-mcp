@@ -37,7 +37,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "verify": "npm run typecheck && npm run lint && npm run coverage",
-    "prepublishOnly": "npm run verify && npm run build"
+    "prepublishOnly": "npm run verify && npm run build",
+    "release": "node scripts/release.mjs"
   },
   "engines": {
     "node": ">=20"
