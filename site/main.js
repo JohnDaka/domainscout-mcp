@@ -283,11 +283,70 @@ class NavFrame {
 // ── Start ────────────────────────────────────────────────────────────────────
 
 /** Every enhancement, by the elements it takes over. */
+// ── Download button ──────────────────────────────────────────────────────────
+
+/** Links that download the Claude Desktop extension. */
+const DOWNLOAD_SELECTOR = '[data-download]';
+/** The note that says what to do with the downloaded file. */
+const DOWNLOAD_HINT_SELECTOR = '[data-download-hint]';
+/** The button's label inside the link. */
+const LABEL_SELECTOR = 'span';
+/** Marks a button whose download is starting: a spinner before the label. */
+const DOWNLOADING_CLASS = 'is-downloading';
+/** How long the button says "Downloading…" and ignores further clicks. */
+const DOWNLOADING_MS = 4000;
+/** The label while the download starts. */
+const DOWNLOADING_LABEL = 'Downloading…';
+/** Tells assistive technology that the button is busy. */
+const ARIA_BUSY = 'aria-busy';
+
+/**
+ * The "Add to Claude Desktop" button. Claude Desktop installs extensions from a downloaded .mcpb
+ * file; unlike Cursor and VS Code it has no install link. So the button shows that the download
+ * has started, keeps its width, ignores repeated clicks for a moment and points to the file.
+ */
+class DownloadButton {
+  constructor(link) {
+    this.link = link;
+    this.label = link.querySelector(LABEL_SELECTOR) ?? link;
+    this.idleLabel = this.label.textContent;
+    this.hint = document.querySelector(DOWNLOAD_HINT_SELECTOR);
+    this.busy = false;
+  }
+
+  mount() {
+    this.link.addEventListener(DomEvent.Click, (event) => this.start(event));
+  }
+
+  /** The browser downloads the file; the button only reports it. */
+  start(event) {
+    if (this.busy) {
+      event.preventDefault();
+      return;
+    }
+    this.busy = true;
+    this.link.style.minWidth = `${this.link.offsetWidth}px`;
+    this.link.classList.add(DOWNLOADING_CLASS);
+    this.link.setAttribute(ARIA_BUSY, ARIA_TRUE);
+    this.label.textContent = DOWNLOADING_LABEL;
+    if (this.hint) this.hint.hidden = false;
+    setTimeout(() => this.finish(), DOWNLOADING_MS);
+  }
+
+  finish() {
+    this.busy = false;
+    this.link.classList.remove(DOWNLOADING_CLASS);
+    this.link.removeAttribute(ARIA_BUSY);
+    this.label.textContent = this.idleLabel;
+  }
+}
+
 const ENHANCEMENTS = new Map()
   .set(TABS_SELECTOR, Tabs)
   .set(COPY_SELECTOR, CopyButton)
   .set(FAQ_SELECTOR, FaqCard)
-  .set(NAV_FRAME_SELECTOR, NavFrame);
+  .set(NAV_FRAME_SELECTOR, NavFrame)
+  .set(DOWNLOAD_SELECTOR, DownloadButton);
 
 for (const [selector, Enhancement] of ENHANCEMENTS) {
   for (const element of document.querySelectorAll(selector)) new Enhancement(element).mount();

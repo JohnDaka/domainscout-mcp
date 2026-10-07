@@ -33,6 +33,9 @@ import {
 import { formatMoney } from './money.js';
 import { hasAffiliateLinks } from './summary.js';
 
+/** Words of a sentence are separated by single spaces. */
+const WORD_SEPARATOR = ' ';
+
 /** Evidence results that mean a source failed. */
 const ERROR_RESULTS: ReadonlySet<EvidenceResult> = new Set([LookupState.Error, ConfirmState.Error]);
 
@@ -94,7 +97,7 @@ export class TextReport {
     return [
       ReportHeading.Available,
       ...this.free.flatMap((result) => this.fullEntry(result)),
-      ReportText.AvailableFootnote,
+      ...this.wrappedText(ReportText.AvailableFootnote),
     ];
   }
 
@@ -103,8 +106,8 @@ export class TextReport {
     return [
       ReportHeading.AvailableCompact,
       ...this.free.map((result) => this.compactEntry(result)),
-      ReportText.AvailableFootnote,
-      ReportText.CompactFootnote,
+      ...this.wrappedText(ReportText.AvailableFootnote),
+      ...this.wrappedText(ReportText.CompactFootnote),
     ];
   }
 
@@ -183,27 +186,46 @@ export class TextReport {
    * longer than that still gets a line of its own).
    */
   private wrappedList(heading: string, items: readonly string[]): string[] {
+    const pieces = items.map((item, index) =>
+      index < items.length - 1 ? `${item}${LIST_ITEM_END}` : item,
+    );
+    return this.wrapWords([heading, ...pieces], CONTINUATION_INDENT);
+  }
+
+  /** A sentence or a paragraph on lines no wider than REPORT_LINE_WIDTH. */
+  private wrappedText(text: string, indent = ''): string[] {
+    return this.wrapWords(text.split(WORD_SEPARATOR), indent);
+  }
+
+  /**
+   * Words joined by spaces on lines no wider than REPORT_LINE_WIDTH; a longer word, such as a URL,
+   * keeps a line of its own. Lines after the first start with `indent`.
+   */
+  private wrapWords(words: readonly string[], indent: string): string[] {
     const lines: string[] = [];
-    let line = heading;
-    for (const [index, item] of items.entries()) {
-      const piece = index < items.length - 1 ? `${item}${LIST_ITEM_END}` : item;
-      const fits = line.length + 1 + piece.length <= REPORT_LINE_WIDTH;
-      if (fits || line === heading) {
-        line = `${line} ${piece}`;
-        continue;
+    let line = '';
+    for (const word of words) {
+      if (!line) {
+        line = word;
+      } else if (line.length + WORD_SEPARATOR.length + word.length <= REPORT_LINE_WIDTH) {
+        line = `${line}${WORD_SEPARATOR}${word}`;
+      } else {
+        lines.push(line);
+        line = `${indent}${word}`;
       }
-      lines.push(line);
-      line = `${CONTINUATION_INDENT}${piece}`;
     }
-    lines.push(line);
+    if (line) lines.push(line);
     return lines;
   }
 
   /** Each unverified domain, with what went wrong. */
   private unknownSection(): Section {
     if (this.unknown.length === 0) return [];
-    const lines = this.unknown.map((result) =>
-      ReportLine.failure(result.display, this.failureReason(result)),
+    const lines = this.unknown.flatMap((result) =>
+      this.wrappedText(
+        ReportLine.failure(result.display, this.failureReason(result)),
+        CONTINUATION_INDENT,
+      ),
     );
     return [ReportHeading.Unknown, ...lines];
   }
@@ -223,7 +245,9 @@ export class TextReport {
 
   private skippedSection(): Section {
     if (this.report.invalid.length === 0) return [];
-    const lines = this.report.invalid.map((entry) => ReportLine.invalid(entry.input, entry.reason));
+    const lines = this.report.invalid.flatMap((entry) =>
+      this.wrappedText(ReportLine.invalid(entry.input, entry.reason), CONTINUATION_INDENT),
+    );
     return [ReportHeading.Skipped, ...lines];
   }
 
@@ -231,12 +255,14 @@ export class TextReport {
     if (this.report.warnings.length === 0) return [];
     return [
       ReportHeading.Notes,
-      ...this.report.warnings.map((warning) => ReportLine.note(warning)),
+      ...this.report.warnings.flatMap((warning) =>
+        this.wrappedText(ReportLine.note(warning), CONTINUATION_INDENT),
+      ),
     ];
   }
 
   private disclosureSection(): Section {
-    return hasAffiliateLinks(this.report) ? [AFFILIATE_DISCLOSURE] : [];
+    return hasAffiliateLinks(this.report) ? this.wrappedText(AFFILIATE_DISCLOSURE) : [];
   }
 
   /** "2 reserved", only when there are any. */

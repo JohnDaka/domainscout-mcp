@@ -335,6 +335,35 @@ h3 {
   border-color: rgba(60, 200, 255, 0.4);
 }
 
+/* "Downloading…": a spinner before the label; main.js keeps the button's width. */
+.button-gradient.is-downloading span {
+  flex: 1;
+  justify-content: center;
+  gap: 10px;
+}
+
+.button-gradient.is-downloading span::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--heading);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* What to do with the downloaded extension. */
+.download-hint {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--body);
+}
+
+.download-hint strong {
+  color: var(--heading);
+  font-weight: 600;
+}
+
 /* Under the install buttons: the other ways in. */
 .also {
   display: flex;
@@ -890,6 +919,11 @@ tr:last-child td {
   }
 
   .button-gradient::before {
+    animation: none;
+  }
+
+  /* The spinner stands still; the label still says "Downloading…". */
+  .button-gradient.is-downloading span::before {
     animation: none;
   }
 }
