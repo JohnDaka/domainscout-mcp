@@ -1,6 +1,10 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "includes": [
       "src/**",
@@ -9,6 +13,8 @@
       "site/**/*.js",
       "site/**/*.mjs",
       "site/**/*.css",
+      "ui/**/*.js",
+      "ui/**/*.css",
       "*.json",
       ".claude-plugin/*.json",
       "plugin/**/*.json",
@@ -31,19 +37,29 @@
     }
   },
   "css": {
-    "formatter": { "quoteStyle": "single" }
+    "formatter": {
+      "quoteStyle": "single"
+    }
   },
   "linter": {
     "enabled": true,
     "rules": {
       "preset": "recommended",
-      "style": { "noMagicNumbers": "error" }
+      "style": {
+        "noMagicNumbers": "error"
+      }
     }
   },
   "overrides": [
     {
       "includes": ["test/**"],
-      "linter": { "rules": { "style": { "noMagicNumbers": "off" } } }
+      "linter": {
+        "rules": {
+          "style": {
+            "noMagicNumbers": "off"
+          }
+        }
+      }
     }
   ]
 }

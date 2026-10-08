@@ -3,19 +3,24 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   FILE_ENCODING,
   LEGACY_RESOURCE_URI_KEY,
+  RESULTS_UI_DIR,
   RESULTS_UI_MIME_TYPE,
   RESULTS_UI_NAME,
-  RESULTS_UI_PATH,
   RESULTS_UI_TITLE,
   RESULTS_UI_URI,
+  ResultsUiFile,
 } from '../constants.js';
 
-/** The card in the package, found relative to this module both in src/ and in the built dist/. */
-const RESULTS_UI_FILE_URL = new URL(RESULTS_UI_PATH, import.meta.url);
+/** The card's folder, found relative to this module both in src/ and in the built dist/. */
+const RESULTS_UI_DIR_URL = new URL(RESULTS_UI_DIR, import.meta.url);
+
+/** The tags in results.html that the stylesheet and the script take the place of. */
+const STYLESHEET_TAG = `<link rel="stylesheet" href="${ResultsUiFile.Styles}" />`;
+const SCRIPT_TAG = `<script src="${ResultsUiFile.Script}"></script>`;
 
 /** What the results card is, for resources/list. */
 const RESULTS_UI_DESCRIPTION =
-  'Interactive card for check_domains results: the free domains with prices and buy buttons.';
+  'Interactive panel for check_domains results: the free domains with prices and buy buttons.';
 
 /**
  * What the tool says about its card: hosts that support MCP Apps render it under each call,
@@ -32,7 +37,24 @@ export const RESULTS_UI_TOOL_META = {
  */
 const RESULTS_UI_CONTENT_META = { ui: { prefersBorder: false } };
 
-/** Offers the results card as a resource; it is read from the package when a host asks for it. */
+function readUiFile(name: string): string {
+  return readFileSync(new URL(name, RESULTS_UI_DIR_URL), FILE_ENCODING);
+}
+
+/**
+ * The card as one self-contained page: results.html with results.css and results.js inlined in
+ * place of their tags. The sources stay separate files, so Biome lints them like the site's.
+ * Replacer functions keep "$" in the sources from being read as replacement patterns.
+ */
+export function resultsPage(): string {
+  const styles = readUiFile(ResultsUiFile.Styles);
+  const script = readUiFile(ResultsUiFile.Script);
+  return readUiFile(ResultsUiFile.Page)
+    .replace(STYLESHEET_TAG, () => `<style>\n${styles}</style>`)
+    .replace(SCRIPT_TAG, () => `<script>\n${script}</script>`);
+}
+
+/** Offers the results card as a resource; it is put together when a host asks for it. */
 export function registerResultsUi(server: McpServer): void {
   server.registerResource(
     RESULTS_UI_NAME,
@@ -47,7 +69,7 @@ export function registerResultsUi(server: McpServer): void {
         {
           uri: RESULTS_UI_URI,
           mimeType: RESULTS_UI_MIME_TYPE,
-          text: readFileSync(RESULTS_UI_FILE_URL, FILE_ENCODING),
+          text: resultsPage(),
           _meta: RESULTS_UI_CONTENT_META,
         },
       ],

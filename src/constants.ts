@@ -53,8 +53,14 @@ export const RESULTS_UI_NAME = 'results-card';
 export const RESULTS_UI_TITLE = 'DomainScout results';
 /** The type MCP Apps hosts look for: an HTML page that talks to the host. */
 export const RESULTS_UI_MIME_TYPE = 'text/html;profile=mcp-app';
-/** The card in the package, relative to a module one folder below the package root. */
-export const RESULTS_UI_PATH = '../../ui/results.html';
+/** The card's folder in the package, relative to a module one folder below the package root. */
+export const RESULTS_UI_DIR = '../../ui/';
+/** The card's files: the page, and the stylesheet and script inlined into it. */
+export const ResultsUiFile = {
+  Page: 'results.html',
+  Styles: 'results.css',
+  Script: 'results.js',
+} as const;
 /**
  * The key older MCP Apps hosts read for a tool's card. Current ones read `_meta.ui.resourceUri`;
  * the tool sends both.

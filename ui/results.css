@@ -1,0 +1,466 @@
+/*
+  The results panel, as on the landing page (domainscout.dakaio.com): the panel, a summary line,
+  then the free domains as a list or as cards. Dark like the landing page by default, light when
+  the host or the visitor picks light.
+*/
+
+/*
+  Dark: the landing page's colors as they come out on screen. There the panel is 4% white over
+  the page's #00030a; here it sits on the host's own background, so the result is set solid:
+  #0a0d14, with the landing page's 8% white border and 6% white dividers on top of it.
+*/
+:root {
+  --ds-panel: #0a0d14;
+  --ds-panel-border: #1e2027;
+  --ds-raised: #12151c;
+  --ds-divider: #181b21;
+  --ds-heading: #ffffff;
+  --ds-body: #c7c9ea;
+  --ds-muted: #a3a6d1;
+  --ds-cyan: #3cc8ff;
+  --ds-violet: #bd5fff;
+  --ds-teal: #11edda;
+  --ds-amber: #facc15;
+  --ds-orange: #fb923c;
+  --ds-accent-fill: rgba(60, 200, 255, 0.14);
+  --ds-font: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  --ds-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --ds-radius: 16px;
+  --ds-radius-control: 8px;
+}
+
+:root[data-theme='light'] {
+  --ds-panel: #ffffff;
+  --ds-panel-border: rgba(15, 18, 40, 0.1);
+  --ds-raised: rgba(15, 18, 40, 0.045);
+  --ds-divider: rgba(15, 18, 40, 0.08);
+  --ds-heading: #0f1228;
+  --ds-body: #3b3f63;
+  --ds-muted: #5e6288;
+  --ds-cyan: #0a74a6;
+  --ds-violet: #7b2fc9;
+  --ds-teal: #077a70;
+  --ds-amber: #8a6500;
+  --ds-orange: #b4520f;
+  --ds-accent-fill: rgba(10, 116, 166, 0.09);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+}
+
+body {
+  padding: 1px;
+  color: var(--ds-body);
+  font: 14px / 1.5 var(--ds-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--ds-cyan);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Panel and header ─────────────────────────────────────────────────────────────────────── */
+
+.panel {
+  padding: 20px 24px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius);
+  background: var(--ds-panel);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+/* "DOMAINSCOUT  check_domains", as above the results on the landing page. */
+.tool {
+  margin: 0;
+  font-family: var(--ds-mono);
+  font-size: 13px;
+  color: var(--ds-cyan);
+}
+
+.tool__who {
+  margin-right: 8px;
+  font-family: var(--ds-font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+/* A button group: icons only, the pressed one raised. */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-control);
+  background: var(--ds-raised);
+}
+
+.segmented__option {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ds-muted);
+}
+
+.segmented__option:hover {
+  color: var(--ds-heading);
+}
+
+.segmented__option[aria-pressed='true'] {
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
+}
+
+.summary {
+  margin: 0 0 6px;
+  color: var(--ds-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status {
+  margin: 0;
+  color: var(--ds-muted);
+}
+
+.progress {
+  height: 3px;
+  margin-top: 12px;
+  border-radius: 3px;
+  background: var(--ds-divider);
+  overflow: hidden;
+}
+
+.progress::after {
+  content: '';
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ds-cyan), var(--ds-violet));
+  animation: slide 1.2s ease-in-out infinite;
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* ── A free domain: a row in the list, a card in the grid ─────────────────────────────────── */
+
+.results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.results--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  align-items: start;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ds-divider);
+}
+
+.results--grid .result {
+  gap: 6px 12px;
+  padding: 14px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: 12px;
+  background: var(--ds-raised);
+}
+
+.result__domain {
+  font-family: var(--ds-mono);
+  font-size: 14px;
+  color: var(--ds-heading);
+  overflow-wrap: anywhere;
+}
+
+/* The price range, and "All N registrars" at the end of the same line. */
+.result__line {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+/* In a card the price and "All N registrars" stack, so every card has the same shape. */
+.results--grid .result__line {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.result__price {
+  font-size: 13px;
+  color: var(--ds-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  align-self: center;
+  padding: 2px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ds-teal);
+}
+
+.pill--premium {
+  color: var(--ds-amber);
+}
+
+/* "All N registrars": opens every registrar under the domain. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--ds-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.toggle:hover {
+  color: var(--ds-heading);
+}
+
+.registrar .icon {
+  width: 12px;
+  height: 12px;
+  color: var(--ds-muted);
+}
+
+.toggle .icon {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.15s ease;
+}
+
+.toggle[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+.results--grid .toggle {
+  margin-left: 0;
+}
+
+.registrars {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+  One registrar: the whole row is the link. Name, price and arrow sit in three columns, so the
+  prices and the arrows line up from row to row.
+*/
+.registrar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--ds-radius-control);
+  color: var(--ds-body);
+  font-size: 13px;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.registrar:hover,
+.registrar:focus-visible {
+  background: var(--ds-accent-fill);
+  color: var(--ds-heading);
+}
+
+.registrar:focus-visible {
+  outline: 2px solid var(--ds-cyan);
+  outline-offset: -2px;
+}
+
+.registrar__price {
+  color: var(--ds-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.registrar:hover .registrar__price,
+.registrar:hover .icon {
+  color: var(--ds-cyan);
+}
+
+.more {
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+
+.more:hover {
+  color: var(--ds-heading);
+}
+
+/* ── Taken, reserved and unverified names ─────────────────────────────────────────────────── */
+
+.group {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ds-divider);
+}
+
+.group__label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 2px 10px;
+  border: 1px solid var(--ds-divider);
+  border-radius: 999px;
+  font-family: var(--ds-mono);
+  font-size: 12px;
+  color: var(--ds-muted);
+  overflow-wrap: anywhere;
+}
+
+.chip--dropping {
+  border-color: currentColor;
+  color: var(--ds-cyan);
+}
+
+.chip--reserved {
+  color: var(--ds-amber);
+}
+
+.chip--unknown {
+  color: var(--ds-orange);
+}
+
+.notes {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+
+.footnote {
+  margin: 16px 0 0;
+  color: var(--ds-muted);
+  font-size: 11px;
+}
+
+/* Text for screen readers only. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+
+  .registrar,
+  .toggle .icon {
+    transition: none;
+  }
+}

@@ -51,8 +51,12 @@ describe('MCP server', () => {
     const { contents } = await client.readResource({ uri: RESULTS_UI_URI });
     const [card] = contents as Array<{ mimeType?: string; text?: string }>;
     expect(card?.mimeType).toBe(RESULTS_UI_MIME_TYPE);
+    // One self-contained page: the stylesheet and the script inlined, nothing to fetch.
     expect(card?.text).toContain('ui/initialize');
     expect(card?.text).toContain('ui/notifications/tool-result');
+    expect(card?.text).toContain('<style>');
+    expect(card?.text).not.toContain('href="results.css"');
+    expect(card?.text).not.toContain('src="results.js"');
   });
 
   it('lists the check_domains tool with input and output schemas', async () => {
