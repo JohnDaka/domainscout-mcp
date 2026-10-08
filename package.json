@@ -19,6 +19,7 @@
   "files": [
     "dist",
     "assets/icon-128.png",
+    "ui/results.html",
     "README.md",
     "LICENSE"
   ],

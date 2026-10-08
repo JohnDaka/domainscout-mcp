@@ -26,6 +26,7 @@ import {
 import { hasAffiliateLinks, rejectionText, summarize } from '../report/summary.js';
 import { TextReport } from '../report/text-report.js';
 import { DomainScout } from '../scout/domain-scout.js';
+import { RESULTS_UI_TOOL_META, registerResultsUi } from './results-ui.js';
 import { checkDomainsTool } from './schemas.js';
 import { serverInfo } from './server-info.js';
 import { listToolsWithPlainSchemas } from './tool-list.js';
@@ -38,7 +39,8 @@ export function createServer(config: Config, services: Partial<ScoutServices> = 
   const scout = new DomainScout(config, services);
   const defaultTlds = config.defaultTlds.join(TextSeparator.List);
   const server = new McpServer(serverInfo(), { instructions: toolInstructions(defaultTlds) });
-  const tool = checkDomainsTool(defaultTlds);
+  const tool = { ...checkDomainsTool(defaultTlds), _meta: RESULTS_UI_TOOL_META };
+  registerResultsUi(server);
   server.registerTool(TOOL_CHECK_DOMAINS, tool, async (input, extra) => {
     const { domains, tlds, confirm, details = false } = input;
     const options = { signal: extra.signal, onProgress: progressReporter(extra) };

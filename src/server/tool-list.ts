@@ -20,6 +20,8 @@ export interface ListedTool {
   inputSchema: ZodRawShape;
   outputSchema: ZodRawShape;
   annotations: Tool['annotations'];
+  /** Extra facts for clients, such as the MCP Apps card that shows the result. */
+  _meta?: Tool['_meta'];
 }
 
 /**
@@ -42,6 +44,7 @@ function toolDefinition(tool: ListedTool): Tool {
     outputSchema: plainJsonSchema(tool.outputSchema, SchemaIo.Output),
     annotations: tool.annotations,
     execution: EXECUTION,
+    _meta: tool._meta,
   };
 }
 

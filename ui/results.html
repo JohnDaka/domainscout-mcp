@@ -1,0 +1,681 @@
+<!doctype html>
+<!--
+  DomainScout's results card for hosts that support MCP Apps (Claude, VS Code, ChatGPT and
+  others). The host renders this page in a sandboxed iframe under a check_domains call and passes
+  the call's result in. Self-contained on purpose: no build step, and nothing loaded from
+  elsewhere, so a strict content security policy still lets it run.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DomainScout results</title>
+    <style>
+      /* The host's theme variables where it sends them, these defaults where it doesn't. */
+      :root {
+        --ds-text: var(--color-text-primary, #1f1e1d);
+        --ds-text-muted: var(--color-text-secondary, #6b6a68);
+        --ds-surface: var(--color-background-secondary, #f5f4f1);
+        --ds-card: var(--color-background-primary, #ffffff);
+        --ds-border: var(--color-border-tertiary, rgba(31, 30, 29, 0.12));
+        --ds-border-strong: var(--color-border-secondary, rgba(31, 30, 29, 0.24));
+        --ds-success: var(--color-text-success, #2f7a3b);
+        --ds-success-bg: var(--color-background-success, #e6f3e7);
+        --ds-warning: var(--color-text-warning, #8a5a00);
+        --ds-warning-bg: var(--color-background-warning, #fbf0d9);
+        --ds-info: var(--color-text-info, #1f5fa8);
+        --ds-info-bg: var(--color-background-info, #e5effa);
+        --ds-accent: #6d4aff;
+        --ds-radius: var(--border-radius-md, 8px);
+        --ds-radius-lg: var(--border-radius-lg, 12px);
+        --ds-font: var(--font-sans, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+        --ds-mono: var(--font-mono, ui-monospace, 'SF Mono', Consolas, monospace);
+      }
+
+      :root[data-theme='dark'] {
+        --ds-text: var(--color-text-primary, #ecebe8);
+        --ds-text-muted: var(--color-text-secondary, #a3a19c);
+        --ds-surface: var(--color-background-secondary, #2a2927);
+        --ds-card: var(--color-background-primary, #1f1e1d);
+        --ds-border: var(--color-border-tertiary, rgba(236, 235, 232, 0.12));
+        --ds-border-strong: var(--color-border-secondary, rgba(236, 235, 232, 0.24));
+        --ds-success: var(--color-text-success, #7fcf8a);
+        --ds-success-bg: var(--color-background-success, #1f3a24);
+        --ds-warning: var(--color-text-warning, #f0c062);
+        --ds-warning-bg: var(--color-background-warning, #3d3018);
+        --ds-info: var(--color-text-info, #8ab8f0);
+        --ds-info-bg: var(--color-background-info, #1c2f47);
+        --ds-accent: #a48bff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        background: transparent;
+      }
+
+      body {
+        padding: 4px 2px 8px;
+        color: var(--ds-text);
+        font: 14px/1.5 var(--ds-font);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--ds-accent);
+        outline-offset: 2px;
+      }
+
+      .status {
+        margin: 8px 0;
+        color: var(--ds-text-muted);
+      }
+
+      .progress {
+        height: 3px;
+        margin-top: 10px;
+        border-radius: 3px;
+        background: var(--ds-border);
+        overflow: hidden;
+      }
+
+      .progress::after {
+        content: '';
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--ds-accent);
+        animation: slide 1.2s ease-in-out infinite;
+      }
+
+      @keyframes slide {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(250%);
+        }
+      }
+
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .tile {
+        padding: 10px 12px;
+        border-radius: var(--ds-radius);
+        background: var(--ds-surface);
+      }
+
+      .tile__label {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ds-text-muted);
+      }
+
+      .tile__value {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .tile__value--free {
+        color: var(--ds-success);
+      }
+
+      .section-title {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin: 18px 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .section-title span {
+        font-weight: 400;
+        color: var(--ds-text-muted);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 8px;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        padding: 12px 14px;
+        border: 1px solid var(--ds-border);
+        border-radius: var(--ds-radius-lg);
+        background: var(--ds-card);
+      }
+
+      .card__domain {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .badge {
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+        background: var(--ds-surface);
+        color: var(--ds-text-muted);
+      }
+
+      .badge--success {
+        background: var(--ds-success-bg);
+        color: var(--ds-success);
+      }
+
+      .badge--warning {
+        background: var(--ds-warning-bg);
+        color: var(--ds-warning);
+      }
+
+      .price {
+        margin: 0;
+      }
+
+      .price__amount {
+        font-size: 20px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .price__unit,
+      .price__renewal {
+        color: var(--ds-text-muted);
+        font-size: 12px;
+      }
+
+      .price__renewal {
+        display: block;
+      }
+
+      .buy {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: auto;
+      }
+
+      .button {
+        padding: 5px 10px;
+        border: 1px solid var(--ds-border-strong);
+        border-radius: var(--ds-radius);
+        background: transparent;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .button:hover {
+        background: var(--ds-surface);
+      }
+
+      .button--primary {
+        border-color: transparent;
+        background: var(--ds-accent);
+        color: #ffffff;
+      }
+
+      .button--primary:hover {
+        background: var(--ds-accent);
+        filter: brightness(1.08);
+      }
+
+      .button--quiet {
+        border-color: transparent;
+        color: var(--ds-text-muted);
+      }
+
+      .more {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ds-text-muted);
+      }
+
+      .link {
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--ds-info);
+        font-size: 12px;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .chip {
+        padding: 2px 8px;
+        border-radius: var(--ds-radius);
+        background: var(--ds-surface);
+        color: var(--ds-text-muted);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .chip--taken {
+        text-decoration: line-through;
+        text-decoration-color: var(--ds-border-strong);
+      }
+
+      .chip--dropping {
+        background: var(--ds-info-bg);
+        color: var(--ds-info);
+        text-decoration: none;
+      }
+
+      .show-all {
+        margin-top: 8px;
+      }
+
+      .notes {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ds-text-muted);
+        font-size: 12px;
+      }
+
+      .footnote {
+        margin: 16px 0 0;
+        color: var(--ds-text-muted);
+        font-size: 11px;
+      }
+
+      @media (max-width: 420px) {
+        .tiles {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .progress::after {
+          animation: none;
+          width: 100%;
+          opacity: 0.4;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app" aria-live="polite">
+      <p class="status">Checking domains…</p>
+      <div class="progress" aria-hidden="true"></div>
+    </main>
+
+    <script>
+      // ── The MCP Apps protocol: JSON-RPC 2.0 over postMessage with the host ─────────────────────
+
+      /** The MCP Apps protocol version this card speaks. */
+      const PROTOCOL_VERSION = '2026-01-26';
+      /** How this card introduces itself to the host. */
+      const APP_INFO = { name: 'DomainScout results', version: '1.0.0' };
+      /** The JSON-RPC version of every message. */
+      const JSONRPC = '2.0';
+      /** Where messages go: the host is the frame that embeds this card. */
+      const ANY_ORIGIN = '*';
+
+      /** The protocol's methods this card sends or handles. */
+      const Method = {
+        Initialize: 'ui/initialize',
+        Initialized: 'ui/notifications/initialized',
+        ToolInput: 'ui/notifications/tool-input',
+        ToolResult: 'ui/notifications/tool-result',
+        ToolCancelled: 'ui/notifications/tool-cancelled',
+        HostContextChanged: 'ui/notifications/host-context-changed',
+        SizeChanged: 'ui/notifications/size-changed',
+        OpenLink: 'ui/open-link',
+      };
+
+      /** Requests sent to the host that wait for an answer, by id. */
+      const pending = new Map();
+      let nextRequestId = 1;
+
+      function post(message) {
+        window.parent.postMessage({ jsonrpc: JSONRPC, ...message }, ANY_ORIGIN);
+      }
+
+      function request(method, params) {
+        const id = nextRequestId++;
+        post({ id, method, params });
+        return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+      }
+
+      function notify(method, params) {
+        post({ method, params });
+      }
+
+      /** Handlers of the host's notifications. */
+      const notificationHandlers = new Map()
+        .set(Method.ToolInput, (params) => showChecking(params?.arguments))
+        .set(Method.ToolResult, (params) => showResult(params))
+        .set(Method.ToolCancelled, () => showMessage('The check was cancelled.'))
+        .set(Method.HostContextChanged, (params) => applyHostContext(params));
+
+      window.addEventListener('message', (event) => {
+        if (event.source !== window.parent) return;
+        const message = event.data;
+        if (!message || message.jsonrpc !== JSONRPC) return;
+        if (message.method === undefined) {
+          settle(message);
+        } else if (message.id !== undefined) {
+          // A request from the host (a teardown, a ping): nothing to clean up, so agree at once.
+          post({ id: message.id, result: {} });
+        } else {
+          notificationHandlers.get(message.method)?.(message.params);
+        }
+      });
+
+      function settle(response) {
+        const waiting = pending.get(response.id);
+        if (!waiting) return;
+        pending.delete(response.id);
+        if (response.error) waiting.reject(response.error);
+        else waiting.resolve(response.result);
+      }
+
+      /** Opens a buy link: the sandbox blocks navigation, so the host opens it. */
+      function openLink(url) {
+        request(Method.OpenLink, { url }).catch(() => window.open(url, '_blank', 'noopener'));
+      }
+
+      // ── The host's look: light or dark, its colors, fonts and radii ────────────────────────────
+
+      function applyHostContext(context) {
+        if (!context) return;
+        if (context.theme) document.documentElement.dataset.theme = context.theme;
+        const variables = context.styles?.variables ?? {};
+        for (const [name, value] of Object.entries(variables)) {
+          if (value) document.documentElement.style.setProperty(name, value);
+        }
+        const fonts = context.styles?.css?.fonts;
+        if (fonts) {
+          const style = document.createElement('style');
+          style.textContent = fonts;
+          document.head.append(style);
+        }
+      }
+
+      // ── The card's height follows its content ─────────────────────────────────────────────────
+
+      let reportedWidth = 0;
+      let reportedHeight = 0;
+
+      function reportSize() {
+        const root = document.documentElement;
+        const previous = root.style.height;
+        root.style.height = 'max-content';
+        const height = Math.ceil(root.getBoundingClientRect().height);
+        root.style.height = previous;
+        const width = Math.ceil(window.innerWidth);
+        if (width === reportedWidth && height === reportedHeight) return;
+        reportedWidth = width;
+        reportedHeight = height;
+        notify(Method.SizeChanged, { width, height });
+      }
+
+      // ── Rendering a check_domains result ─────────────────────────────────────────────────────
+
+      /** The tool's domain statuses. */
+      const Status = {
+        Available: 'available',
+        LikelyAvailable: 'likely_available',
+        Taken: 'taken',
+        Reserved: 'reserved',
+        Unknown: 'unknown',
+      };
+      /** Free domains shown before "Show all": enough to choose from, short enough to scan. */
+      const FREE_SHOWN = 24;
+      /** Characters of an ISO date that make the day: "2030-02-03". */
+      const DATE_LENGTH = 10;
+      /** Milliseconds in a second, for the elapsed time. */
+      const SECOND_MS = 1000;
+
+      const app = document.getElementById('app');
+
+      /** An element with a class and, optionally, text: data always goes in as text, never as HTML. */
+      function element(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      function money(amount, currency) {
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
+      }
+
+      function showMessage(text) {
+        app.replaceChildren(element('p', 'status', text));
+      }
+
+      function showChecking(input) {
+        const count = Array.isArray(input?.domains) ? input.domains.length : 0;
+        const status = element('p', 'status', count ? `Checking ${count} names…` : 'Checking domains…');
+        app.replaceChildren(status, element('div', 'progress'));
+      }
+
+      function showResult(result) {
+        const data = result?.structuredContent;
+        if (result?.isError || !data?.results) {
+          const text = result?.content?.find((block) => block.type === 'text')?.text;
+          showMessage(text ?? 'The check did not return results.');
+          return;
+        }
+        const byStatus = (statuses) => data.results.filter((item) => statuses.includes(item.status));
+        const free = byStatus([Status.Available, Status.LikelyAvailable]);
+        const taken = byStatus([Status.Taken]);
+        const reserved = byStatus([Status.Reserved]);
+        const unknown = byStatus([Status.Unknown]);
+
+        const parts = [tiles(data.summary, free.length, taken.length)];
+        if (free.length) parts.push(sectionTitle('Free to register', free.length), freeCards(free));
+        if (taken.length) parts.push(sectionTitle('Taken', taken.length), takenChips(taken));
+        if (reserved.length) parts.push(sectionTitle('Reserved', reserved.length), chips(reserved));
+        if (unknown.length) {
+          parts.push(sectionTitle('Not verified, try again later', unknown.length), chips(unknown));
+        }
+        if (data.warnings?.length) parts.push(sectionTitle('Notes'), notes(data.warnings));
+        parts.push(
+          element(
+            'p',
+            'footnote',
+            'Free means the registry has no record of the name; the registrar confirms it at checkout. ' +
+              'Prices are standard yearly prices for the TLD; premium names cost more.' +
+              (data.disclosure ? ` ${data.disclosure}` : ''),
+          ),
+        );
+        app.replaceChildren(...parts);
+      }
+
+      function tiles(summary, freeCount, takenCount) {
+        const seconds = (summary.elapsed_ms / SECOND_MS).toFixed(1);
+        const box = element('div', 'tiles');
+        const values = [
+          ['Checked', String(summary.total), ''],
+          ['Free', String(freeCount), 'tile__value--free'],
+          ['Taken', String(takenCount), ''],
+          ['Time', `${seconds} s`, ''],
+        ];
+        for (const [label, value, modifier] of values) {
+          const tile = element('div', 'tile');
+          tile.append(element('p', 'tile__label', label), element('p', `tile__value ${modifier}`, value));
+          box.append(tile);
+        }
+        return box;
+      }
+
+      function sectionTitle(text, count) {
+        const title = element('h2', 'section-title', text);
+        if (count !== undefined) title.append(element('span', '', String(count)));
+        return title;
+      }
+
+      function freeCards(free) {
+        const box = element('div', 'cards');
+        free.slice(0, FREE_SHOWN).forEach((item) => box.append(freeCard(item)));
+        if (free.length <= FREE_SHOWN) return box;
+        const wrapper = element('div');
+        const showAll = element('button', 'button show-all', `Show all ${free.length}`);
+        showAll.addEventListener('click', () => {
+          free.slice(FREE_SHOWN).forEach((item) => box.append(freeCard(item)));
+          showAll.remove();
+        });
+        wrapper.append(box, showAll);
+        return wrapper;
+      }
+
+      function freeCard(item) {
+        const card = element('article', 'card');
+        card.append(element('h3', 'card__domain', item.display || item.domain));
+
+        // Free-looking names are the norm here, so only what sets a name apart gets a badge.
+        const badges = element('div', 'badges');
+        if (item.confirmedBy) badges.append(element('span', 'badge badge--success', `Confirmed by ${item.confirmedBy}`));
+        if (item.premium) badges.append(element('span', 'badge badge--warning', 'Premium'));
+        if (badges.childElementCount) card.append(badges);
+
+        // Offers come cheapest first: the first one with a price leads, the next priced one is
+        // there to compare, and the rest wait behind "+N more".
+        const offers = [...(item.buy ?? [])];
+        const priced = offers.filter((offer) => offer.price);
+        const lead = priced[0] ?? offers[0];
+        const runnerUp = priced[1];
+        if (priced[0]) card.append(priceLine(priced[0]));
+
+        const buttons = element('div', 'buy');
+        if (lead) buttons.append(buyButton(`Buy at ${lead.registrar}`, lead.url, true));
+        if (runnerUp) {
+          const label = `${runnerUp.registrar} ${money(runnerUp.price.registration, runnerUp.price.currency)}`;
+          buttons.append(buyButton(label, runnerUp.url, false));
+        }
+        const rest = offers.filter((offer) => offer !== lead && offer !== runnerUp);
+        if (rest.length) buttons.append(moreToggle(card, rest));
+        if (buttons.childElementCount) card.append(buttons);
+        return card;
+      }
+
+      function buyButton(label, url, primary) {
+        const button = element('button', primary ? 'button button--primary' : 'button', label);
+        button.addEventListener('click', () => openLink(url));
+        return button;
+      }
+
+      /** "+N more": shows the other registrars' links under the buttons. */
+      function moreToggle(card, offers) {
+        const toggle = element('button', 'button button--quiet', `+${offers.length} more`);
+        toggle.addEventListener('click', () => {
+          toggle.remove();
+          card.append(moreLinks(offers));
+        });
+        return toggle;
+      }
+
+      function priceLine(offer) {
+        const { price } = offer;
+        const line = element('p', 'price');
+        line.append(
+          element('span', 'price__amount', money(price.registration, price.currency)),
+          element('span', 'price__unit', ` /yr at ${offer.registrar}`),
+        );
+        const terms = [`Renews at ${money(price.renewal, price.currency)}/yr`];
+        if (price.minYears > 1) terms.push(`${price.minYears}-year minimum`);
+        line.append(element('span', 'price__renewal', terms.join(' · ')));
+        return line;
+      }
+
+      function moreLinks(offers) {
+        const line = element('p', 'more', 'Also at ');
+        offers.forEach((offer, index) => {
+          const link = element('button', 'link', offer.registrar);
+          link.addEventListener('click', () => openLink(offer.url));
+          line.append(link);
+          if (index < offers.length - 1) line.append(', ');
+        });
+        return line;
+      }
+
+      function takenChips(items) {
+        const box = element('div', 'chips');
+        for (const item of items) {
+          const dropping = item.registration?.dropping;
+          const chip = element('span', dropping ? 'chip chip--dropping' : 'chip chip--taken', item.display || item.domain);
+          const expires = item.registration?.expires?.slice(0, DATE_LENGTH);
+          if (dropping) chip.title = 'Being deleted: may become available soon';
+          else if (expires) chip.title = `Registered until ${expires}`;
+          box.append(chip);
+        }
+        return box;
+      }
+
+      function chips(items) {
+        const box = element('div', 'chips');
+        for (const item of items) {
+          const chip = element('span', 'chip', item.display || item.domain);
+          if (item.note) chip.title = item.note;
+          box.append(chip);
+        }
+        return box;
+      }
+
+      function notes(warnings) {
+        const list = element('ul', 'notes');
+        for (const warning of warnings) list.append(element('li', '', warning));
+        return list;
+      }
+
+      // ── Start: introduce the card, take the host's look, then follow the content's size ──────
+
+      async function start() {
+        const result = await request(Method.Initialize, {
+          appInfo: APP_INFO,
+          appCapabilities: {},
+          protocolVersion: PROTOCOL_VERSION,
+        });
+        applyHostContext(result?.hostContext);
+        notify(Method.Initialized);
+        const observer = new ResizeObserver(() => requestAnimationFrame(reportSize));
+        observer.observe(document.documentElement);
+        observer.observe(document.body);
+        reportSize();
+      }
+
+      start();
+    </script>
+  </body>
+</html>

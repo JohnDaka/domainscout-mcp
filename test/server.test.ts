@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   EnvVar,
   ICON_URL,
+  RESULTS_UI_MIME_TYPE,
+  RESULTS_UI_URI,
   SERVER_TITLE,
   TOOL_CHECK_DOMAINS,
   WEBSITE_URL,
@@ -34,6 +36,23 @@ describe('MCP server', () => {
     const [packaged, website] = info?.icons ?? [];
     expect(packaged?.src).toMatch(/^data:image\/png;base64,iVBOR/);
     expect(website?.src).toBe(ICON_URL);
+  });
+
+  it('points check_domains at its MCP Apps results card, and serves the card', async () => {
+    const client = await connect();
+    const { tools } = await client.listTools();
+    const tool = tools.find((candidate) => candidate.name === TOOL_CHECK_DOMAINS);
+    expect(tool?._meta).toMatchObject({ ui: { resourceUri: RESULTS_UI_URI } });
+
+    const { resources } = await client.listResources();
+    expect(resources).toContainEqual(
+      expect.objectContaining({ uri: RESULTS_UI_URI, mimeType: RESULTS_UI_MIME_TYPE }),
+    );
+    const { contents } = await client.readResource({ uri: RESULTS_UI_URI });
+    const [card] = contents as Array<{ mimeType?: string; text?: string }>;
+    expect(card?.mimeType).toBe(RESULTS_UI_MIME_TYPE);
+    expect(card?.text).toContain('ui/initialize');
+    expect(card?.text).toContain('ui/notifications/tool-result');
   });
 
   it('lists the check_domains tool with input and output schemas', async () => {

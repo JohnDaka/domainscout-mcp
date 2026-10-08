@@ -128,6 +128,16 @@ TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, 
 Ask about a few favourites afterwards and each one gets every registrar's link and price. More
 real output, including the command line and JSON: [examples](examples/README.md).
 
+## Results card
+
+In clients that support [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) (Claude on
+the web and desktop, VS Code, ChatGPT and others), each `check_domains` call shows an interactive
+card: the counts, every free domain with its price and buy buttons, and the taken names. It follows
+the client's light or dark theme. The page ships in the package (`ui/results.html`), loads nothing
+from elsewhere, and opens buy links through the client. Other clients show the text report.
+
+![The results card: checked, free and taken counts, then a card for each free domain with its price and Buy buttons](assets/results-card.png)
+
 ## How it checks
 
 For each domain, in parallel and within polite rate limits:
