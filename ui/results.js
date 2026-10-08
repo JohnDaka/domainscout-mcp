@@ -127,6 +127,7 @@ const Copy = {
   CompareSaved: 'Compare in chat',
   Regenerate: 'Regenerate',
   RegenerateLabel: 'New names, none of those checked so far; the saved ones stay',
+  RegenerateHint: 'Regenerate for a new batch.',
   OtherTlds: 'Try other TLDs',
   DownloadCsv: 'Download CSV',
   LinkBlocked: "Your chat app didn't open the link. Copy it:",
@@ -530,9 +531,16 @@ header.append(tool, toolbar);
 const status = element('p', 'summary');
 status.setAttribute('role', 'status');
 /** The summary on the left, the TLD filter on the right, on one line. */
+/**
+ * The summary and "Regenerate" on the left, the TLD filter on the right, on one line. The button
+ * sits beside the status line, not in it: a status line is read out whole on every change.
+ */
 const summaryRow = element('div', 'summary-row');
+const summaryMain = element('div', 'summary-row__main');
+const regenerateSlot = element('span', 'summary-row__action');
 const filterSlot = element('div', 'summary-row__filter');
-summaryRow.append(status, filterSlot);
+summaryMain.append(status, regenerateSlot);
+summaryRow.append(summaryMain, filterSlot);
 const fallbackBox = element('div', 'fallback');
 fallbackBox.hidden = true;
 const content = element('div', 'content');
@@ -616,6 +624,7 @@ function showChecking(input) {
   setStatus(count ? `Checking ${count} names${where}…` : Copy.Checking, StatusKind.Progress);
   content.replaceChildren(element('div', 'progress'));
   filterSlot.replaceChildren();
+  regenerateSlot.replaceChildren();
   layoutGroup.hidden = false;
 }
 
@@ -624,6 +633,7 @@ function showMessage(text, kind) {
   setStatus(text, kind);
   content.replaceChildren();
   filterSlot.replaceChildren();
+  regenerateSlot.replaceChildren();
   layoutGroup.hidden = true;
 }
 
@@ -666,6 +676,7 @@ function renderResult(result) {
   state.saved = new Map(free.filter((item) => item.saved).map((item) => [domainKey(item), item]));
   showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
+  regenerateSlot.replaceChildren(...(state.can.message ? [regenerateButton()] : []));
   shareContext();
 
   const top = [];
@@ -730,8 +741,8 @@ function showSummary(data, groups) {
 function fewFreeNote(free, total) {
   const note = element('div', 'few-free');
   const text = free.length ? `Only ${free.length} of ${total} are free.` : Copy.NoneFree;
-  note.append(element('p', 'few-free__text', text));
-  if (state.can.message) note.append(regenerateButton(true));
+  const hint = state.can.message ? ` ${Copy.RegenerateHint}` : '';
+  note.append(element('p', 'few-free__text', `${text}${hint}`));
   return note;
 }
 
@@ -739,8 +750,8 @@ function fewFreeNote(free, total) {
  * "Regenerate": asks the chat for a new batch of names, none of those checked so far, with the
  * saved domains kept. This panel stays as it is; the new check comes as a new one under it.
  */
-function regenerateButton(primary) {
-  const node = button(primary ? 'action action--primary' : 'action', Copy.Regenerate, () => {
+function regenerateButton() {
+  const node = button('chip-button regenerate', Copy.Regenerate, () => {
     const saved = [...state.saved.values()].map((item) => item.domain);
     sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free }));
   });
@@ -749,10 +760,9 @@ function regenerateButton(primary) {
   return node;
 }
 
-/** Under the domains: a new batch, and the domains as a file. */
+/** Under the domains: the domains as a file. */
 function bottomActions() {
   const bar = element('div', 'actions');
-  if (state.can.message && state.free.length >= FEW_FREE) bar.append(regenerateButton(true));
   if (state.can.downloadFile) {
     const download = button('action', Copy.DownloadCsv, downloadCsv);
     download.prepend(icon(Icon.Download));

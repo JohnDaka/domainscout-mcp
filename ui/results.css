@@ -263,6 +263,13 @@ input:focus-visible {
   margin: 0 0 8px;
 }
 
+.summary-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+}
+
 .summary {
   margin: 0;
   color: var(--ds-body);
@@ -580,6 +587,16 @@ input:focus-visible {
 }
 
 .similar:hover {
+  background: var(--ds-accent-fill);
+}
+
+/* "Regenerate": the panel's main request to the chat, in the brand's cyan. */
+.regenerate {
+  border-color: var(--ds-accent-border);
+  color: var(--ds-cyan);
+}
+
+.regenerate:hover {
   background: var(--ds-accent-fill);
 }
 
