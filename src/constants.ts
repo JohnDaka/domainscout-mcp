@@ -60,6 +60,7 @@ export const ResultsUiFile = {
   Page: 'results.html',
   Styles: 'results.css',
   Script: 'results.js',
+  Logo: 'logo.png',
 } as const;
 /**
  * The key older MCP Apps hosts read for a tool's card. Current ones read `_meta.ui.resourceUri`;

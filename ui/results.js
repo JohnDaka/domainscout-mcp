@@ -160,18 +160,15 @@ function keepChoice(key, value) {
   }
 }
 
-function forgetChoice(key) {
-  try {
-    window.localStorage.removeItem(key);
-  } catch {
-    // Nothing was stored.
-  }
-}
+/** What a first-time visitor sees: the price table, dark like the landing page. */
+const DEFAULT_VIEW = View.Table;
+const DEFAULT_THEME = Theme.Dark;
 
 const state = {
-  view: readChoice(StorageKey.View, View) ?? View.List,
-  /** The visitor's own theme; while unset, the host's theme applies. */
-  chosenTheme: readChoice(StorageKey.Theme, Theme),
+  view: readChoice(StorageKey.View, View) ?? DEFAULT_VIEW,
+  /** The panel's own theme: dark unless the visitor picked light. */
+  theme: readChoice(StorageKey.Theme, Theme) ?? DEFAULT_THEME,
+  /** The host's theme: only the page's color scheme follows it. */
   hostTheme: window.matchMedia(LIGHT_SCHEME_QUERY).matches ? Theme.Light : Theme.Dark,
   /** Whether the host said which theme it uses: only then does the canvas follow it. */
   hostThemeKnown: false,
@@ -184,16 +181,16 @@ const state = {
 };
 
 function currentTheme() {
-  return state.chosenTheme ?? state.hostTheme;
+  return state.theme;
 }
 
 /**
- * The panel's colors follow the chosen theme; the page's color scheme follows the host's, so
- * the browser keeps the iframe's canvas transparent instead of painting it white or black.
+ * The panel's colors follow its own theme; the page's color scheme follows the host's, so the
+ * browser keeps the iframe's canvas transparent instead of painting it white or black.
  */
 function applyTheme() {
   const root = document.documentElement;
-  root.dataset.theme = currentTheme();
+  root.dataset.theme = state.theme;
   if (state.hostThemeKnown) root.style.colorScheme = state.hostTheme;
   syncToolbar();
 }
@@ -282,6 +279,11 @@ const ICON_PATHS = new Map()
   .set(Icon.External, ['M7 17L17 7', 'M8 7h9v9'])
   .set(Icon.Chevron, ['M6 9l6 6 6-6']);
 
+/** How an inlined image's address starts. */
+const DATA_URI_PREFIX = 'data:';
+/** The icon's size beside the name, in CSS pixels; the image is drawn sharper than that. */
+const LOGO_SIZE = 18;
+
 /** Attribute values used as switches. */
 const TRUE = 'true';
 const FALSE = 'false';
@@ -338,6 +340,21 @@ function uniqueId(prefix) {
   return `${prefix}-${nextId++}`;
 }
 
+/**
+ * DomainScout's icon before its name, as on the landing page. The server puts the image into the
+ * page as a data URI, so nothing is fetched; without one (a page opened on its own) it is left out.
+ */
+function logo() {
+  const source = document.documentElement.dataset.logo;
+  if (!source?.startsWith(DATA_URI_PREFIX)) return '';
+  const image = element('img', 'tool__logo');
+  image.src = source;
+  image.alt = '';
+  image.width = LOGO_SIZE;
+  image.height = LOGO_SIZE;
+  return image;
+}
+
 // ── The panel's frame: built once, so the toolbar keeps focus while the content changes ──────
 
 /** The groups' options: the value each sets, its icon and its name for screen readers. */
@@ -380,7 +397,7 @@ function syncToolbar() {
 const panel = element('section', 'panel');
 const header = element('div', 'header');
 const tool = element('p', 'tool');
-tool.append(element('span', 'tool__who', Copy.ToolWho), Copy.ToolName);
+tool.append(logo(), element('span', 'tool__who', Copy.ToolWho), Copy.ToolName);
 const layoutGroup = segmented(Copy.Layout, VIEW_OPTIONS, () => state.view, chooseView);
 const themeGroup = segmented(Copy.Theme, THEME_OPTIONS, currentTheme, chooseTheme);
 const toolbar = element('div', 'toolbar');
@@ -409,15 +426,9 @@ function chooseView(view) {
   if (state.free.length) renderFree();
 }
 
-/** Choosing the host's own theme goes back to following the host. */
 function chooseTheme(theme) {
-  if (theme === state.hostTheme) {
-    state.chosenTheme = undefined;
-    forgetChoice(StorageKey.Theme);
-  } else {
-    state.chosenTheme = theme;
-    keepChoice(StorageKey.Theme, theme);
-  }
+  state.theme = theme;
+  keepChoice(StorageKey.Theme, theme);
   applyTheme();
 }
 

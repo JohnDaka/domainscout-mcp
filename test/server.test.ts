@@ -57,6 +57,7 @@ describe('MCP server', () => {
     expect(card?.text).toContain('<style>');
     expect(card?.text).not.toContain('href="results.css"');
     expect(card?.text).not.toContain('src="results.js"');
+    expect(card?.text).toContain('data-logo="data:image/png;base64,');
   });
 
   it('lists the check_domains tool with input and output schemas', async () => {

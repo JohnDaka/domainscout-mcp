@@ -146,12 +146,20 @@ input:focus-visible {
   margin-bottom: 8px;
 }
 
-/* "DOMAINSCOUT  check_domains", as above the results on the landing page. */
+/* The logo, "DOMAINSCOUT" and "check_domains", as above the results on the landing page. */
 .tool {
+  display: inline-flex;
+  align-items: center;
   margin: 0;
   font-family: var(--ds-mono);
   font-size: 13px;
   color: var(--ds-cyan);
+}
+
+.tool__logo {
+  flex: none;
+  margin-right: 8px;
+  border-radius: var(--ds-radius-option);
 }
 
 .tool__who {
