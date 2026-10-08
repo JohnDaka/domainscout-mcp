@@ -416,15 +416,19 @@ function priceRange(offers) {
 const PRICE_ON_SITE = 'site';
 /** What a cell shows for a registrar that does not sell the name. */
 const NOT_SOLD = '—';
+/** The last column: the registrars without a public price, behind "N more". */
+const OTHERS_HEADING = 'Others';
 
 /**
- * The registrars across the top, in one order for every row: by the place each one takes in the
- * tool's price-sorted lists on average, so the usually cheapest come first.
+ * The registrars across the top: only those with a public price for at least one of the names,
+ * in one order for every row - by the place each one takes in the tool's price-sorted lists on
+ * average, so the usually cheapest come first. The rest go to the "Others" column.
  */
-function tableRegistrars(free) {
+function pricedColumns(free) {
   const places = new Map();
   for (const item of free) {
     (item.buy ?? []).forEach((offer, place) => {
+      if (!offer.price) return;
       const seen = places.get(offer.registrar) ?? [];
       places.set(offer.registrar, [...seen, place]);
     });
@@ -435,28 +439,33 @@ function tableRegistrars(free) {
     .map(([registrar]) => registrar);
 }
 
-/** The free domains as a table of prices: every cell a link to that registrar. */
+/** A name's registrars that have no column of their own, in the tool's order. */
+function otherOffers(item, columns) {
+  return (item.buy ?? []).filter((offer) => !columns.includes(offer.registrar));
+}
+
+/** The free domains as a table of prices: every price a link to that registrar. */
 function priceTable(free) {
-  const registrars = tableRegistrars(free);
+  const columns = pricedColumns(free);
+  const hasOthers = free.some((item) => otherOffers(item, columns).length > 0);
   const table = element('table', 'matrix');
   const caption = element(
     'caption',
     'visually-hidden',
     'Yearly price of each free domain at each registrar',
   );
-  const head = element('thead');
   const headRow = element('tr');
-  const corner = element('th', 'matrix__corner', 'Domain');
-  corner.scope = 'col';
-  headRow.append(corner);
-  for (const registrar of registrars) {
-    const cell = element('th', '', registrar);
+  const headings = ['Domain', ...columns, ...(hasOthers ? [OTHERS_HEADING] : [])];
+  headings.forEach((text, index) => {
+    const cell = element('th', index === 0 ? 'matrix__corner' : '', text);
     cell.scope = 'col';
     headRow.append(cell);
-  }
+  });
+  const head = element('thead');
   head.append(headRow);
   const body = element('tbody');
-  body.append(...free.slice(0, FREE_SHOWN).map((item) => tableRow(item, registrars)));
+  const rows = (items) => items.flatMap((item) => tableRows(item, columns, hasOthers));
+  body.append(...rows(free.slice(0, FREE_SHOWN)));
   table.append(caption, head, body);
   const wrap = element('div', 'matrix-wrap');
   wrap.append(table);
@@ -464,39 +473,65 @@ function priceTable(free) {
   const more = element('button', 'more', `…and ${free.length - FREE_SHOWN} more free`);
   more.type = 'button';
   more.addEventListener('click', () => {
-    body.append(...free.slice(FREE_SHOWN).map((item) => tableRow(item, registrars)));
+    body.append(...rows(free.slice(FREE_SHOWN)));
     more.remove();
   });
   return [wrap, more];
 }
 
-function tableRow(item, registrars) {
+/** A name's row and, when it has other registrars, the row that opens under it with their links. */
+function tableRows(item, columns, hasOthers) {
   const row = element('tr');
-  const name = element('th', 'matrix__domain');
-  name.scope = 'row';
-  name.append(element('span', 'result__domain', item.display || item.domain));
-  if (item.premium) name.append(element('span', 'matrix__note matrix__note--premium', 'Premium'));
+  row.append(domainCell(item));
+  const offers = new Map((item.buy ?? []).map((offer) => [offer.registrar, offer]));
+  for (const registrar of columns) row.append(priceCell(offers.get(registrar)));
+  if (!hasOthers) return [row];
+  const others = otherOffers(item, columns);
+  if (!others.length) {
+    row.append(noneCell());
+    return [row];
+  }
+  const span = 1 + columns.length + 1;
+  const extra = otherLinksRow(others, span, item.display || item.domain);
+  const cell = element('td');
+  cell.append(othersToggle(others.length, extra));
+  row.append(cell);
+  return [row, extra];
+}
+
+function domainCell(item) {
+  const cell = element('th', 'matrix__domain');
+  cell.scope = 'row';
+  cell.append(element('span', 'result__domain', item.display || item.domain));
+  if (item.premium) cell.append(element('span', 'matrix__note matrix__note--premium', 'Premium'));
   const minYears = (item.buy ?? []).find((offer) => offer.price)?.price.minYears ?? 1;
   if (minYears > 1) {
-    name.append(
+    cell.append(
       element('span', 'matrix__note', `${minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`),
     );
   }
-  row.append(name);
-  const offers = new Map((item.buy ?? []).map((offer) => [offer.registrar, offer]));
-  for (const registrar of registrars) row.append(priceCell(offers.get(registrar)));
-  return row;
+  return cell;
 }
 
-/** A price that links to the registrar, "site" where it publishes none, a dash where it does not sell. */
+/** A price that links to the registrar, "site" where it has none, a dash where it does not sell. */
 function priceCell(offer) {
+  if (!offer) return noneCell();
   const cell = element('td');
-  if (!offer) {
-    cell.append(element('span', 'matrix__none', NOT_SOLD));
-    return cell;
-  }
   const text = offer.price ? money(offer.price.registration, offer.price.currency) : PRICE_ON_SITE;
-  const link = element('a', offer.price ? 'matrix__link' : 'matrix__link matrix__link--site', text);
+  const className = offer.price ? 'matrix__link' : 'matrix__link matrix__link--site';
+  cell.append(registrarLink(offer, className, text));
+  return cell;
+}
+
+function noneCell() {
+  const cell = element('td');
+  cell.append(element('span', 'matrix__none', NOT_SOLD));
+  return cell;
+}
+
+/** A link to a registrar's page for the name; the host opens it, as the sandbox blocks navigation. */
+function registrarLink(offer, className, text) {
+  const link = element('a', className, text);
   link.href = offer.url;
   link.rel = 'noopener';
   link.title = `Buy at ${offer.registrar}`;
@@ -504,8 +539,41 @@ function priceCell(offer) {
     event.preventDefault();
     openLink(offer.url);
   });
-  cell.append(link);
-  return cell;
+  return link;
+}
+
+/** "7 more": opens the row with the other registrars' links under the name. */
+function othersToggle(count, extra) {
+  const toggle = element('button', 'toggle matrix__toggle', `${count} more`);
+  toggle.type = 'button';
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', extra.id);
+  toggle.append(icon('chevron'));
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    extra.hidden = !open;
+  });
+  return toggle;
+}
+
+/** The row under a name: its other registrars as links, prices on their own sites. */
+function otherLinksRow(offers, span, domain) {
+  const row = element('tr', 'matrix__extra');
+  row.id = `others-${nextListId++}`;
+  row.hidden = true;
+  const cell = element('td');
+  cell.colSpan = span;
+  const label = element('span', 'matrix__extra-label', `Prices on their sites for ${domain}:`);
+  const links = element('span', 'matrix__extra-links');
+  for (const offer of offers) {
+    const link = registrarLink(offer, 'matrix__chip', offer.registrar);
+    link.append(icon('external'));
+    links.append(link);
+  }
+  cell.append(label, links);
+  row.append(cell);
+  return row;
 }
 
 /** "All N registrars": opens and closes the list under the domain. */

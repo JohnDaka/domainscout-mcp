@@ -289,7 +289,8 @@ button:focus-visible {
   color: var(--ds-heading);
 }
 
-.registrar .icon {
+.registrar .icon,
+.matrix__chip .icon {
   width: 12px;
   height: 12px;
   color: var(--ds-muted);
@@ -474,6 +475,49 @@ button:focus-visible {
   display: block;
   padding: 8px 12px;
   color: var(--ds-divider);
+}
+
+/* "7 more" in the Others column, and the row of links it opens under the name. */
+.matrix .matrix__toggle {
+  margin: 0;
+  padding: 8px 12px;
+}
+
+.matrix__extra td {
+  padding: 4px 12px 12px;
+  text-align: left;
+  white-space: normal;
+}
+
+.matrix__extra-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--ds-muted);
+}
+
+.matrix__extra-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matrix__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: 999px;
+  color: var(--ds-body);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.matrix__chip:hover,
+.matrix__chip:focus-visible {
+  border-color: var(--ds-cyan);
+  color: var(--ds-cyan);
 }
 
 /* ── Taken, reserved and unverified names ─────────────────────────────────────────────────── */
