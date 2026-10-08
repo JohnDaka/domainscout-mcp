@@ -441,6 +441,7 @@ function setStatus(text, kind) {
 /** How the status line looks. */
 const StatusKind = {
   Progress: 'progress',
+  Result: 'result',
   Error: 'error',
 };
 
@@ -529,7 +530,7 @@ function renderResult(result) {
   const reserved = byStatus([Status.Reserved]);
   const unknown = byStatus([Status.Unknown]);
   state.free = free;
-  setStatus(summaryText(data, free, taken, reserved, unknown));
+  showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
 
   const rest = [];
@@ -547,17 +548,40 @@ function renderResult(result) {
   renderFree();
 }
 
-/** "48 domains checked in 4.2s: 23 free, 25 taken", naming the TLD when there is only one. */
-function summaryText(data, free, taken, reserved, unknown) {
+/** The counts in the summary, in order: each with its word and its color. */
+const SUMMARY_COUNTS = [
+  { key: 'free', word: 'free', modifier: 'stat--free' },
+  { key: 'taken', word: 'taken', modifier: 'stat--taken' },
+  { key: 'reserved', word: 'reserved', modifier: 'stat--reserved' },
+  { key: 'unknown', word: 'not verified', modifier: 'stat--unknown' },
+];
+
+/**
+ * "48 domains checked in 4.2s", then each count with a colored dot: "● 23 free .com", "● 25 taken".
+ * Free and taken always show; reserved and unverified only when there are any. The TLD is named
+ * when there is only one. Screen readers hear one plain sentence.
+ */
+function showSummary(data, groups) {
   const total = data.summary?.total ?? data.results.length;
   const elapsed = data.summary?.elapsed_ms;
   const time = Number.isFinite(elapsed) ? ` in ${(elapsed / SECOND_MS).toFixed(1)}s` : '';
   const tlds = new Set(data.results.map((item) => item.tld));
   const onlyTld = tlds.size === 1 ? ` .${[...tlds][0]}` : '';
-  const counts = [`${free.length} free${onlyTld}`, `${taken.length} taken`];
-  if (reserved.length) counts.push(`${reserved.length} reserved`);
-  if (unknown.length) counts.push(`${unknown.length} not verified`);
-  return `${total} domains checked${time}: ${counts.join(', ')}`;
+  const lead = element('span', 'summary__lead', `${total} domains checked${time}`);
+  const stats = SUMMARY_COUNTS.filter(({ key }, index) => index < 2 || groups[key].length > 0).map(
+    ({ key, word, modifier }) => {
+      const label = key === 'free' ? `${word}${onlyTld}` : word;
+      const stat = element('span', `stat ${modifier}`);
+      stat.append(
+        element('span', 'stat__dot'),
+        element('span', 'stat__value', String(groups[key].length)),
+        ` ${label}`,
+      );
+      return stat;
+    },
+  );
+  setStatus('', StatusKind.Result);
+  status.append(lead, ...stats);
 }
 
 /** The free domains in the chosen view, into the box at the top of the content. */

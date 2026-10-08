@@ -221,6 +221,56 @@ input:focus-visible {
   font-weight: 600;
 }
 
+/* The result's summary: the total in quiet text, then the counts, each with its colored dot. */
+.summary--result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  font-weight: 400;
+}
+
+.summary__lead {
+  color: var(--ds-muted);
+}
+
+.stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ds-muted);
+  white-space: nowrap;
+}
+
+.stat__dot {
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--ds-radius-pill);
+  background: currentColor;
+}
+
+.stat__value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat--free {
+  color: var(--ds-teal);
+}
+
+.stat--taken .stat__value {
+  color: var(--ds-heading);
+}
+
+.stat--reserved {
+  color: var(--ds-amber);
+}
+
+.stat--unknown {
+  color: var(--ds-orange);
+}
+
 .summary--progress {
   color: var(--ds-muted);
   font-weight: 400;
