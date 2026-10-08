@@ -119,7 +119,8 @@ const Copy = {
   AllTlds: 'All',
   TldFilter: 'Show TLD',
   Similar: 'Similar',
-  SimilarLabel: 'Ask the chat for names like this one',
+  SimilarLabel: 'Use as an example: Regenerate brings names like this one',
+  NotSimilarLabel: 'No longer an example for Regenerate',
   Saved: 'Saved',
   Save: 'Save',
   SaveLabel: 'Save',
@@ -148,8 +149,6 @@ const RANGE_DASH = '\u2013';
 
 // ── What the panel asks the chat ──────────────────────────────────────────────────────────────
 
-/** New names asked for, per request. */
-const SIMILAR_COUNT = 30;
 /** A new batch is as big as the last one, within these bounds. */
 const REGENERATE_MIN = 20;
 const REGENERATE_MAX = 200;
@@ -173,8 +172,6 @@ function tldList(tlds) {
 }
 
 const Ask = {
-  similar: (item, tlds) =>
-    `Find ${SIMILAR_COUNT} more domain names like "${label(item)}" (a similar style and length) and check them all with DomainScout in ${tldList(tlds)}.`,
   otherTlds: (names) =>
     `These names are taken: ${names.slice(0, TAKEN_SAMPLE).join(', ')}. Check the same names in other TLDs (${tldList(OTHER_TLDS)}) with DomainScout.`,
   /**
@@ -182,17 +179,22 @@ const Ask = {
    * names to leave out go in the model's context when the host takes it, so the chat stays short;
    * otherwise they are spelled out. The saved domains go along in "saved", so they stay.
    */
-  regenerate: ({ names, saved, tlds, free }) => {
+  regenerate: ({ names, saved, tlds, free, similar }) => {
     const count = Math.min(Math.max(names.length, REGENERATE_MIN), REGENERATE_MAX);
     const examples = free.slice(0, STYLE_SAMPLE).map(label);
-    const style = examples.length ? ` (names like ${examples.join(', ')} were free)` : '';
+    const liked = examples.length
+      ? ` in the same style (names like ${examples.join(', ')} were free)`
+      : '';
+    const style = similar.length
+      ? ` similar to ${similar.join(', ')} (the same style and length)`
+      : liked;
     const avoid = state.can.updateModelContext
       ? `Leave out all ${names.length} names checked so far; they are in the panel's context.`
       : `Leave out every name checked so far: ${names.join(', ')}.`;
     const keep = saved.length
       ? ` Pass my saved domains in the saved parameter so they stay: ${saved.join(', ')}.`
       : '';
-    return `Regenerate: brainstorm ${count} new domain names in the same style${style}. ${avoid} Check them all with DomainScout in ${tldList(tlds)}.${keep}`;
+    return `Regenerate: brainstorm ${count} new domain names${style}. ${avoid} Check them all with DomainScout in ${tldList(tlds)}.${keep}`;
   },
   compare: (items) =>
     `Compare these saved domains and recommend one: ${items.map(describeForChat).join('; ')}.`,
@@ -284,6 +286,8 @@ const state = {
   sort: { column: undefined, direction: SortDirection.Ascending },
   /** The domains the visitor saved, in the order they were saved. */
   saved: new Map(),
+  /** The names the visitor marked as examples for Regenerate. */
+  similar: new Map(),
 };
 
 function currentTheme() {
@@ -674,6 +678,7 @@ function renderResult(result) {
   state.sort = { column: undefined, direction: SortDirection.Ascending };
   // Domains saved on an earlier panel come back marked: they start saved here too.
   state.saved = new Map(free.filter((item) => item.saved).map((item) => [domainKey(item), item]));
+  state.similar = new Map();
   showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
   regenerateSlot.replaceChildren(...(state.can.message ? [regenerateButton()] : []));
@@ -753,11 +758,29 @@ function fewFreeNote(free, total) {
 function regenerateButton() {
   const node = button('chip-button regenerate', Copy.Regenerate, () => {
     const saved = [...state.saved.values()].map((item) => item.domain);
-    sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free }));
+    const similar = [...state.similar.values()].map(label);
+    sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free, similar }));
   });
   node.prepend(icon(Icon.Refresh));
   node.title = Copy.RegenerateLabel;
+  regenerateCount = element('span', 'regenerate__count');
+  node.append(regenerateCount);
+  syncRegenerateCount();
   return node;
+}
+
+/**
+ * The number of examples on "Regenerate", spoken as "like 3 names". Its place is kept while it is
+ * zero, unseen and unspoken, so marking the first name widens nothing and nothing wraps.
+ */
+let regenerateCount;
+
+function syncRegenerateCount() {
+  if (!regenerateCount) return;
+  const count = state.similar.size;
+  regenerateCount.classList.toggle('regenerate__count--none', count === 0);
+  regenerateCount.setAttribute('aria-hidden', String(count === 0));
+  regenerateCount.replaceChildren(String(count), hiddenText(` like ${count} names`));
 }
 
 /** Under the domains: the domains as a file. */
@@ -782,6 +805,7 @@ function renderFree() {
   const box = content.querySelector('.free');
   if (!box) return;
   saveButtons.clear();
+  similarButtons.clear();
   const items = shownFree();
   const parts = state.view === View.Table ? priceTable(items) : freeList(items);
   box.replaceChildren(...parts);
@@ -1054,13 +1078,36 @@ function freeDomain(item) {
 
 /** "✦ Similar": asks the chat for more names like this one, checked in the same TLDs. */
 function similarButton(item) {
-  const node = button('chip-button similar', undefined, () =>
-    sendToChat(Ask.similar(item, state.check.tlds)),
-  );
+  const key = domainKey(item);
+  const node = button('chip-button similar', undefined, () => toggleSimilar(item));
   node.append(icon(Icon.Sparkles), element('span', 'chip-button__label', Copy.Similar));
-  node.title = Copy.SimilarLabel;
-  node.append(hiddenText(` to ${item.display || item.domain}`));
+  const buttons = similarButtons.get(key) ?? new Set();
+  buttons.add(node);
+  similarButtons.set(key, buttons);
+  syncSimilar(node, state.similar.has(key), item);
   return node;
+}
+
+/** The Similar buttons of each domain, so marking one updates every view of it. */
+const similarButtons = new Map();
+
+function syncSimilar(node, marked, item) {
+  const text = marked ? Copy.NotSimilarLabel : Copy.SimilarLabel;
+  node.setAttribute('aria-pressed', String(marked));
+  node.setAttribute('aria-label', `${Copy.Similar}: ${item.display || item.domain}`);
+  node.title = text;
+}
+
+/** Marks a name as an example for Regenerate, or unmarks it. */
+function toggleSimilar(item) {
+  const key = domainKey(item);
+  if (state.similar.has(key)) state.similar.delete(key);
+  else state.similar.set(key, item);
+  const marked = state.similar.has(key);
+  for (const node of similarButtons.get(key) ?? []) {
+    if (node.isConnected) syncSimilar(node, marked, item);
+  }
+  syncRegenerateCount();
 }
 
 /**

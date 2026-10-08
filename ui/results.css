@@ -259,7 +259,7 @@ input:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px 16px;
+  gap: 6px 12px;
   margin: 0 0 8px;
 }
 
@@ -267,7 +267,7 @@ input:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 16px;
+  gap: 6px 12px;
 }
 
 .summary {
@@ -282,7 +282,7 @@ input:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 16px;
+  gap: 4px 12px;
   font-weight: 400;
 }
 
@@ -580,14 +580,10 @@ input:focus-visible {
   visibility: hidden;
 }
 
-/* "Similar" asks the chat: in the brand's cyan. */
-.similar {
-  border-color: var(--ds-accent-border);
-  color: var(--ds-cyan);
-}
-
+/* "Similar" marks a name as an example for Regenerate: quiet until marked, then cyan. */
 .similar:hover {
-  background: var(--ds-accent-fill);
+  border-color: var(--ds-cyan);
+  color: var(--ds-cyan);
 }
 
 /* "Regenerate": the panel's main request to the chat, in the brand's cyan. */
@@ -598,6 +594,29 @@ input:focus-visible {
 
 .regenerate:hover {
   background: var(--ds-accent-fill);
+}
+
+/* How many names Regenerate will take as examples. */
+.regenerate__count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-cyan);
+  color: var(--ds-panel);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.regenerate__count--none {
+  visibility: hidden;
+}
+
+/* A name marked as an example: filled in the brand's cyan. */
+.similar[aria-pressed='true'] {
+  border-color: var(--ds-cyan);
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
 }
 
 .save:hover {
@@ -1108,7 +1127,8 @@ input:focus-visible {
   color: var(--ds-cyan);
 }
 
-.save[aria-pressed='true'] .icon {
+.save[aria-pressed='true'] .icon,
+.similar[aria-pressed='true'] .icon {
   fill: currentColor;
 }
 
