@@ -132,13 +132,24 @@ real output, including the command line and JSON: [examples](examples/README.md)
 
 In clients that support [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) (Claude on
 the web and desktop, VS Code, ChatGPT and others), each `check_domains` call shows an interactive
-panel, the same as on [the website](https://domainscout.dakaio.com): a summary line, then every free
-domain with its price range across registrars, and an "All registrars" list under each one where
-every row is a link to that registrar. The free domains show as a list, as cards or as a price
-table (domains down the side, registrars across the top, every price a link), in a light or dark
-theme, switched from the panel's top-right corner. Registrars are always in price order,
-cheapest first, the same as in the text report. The panel ships in the package (`ui/`), loads
-nothing from elsewhere, and opens links through the client. Other clients show the text report.
+panel, the same as on [the website](https://domainscout.dakaio.com):
+
+- **The free domains** as a price table (domains down the side, registrars across the top, every
+  price a link), a list or cards, in a dark or light theme, switched from the top-right corner.
+  The table sorts by any column; a TLD filter narrows every view to one TLD.
+- **Prices** as a range across registrars, with what renewing costs when it differs from the
+  first year and what a minimum term costs upfront. Registrars are always in price order,
+  cheapest first, the same as in the text report.
+- **Every registrar** for a name under "All registrars" or the table's "N more", each a link.
+- **Ask the chat** without typing: "Similar" asks for more names like one you like, "Try other
+  TLDs" re-checks the taken names elsewhere, and "Brainstorm more and check" asks for a new batch
+  (offered at the top when few names are free).
+- **A shortlist**: star the names you like; the chat sees them, and "Compare in chat" asks it to
+  pick one. "Download CSV" saves the free domains with prices and links.
+
+The panel ships in the package (`ui/`), loads nothing from elsewhere, and uses only what the client
+offers: a client that can't send messages or save files simply doesn't show those buttons. Other
+clients show the text report.
 
 ![The results panel: a summary line, then each free domain with its price range and an open list of every registrar](assets/results-card.png)
 

@@ -128,6 +128,46 @@ input:focus-visible {
   stroke-linejoin: round;
 }
 
+/* Icons inside controls: smaller than the toolbar's. */
+.registrar .icon,
+.matrix__chip .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  color: var(--ds-muted);
+}
+
+.toggle .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  transition: transform var(--ds-quick);
+}
+
+.similar .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+}
+
+.star .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.sort .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  opacity: 0.6;
+}
+
+.action .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.shortlist__remove .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+}
+
 /* ── Panel, header and status ─────────────────────────────────────────────────────────────── */
 
 .panel {
@@ -329,16 +369,18 @@ input:focus-visible {
   display: none;
 }
 
-.fallback__text {
+.fallback__note {
   flex-basis: 100%;
   margin: 0;
   font-size: 13px;
   color: var(--ds-body);
 }
 
-.fallback__url {
+.fallback__text-field {
   flex: 1;
   min-width: 0;
+  max-height: 160px;
+  resize: vertical;
   padding: 6px 8px;
   border: 1px solid var(--ds-panel-border);
   border-radius: var(--ds-radius-option);
@@ -392,15 +434,24 @@ input:focus-visible {
 }
 
 .result__domain {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  min-width: 0;
   font-family: var(--ds-mono);
   font-size: 14px;
   color: var(--ds-heading);
   overflow-wrap: anywhere;
 }
 
+.result__name {
+  min-width: 0;
+}
+
 /* An internationalized name's ASCII form: what is actually registered. */
 .result__ascii {
-  display: block;
+  flex-basis: 100%;
   font-size: 12px;
   color: var(--ds-muted);
 }
@@ -419,6 +470,17 @@ input:focus-visible {
 .results--grid .result__line {
   flex-direction: column;
   align-items: flex-start;
+}
+
+.result__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px 14px;
+  margin-left: auto;
+}
+
+.results--grid .result__actions {
+  margin-left: 0;
 }
 
 .result__price {
@@ -461,25 +523,36 @@ input:focus-visible {
   color: var(--ds-heading);
 }
 
-.registrar .icon,
-.matrix__chip .icon {
-  width: var(--ds-icon-small);
-  height: var(--ds-icon-small);
+.results--grid .toggle,
+.result__actions .toggle {
+  margin-left: 0;
+}
+
+/* "Similar": asks the chat for more names like this one. */
+.similar:hover {
+  color: var(--ds-cyan);
+}
+
+/* A star that puts the domain on the shortlist. */
+.star {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius-option);
+  background: none;
   color: var(--ds-muted);
 }
 
-.toggle .icon {
-  width: var(--ds-icon-small);
-  height: var(--ds-icon-small);
-  transition: transform var(--ds-quick);
+.star:hover {
+  color: var(--ds-amber);
 }
 
-.toggle[aria-expanded='true'] .icon {
-  transform: rotate(180deg);
-}
-
-.results--grid .toggle {
-  margin-left: 0;
+.star[aria-pressed='true'] {
+  color: var(--ds-amber);
 }
 
 .registrars {
@@ -524,11 +597,6 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
-}
-
-.registrar:hover .registrar__price,
-.registrar:hover .icon {
-  color: var(--ds-cyan);
 }
 
 .more {
@@ -602,9 +670,45 @@ input:focus-visible {
   font-weight: 400;
 }
 
+.matrix__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .matrix__domain .result__domain {
-  display: block;
   font-size: 13px;
+}
+
+.matrix__name .similar {
+  margin-left: 4px;
+  font-family: var(--ds-font);
+}
+
+/* A heading that sorts its column; the arrows show which way once it is sorted. */
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.sort:hover,
+.sort--ascending,
+.sort--descending {
+  color: var(--ds-heading);
+}
+
+.matrix__renewal {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-muted);
 }
 
 .matrix__note {
@@ -697,6 +801,153 @@ input:focus-visible {
   color: var(--ds-cyan);
 }
 
+/* ── Few free, filter, shortlist and actions ───────────────────────────────────────────────── */
+
+/* Few or no free names: a note with a way to get more at once. */
+.few-free {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 8px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+  background: var(--ds-raised);
+}
+
+.few-free__text {
+  margin: 0;
+  color: var(--ds-body);
+}
+
+/* A button that asks the chat for something or saves a file. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-control);
+  background: transparent;
+  color: var(--ds-body);
+  font-size: 13px;
+}
+
+.action:hover {
+  border-color: var(--ds-cyan);
+  color: var(--ds-heading);
+}
+
+.action--primary {
+  border-color: var(--ds-cyan);
+  color: var(--ds-cyan);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* "All · .com · .ai": the free domains of one TLD. */
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+
+.filter__option {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+
+.filter__option:hover {
+  color: var(--ds-heading);
+}
+
+.filter__option[aria-pressed='true'] {
+  border-color: var(--ds-cyan);
+  background: var(--ds-accent-fill);
+  color: var(--ds-heading);
+}
+
+.filter__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* The shortlist: the starred names, each with a way to take it off, and "Compare in chat". */
+.shortlist:not(:empty) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+}
+
+.shortlist__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-amber);
+}
+
+.shortlist__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortlist__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  color: var(--ds-heading);
+  font: 12px var(--ds-mono);
+}
+
+.shortlist__remove {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius-pill);
+  background: none;
+  color: var(--ds-muted);
+}
+
+.shortlist__remove:hover {
+  color: var(--ds-heading);
+}
+
+.shortlist .action {
+  margin-left: auto;
+}
+
 /* ── Taken, reserved and unverified names ─────────────────────────────────────────────────── */
 
 .group {
@@ -705,8 +956,17 @@ input:focus-visible {
   border-top: 1px solid var(--ds-divider);
 }
 
+.group__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
 .group__label {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -781,6 +1041,24 @@ input:focus-visible {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Icons that change with their control's state. */
+.sort--descending .icon {
+  transform: scaleY(-1);
+}
+
+.registrar:hover .registrar__price,
+.registrar:hover .icon {
+  color: var(--ds-cyan);
+}
+
+.star[aria-pressed='true'] .icon {
+  fill: currentColor;
+}
+
+.toggle[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
 }
 
 /* A phone: less padding around the panel. */

@@ -7,13 +7,13 @@
 /** The MCP Apps protocol version this panel speaks. */
 const PROTOCOL_VERSION = '2026-01-26';
 /** How this panel introduces itself to the host. */
-const APP_INFO = { name: 'DomainScout results', version: '1.2.0' };
+const APP_INFO = { name: 'DomainScout results', version: '1.3.0' };
 /** The JSON-RPC version of every message. */
 const JSONRPC = '2.0';
 /** Where messages go: the host is the frame that embeds this panel. */
 const ANY_ORIGIN = '*';
-/** How long a host gets to open a link before the panel offers the link to copy instead. */
-const OPEN_LINK_TIMEOUT_MS = 3000;
+/** How long a host gets to act on a request before the panel offers to copy instead. */
+const HOST_TIMEOUT_MS = 3000;
 
 /** The protocol's methods this panel sends or handles. */
 const Method = {
@@ -25,6 +25,9 @@ const Method = {
   HostContextChanged: 'ui/notifications/host-context-changed',
   SizeChanged: 'ui/notifications/size-changed',
   OpenLink: 'ui/open-link',
+  Message: 'ui/message',
+  UpdateModelContext: 'ui/update-model-context',
+  DownloadFile: 'ui/download-file',
 };
 
 /** Requests sent to the host that wait for an answer, by id. */
@@ -53,10 +56,14 @@ function settle(response) {
   else waiting.resolve(response.result);
 }
 
-/** A promise that gives up after the given time. */
-function withTimeout(promise, ms) {
-  const timeout = new Promise((_, reject) => window.setTimeout(reject, ms));
-  return Promise.race([promise, timeout]);
+/** A request the host must answer in time and without an error; otherwise `fallback` runs. */
+function requestOrFallback(method, params, fallback) {
+  const timeout = new Promise((_, reject) => window.setTimeout(reject, HOST_TIMEOUT_MS));
+  Promise.race([request(method, params), timeout])
+    .then((result) => {
+      if (result?.isError) fallback();
+    })
+    .catch(fallback);
 }
 
 /**
@@ -64,15 +71,20 @@ function withTimeout(promise, ms) {
  * it; when the host can't, refuses, or doesn't answer, the panel shows the link to copy.
  */
 function openLink(url) {
-  if (!state.hostOpensLinks) {
-    showLinkFallback(url);
+  if (!state.can.openLinks) {
+    showCopyFallback(Copy.LinkBlocked, url);
     return;
   }
-  withTimeout(request(Method.OpenLink, { url }), OPEN_LINK_TIMEOUT_MS)
-    .then((result) => {
-      if (result?.isError) showLinkFallback(url);
-    })
-    .catch(() => showLinkFallback(url));
+  requestOrFallback(Method.OpenLink, { url }, () => showCopyFallback(Copy.LinkBlocked, url));
+}
+
+/** The type of the text content blocks this panel sends and reads. */
+const TEXT_BLOCK = 'text';
+
+/** Sends a message to the chat as the user would; when the host can't, offers it to copy. */
+function sendToChat(text) {
+  const params = { role: 'user', content: [{ type: TEXT_BLOCK, text }] };
+  requestOrFallback(Method.Message, params, () => showCopyFallback(Copy.MessageBlocked, text));
 }
 
 // ── Words on the panel ────────────────────────────────────────────────────────────────────────
@@ -85,7 +97,7 @@ const Copy = {
   Cancelled: 'The check was cancelled.',
   NoResults: 'The check did not return results.',
   NothingToCheck: 'No names to check.',
-  NoneFree: 'None of these are free. Ask for variations of the names or other TLDs.',
+  NoneFree: 'None of these are free.',
   FreeDomains: 'Free domains',
   Taken: 'Taken',
   Reserved: 'Reserved',
@@ -104,7 +116,20 @@ const Copy = {
   OthersHeading: 'Others',
   SiteCell: 'site',
   NotSold: 'not sold here',
+  AllTlds: 'All',
+  TldFilter: 'Show TLD',
+  Similar: 'Similar',
+  SimilarLabel: 'Ask the chat for names like this one',
+  Shortlist: 'Shortlist',
+  AddToShortlist: 'Add to shortlist',
+  RemoveFromShortlist: 'Remove from shortlist',
+  CompareShortlist: 'Compare in chat',
+  OtherTlds: 'Try other TLDs',
+  Brainstorm: 'Brainstorm more and check',
+  DownloadCsv: 'Download CSV',
   LinkBlocked: "Your chat app didn't open the link. Copy it:",
+  MessageBlocked: "Your chat app didn't take the message. Copy it into the chat:",
+  DownloadBlocked: "Your chat app didn't save the file. Copy the CSV:",
   Close: 'Close',
   Footnote:
     'Registrars are listed cheapest first. Prices are standard yearly prices where a registrar publishes them; premium names cost more.',
@@ -113,10 +138,59 @@ const Copy = {
 /** What a table cell shows for a registrar that does not sell the name. */
 const NOT_SOLD_MARK = '—';
 /** A hyphen and a space that never break a line: "2-year minimum" stays whole. */
-const NO_BREAK_HYPHEN = '‑';
-const NO_BREAK_SPACE = ' ';
+const NO_BREAK_HYPHEN = '\u2011';
+const NO_BREAK_SPACE = '\u00a0';
 /** Between the lowest and the highest price: an en dash, as in "$10.46-$11.08". */
-const RANGE_DASH = '–';
+const RANGE_DASH = '\u2013';
+
+// ── What the panel asks the chat ──────────────────────────────────────────────────────────────
+
+/** New names asked for, per request. */
+const SIMILAR_COUNT = 30;
+const BRAINSTORM_COUNT = 100;
+/** Taken names passed on when asking for other TLDs: enough to go on, short enough to read. */
+const TAKEN_SAMPLE = 30;
+/** Free names given as examples of a style that works. */
+const STYLE_SAMPLE = 5;
+/** TLDs suggested for names taken in theirs. */
+const OTHER_TLDS = ['io', 'app', 'dev', 'co'];
+/** Fewer free names than this, and the panel offers to brainstorm more at the top. */
+const FEW_FREE = 5;
+
+/** The part of a domain before its TLD: "kettlecrate" for "kettlecrate.com". */
+function label(item) {
+  const domain = item.display || item.domain;
+  return item.tld ? domain.slice(0, -(item.tld.length + 1)) : domain;
+}
+
+function tldList(tlds) {
+  return tlds.map((tld) => `.${tld}`).join(', ');
+}
+
+const Ask = {
+  similar: (item, tlds) =>
+    `Find ${SIMILAR_COUNT} more domain names like "${label(item)}" (a similar style and length) and check them all with DomainScout in ${tldList(tlds)}.`,
+  otherTlds: (names) =>
+    `These names are taken: ${names.slice(0, TAKEN_SAMPLE).join(', ')}. Check the same names in other TLDs (${tldList(OTHER_TLDS)}) with DomainScout.`,
+  brainstorm: (free, total, tlds) => {
+    const examples = free.slice(0, STYLE_SAMPLE).map(label);
+    const liked = examples.length ? ` Names like ${examples.join(', ')} were free.` : '';
+    const only = free.length < FEW_FREE ? 'Only ' : '';
+    return `${only}${free.length} of ${total} names were free.${liked} Brainstorm ${BRAINSTORM_COUNT} more names in the same style and check them all with DomainScout in ${tldList(tlds)}.`;
+  },
+  compare: (items) =>
+    `Compare these shortlisted domains and recommend one: ${items.map(describeForChat).join('; ')}.`,
+};
+
+/** "kettlecrate.com ($10.46/yr at Cloudflare, renews at $10.46)", for messages and context. */
+function describeForChat(item) {
+  const lead = (item.buy ?? []).find((offer) => offer.price);
+  if (!lead) return item.display || item.domain;
+  const { price } = lead;
+  const renewal = money(price.renewal, price.currency);
+  const cost = `${money(price.registration, price.currency)}/yr at ${lead.registrar}, renews at ${renewal}`;
+  return `${item.display || item.domain} (${cost})`;
+}
 
 // ── Preferences: list, cards or table; light or dark ──────────────────────────────────────────
 
@@ -139,7 +213,7 @@ const StorageKey = {
   Theme: 'domainscout.theme',
 };
 
-/** The system's theme, until the host or the visitor says otherwise. */
+/** The system's theme, until the host says otherwise. */
 const LIGHT_SCHEME_QUERY = '(prefers-color-scheme: light)';
 
 /** A stored choice; none when the sandbox blocks storage or nothing was chosen. */
@@ -164,6 +238,14 @@ function keepChoice(key, value) {
 const DEFAULT_VIEW = View.Table;
 const DEFAULT_THEME = Theme.Dark;
 
+/** Which way a table column is sorted. */
+const SortDirection = {
+  Ascending: 'ascending',
+  Descending: 'descending',
+};
+/** The table's column that sorts by name rather than by a registrar's price. */
+const DOMAIN_COLUMN = 'domain';
+
 const state = {
   view: readChoice(StorageKey.View, View) ?? DEFAULT_VIEW,
   /** The panel's own theme: dark unless the visitor picked light. */
@@ -172,12 +254,20 @@ const state = {
   hostTheme: window.matchMedia(LIGHT_SCHEME_QUERY).matches ? Theme.Light : Theme.Dark,
   /** Whether the host said which theme it uses: only then does the canvas follow it. */
   hostThemeKnown: false,
-  /** Whether the host offers to open links; assumed until it says otherwise. */
-  hostOpensLinks: true,
+  /** What the host offers to do for the panel; links are assumed until it says otherwise. */
+  can: { openLinks: true, message: false, updateModelContext: false, downloadFile: false },
   /** The host's locale, for prices. */
   locale: undefined,
-  /** The last tool result's free domains, so a change of view keeps them. */
+  /** The last result's TLDs, total and taken names, for what the panel asks the chat. */
+  check: { tlds: [], total: 0, taken: [] },
+  /** The last result's free domains, so a change of view, filter or sort keeps them. */
   free: [],
+  /** The TLD the free domains are filtered to; all of them while unset. */
+  tld: undefined,
+  /** The table's sort: a registrar's prices or the names, and which way; the tool's order while unset. */
+  sort: { column: undefined, direction: SortDirection.Ascending },
+  /** The domains the visitor starred, in the order they were starred. */
+  shortlist: new Map(),
 };
 
 function currentTheme() {
@@ -195,7 +285,7 @@ function applyTheme() {
   syncToolbar();
 }
 
-// ── The host's look: its theme, font and locale ───────────────────────────────────────────────
+// ── The host's look: its theme, font, locale and height cap ───────────────────────────────────
 
 /** The class that lets the page scroll, when the host caps the frame's height. */
 const CAPPED_CLASS = 'is-capped';
@@ -257,6 +347,11 @@ const Icon = {
   Moon: 'moon',
   External: 'external',
   Chevron: 'chevron',
+  Star: 'star',
+  Sparkles: 'sparkles',
+  Download: 'download',
+  Close: 'close',
+  Sort: 'sort',
 };
 
 /** Icons as SVG path data: drawn with strokes, in the text's color. */
@@ -277,16 +372,24 @@ const ICON_PATHS = new Map()
   ])
   .set(Icon.Moon, ['M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z'])
   .set(Icon.External, ['M7 17L17 7', 'M8 7h9v9'])
-  .set(Icon.Chevron, ['M6 9l6 6 6-6']);
-
-/** How an inlined image's address starts. */
-const DATA_URI_PREFIX = 'data:';
-/** The icon's size beside the name, in CSS pixels; the image is drawn sharper than that. */
-const LOGO_SIZE = 18;
+  .set(Icon.Chevron, ['M6 9l6 6 6-6'])
+  .set(Icon.Star, ['M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z'])
+  .set(Icon.Sparkles, [
+    'M12 4l1.8 4.6L18.5 10l-4.7 1.4L12 16l-1.8-4.6L5.5 10l4.7-1.4z',
+    'M19 15v4',
+    'M17 17h4',
+  ])
+  .set(Icon.Download, ['M12 4v11', 'M7 10l5 5 5-5', 'M5 20h14'])
+  .set(Icon.Close, ['M6 6l12 12', 'M18 6L6 18'])
+  .set(Icon.Sort, ['M8 9l4-4 4 4', 'M8 15l4 4 4-4']);
 
 /** Attribute values used as switches. */
 const TRUE = 'true';
 const FALSE = 'false';
+/** How an inlined image's address starts. */
+const DATA_URI_PREFIX = 'data:';
+/** The icon's size beside the name, in CSS pixels; the image is drawn sharper than that. */
+const LOGO_SIZE = 18;
 
 function icon(name) {
   const svg = document.createElementNS(SVG_NS, 'svg');
@@ -309,6 +412,13 @@ function element(tag, className, text) {
   return node;
 }
 
+function button(className, text, onClick) {
+  const node = element('button', className, text);
+  node.type = 'button';
+  node.addEventListener('click', onClick);
+  return node;
+}
+
 /** Text only screen readers hear, such as which domain a button belongs to. */
 function hiddenText(text) {
   return element('span', 'visually-hidden', text);
@@ -319,18 +429,16 @@ function money(amount, currency) {
 }
 
 /** A button that opens and closes the given element, which starts closed. */
-function disclosure(className, label, target, hiddenLabel) {
-  const toggle = element('button', className, label);
-  toggle.type = 'button';
-  toggle.setAttribute('aria-expanded', FALSE);
-  toggle.setAttribute('aria-controls', target.id);
-  if (hiddenLabel) toggle.append(hiddenText(hiddenLabel));
-  toggle.append(icon(Icon.Chevron));
-  toggle.addEventListener('click', () => {
+function disclosure(className, text, target, hiddenLabel) {
+  const toggle = button(className, text, () => {
     const open = toggle.getAttribute('aria-expanded') !== TRUE;
     toggle.setAttribute('aria-expanded', String(open));
     target.hidden = !open;
   });
+  toggle.setAttribute('aria-expanded', FALSE);
+  toggle.setAttribute('aria-controls', target.id);
+  if (hiddenLabel) toggle.append(hiddenText(hiddenLabel));
+  toggle.append(icon(Icon.Chevron));
   return toggle;
 }
 
@@ -376,21 +484,19 @@ function segmented(groupLabel, options, current, choose) {
   group.setAttribute('role', 'group');
   group.setAttribute('aria-label', groupLabel);
   for (const option of options) {
-    const button = element('button', 'segmented__option');
-    button.type = 'button';
-    button.title = option.label;
-    button.setAttribute('aria-label', option.label);
-    button.append(icon(option.icon));
-    button.addEventListener('click', () => choose(option.value));
-    toolbarButtons.push({ button, isPressed: () => current() === option.value });
-    group.append(button);
+    const node = button('segmented__option', undefined, () => choose(option.value));
+    node.title = option.label;
+    node.setAttribute('aria-label', option.label);
+    node.append(icon(option.icon));
+    toolbarButtons.push({ button: node, isPressed: () => current() === option.value });
+    group.append(node);
   }
   return group;
 }
 
 function syncToolbar() {
-  for (const { button, isPressed } of toolbarButtons) {
-    button.setAttribute('aria-pressed', String(isPressed()));
+  for (const { button: node, isPressed } of toolbarButtons) {
+    node.setAttribute('aria-pressed', String(isPressed()));
   }
 }
 
@@ -406,10 +512,10 @@ header.append(tool, toolbar);
 /** The one line screen readers are told about: the progress, the summary or an error. */
 const status = element('p', 'summary');
 status.setAttribute('role', 'status');
-const linkFallback = element('div', 'fallback');
-linkFallback.hidden = true;
+const fallbackBox = element('div', 'fallback');
+fallbackBox.hidden = true;
 const content = element('div', 'content');
-panel.append(header, status, linkFallback, content);
+panel.append(header, status, fallbackBox, content);
 document.getElementById('app').append(panel);
 
 function chooseView(view) {
@@ -432,12 +538,6 @@ function chooseTheme(theme) {
   applyTheme();
 }
 
-function setStatus(text, kind) {
-  status.textContent = text;
-  status.className = kind ? `summary summary--${kind}` : 'summary';
-  status.setAttribute('role', kind === StatusKind.Error ? 'alert' : 'status');
-}
-
 /** How the status line looks. */
 const StatusKind = {
   Progress: 'progress',
@@ -445,20 +545,25 @@ const StatusKind = {
   Error: 'error',
 };
 
-/** "Your chat app didn't open the link. Copy it:" with the link, selected, and a close button. */
-function showLinkFallback(url) {
-  const field = element('input', 'fallback__url');
-  field.type = 'text';
+function setStatus(text, kind) {
+  status.textContent = text;
+  status.className = kind ? `summary summary--${kind}` : 'summary';
+  status.setAttribute('role', kind === StatusKind.Error ? 'alert' : 'status');
+}
+
+/** Something the host would not do, offered to copy instead: a link, a message or a CSV. */
+function showCopyFallback(note, text) {
+  const multiline = text.includes('\n');
+  const field = element(multiline ? 'textarea' : 'input', 'fallback__text-field');
+  if (!multiline) field.type = 'text';
   field.readOnly = true;
-  field.value = url;
-  field.setAttribute('aria-label', Copy.LinkBlocked);
-  const close = element('button', 'fallback__close', Copy.Close);
-  close.type = 'button';
-  close.addEventListener('click', () => {
-    linkFallback.hidden = true;
+  field.value = text;
+  field.setAttribute('aria-label', note);
+  const close = button('fallback__close', Copy.Close, () => {
+    fallbackBox.hidden = true;
   });
-  linkFallback.replaceChildren(element('p', 'fallback__text', Copy.LinkBlocked), field, close);
-  linkFallback.hidden = false;
+  fallbackBox.replaceChildren(element('p', 'fallback__note', note), field, close);
+  fallbackBox.hidden = false;
   field.focus();
   field.select();
 }
@@ -473,8 +578,6 @@ const Status = {
   Reserved: 'reserved',
   Unknown: 'unknown',
 };
-/** The content type of the tool's text report. */
-const TEXT_BLOCK = 'text';
 /** Names shown at a time, in each list and each "show more" step: about a screenful. */
 const PAGE_SIZE = 24;
 /** Characters of an ISO date that make the day: "2030-02-03". */
@@ -482,13 +585,13 @@ const DATE_LENGTH = 10;
 /** Milliseconds in a second, for the elapsed time. */
 const SECOND_MS = 1000;
 /** Rows a "show more" button has revealed get focus, so the keyboard carries on from there. */
-const FOCUSABLE_FROM_SCRIPT = '-1';
+const FOCUSABLE_FROM_SCRIPT = -1;
 
 function showChecking(input) {
   state.free = [];
   const count = Array.isArray(input?.domains) ? input.domains.length : 0;
   const tlds = Array.isArray(input?.tlds) && input.tlds.length ? input.tlds : undefined;
-  const where = tlds ? ` in ${tlds.map((tld) => `.${tld}`).join(', ')}` : '';
+  const where = tlds ? ` in ${tldList(tlds)}` : '';
   setStatus(count ? `Checking ${count} names${where}…` : Copy.Checking, StatusKind.Progress);
   content.replaceChildren(element('div', 'progress'));
   layoutGroup.hidden = false;
@@ -529,22 +632,34 @@ function renderResult(result) {
   const taken = byStatus([Status.Taken]);
   const reserved = byStatus([Status.Reserved]);
   const unknown = byStatus([Status.Unknown]);
+  const tlds = [...new Set(data.results.map((item) => item.tld).filter(Boolean))];
+  const total = data.summary?.total ?? data.results.length;
   state.free = free;
+  state.check = { tlds, total, taken };
+  state.tld = undefined;
+  state.sort = { column: undefined, direction: SortDirection.Ascending };
   showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
 
+  const top = [];
+  if (free.length < FEW_FREE) top.push(fewFreeNote(free, total, tlds));
   const rest = [];
-  if (!free.length) rest.push(element('p', 'empty', Copy.NoneFree));
-  if (taken.length) rest.push(group(Copy.Taken, taken, takenChip));
+  if (taken.length) rest.push(group(Copy.Taken, taken, takenChip, takenActions(taken)));
   if (reserved.length) rest.push(group(Copy.Reserved, reserved, notedChip('chip--reserved')));
   if (unknown.length) rest.push(group(Copy.Unknown, unknown, notedChip('chip--unknown')));
   if (data.warnings?.length) rest.push(notes(data.warnings));
   if (free.length) {
+    rest.push(bottomActions());
     const disclosureText = data.disclosure ? ` ${data.disclosure}` : '';
     rest.push(element('p', 'footnote', `${Copy.Footnote}${disclosureText}`));
   }
+  const shortlistBox = element('div', 'shortlist');
+  const filterBox = element('div', 'filters');
   const freeBox = element('div', 'free');
-  content.replaceChildren(freeBox, ...rest);
+  // The shortlist sits under the domains: when it appears, nothing above it moves under the pointer.
+  content.replaceChildren(...top, filterBox, freeBox, shortlistBox, ...rest);
+  renderShortlist();
+  renderFilters();
   renderFree();
 }
 
@@ -555,11 +670,12 @@ const SUMMARY_COUNTS = [
   { key: 'reserved', word: 'reserved', modifier: 'stat--reserved' },
   { key: 'unknown', word: 'not verified', modifier: 'stat--unknown' },
 ];
+/** Free and taken always show in the summary; reserved and unverified only when there are any. */
+const ALWAYS_COUNTED = 2;
 
 /**
  * "48 domains checked in 4.2s", then each count with a colored dot: "● 23 free .com", "● 25 taken".
- * Free and taken always show; reserved and unverified only when there are any. The TLD is named
- * when there is only one. Screen readers hear one plain sentence.
+ * The TLD is named when there is only one. Screen readers hear one plain sentence.
  */
 function showSummary(data, groups) {
   const total = data.summary?.total ?? data.results.length;
@@ -568,27 +684,68 @@ function showSummary(data, groups) {
   const tlds = new Set(data.results.map((item) => item.tld));
   const onlyTld = tlds.size === 1 ? ` .${[...tlds][0]}` : '';
   const lead = element('span', 'summary__lead', `${total} domains checked${time}`);
-  const stats = SUMMARY_COUNTS.filter(({ key }, index) => index < 2 || groups[key].length > 0).map(
-    ({ key, word, modifier }) => {
-      const label = key === 'free' ? `${word}${onlyTld}` : word;
-      const stat = element('span', `stat ${modifier}`);
-      stat.append(
-        element('span', 'stat__dot'),
-        element('span', 'stat__value', String(groups[key].length)),
-        ` ${label}`,
-      );
-      return stat;
-    },
-  );
+  const stats = SUMMARY_COUNTS.filter(
+    ({ key }, index) => index < ALWAYS_COUNTED || groups[key].length > 0,
+  ).map(({ key, word, modifier }) => {
+    const text = key === 'free' ? `${word}${onlyTld}` : word;
+    const stat = element('span', `stat ${modifier}`);
+    stat.append(
+      element('span', 'stat__dot'),
+      element('span', 'stat__value', String(groups[key].length)),
+      ` ${text}`,
+    );
+    return stat;
+  });
   setStatus('', StatusKind.Result);
   status.append(lead, ...stats);
 }
 
-/** The free domains in the chosen view, into the box at the top of the content. */
+/** Few or no free names: says so, and offers to brainstorm more right away. */
+function fewFreeNote(free, total, tlds) {
+  const note = element('div', 'few-free');
+  const text = free.length ? `Only ${free.length} of ${total} are free.` : Copy.NoneFree;
+  note.append(element('p', 'few-free__text', text));
+  if (state.can.message) {
+    const ask = button('action action--primary', Copy.Brainstorm, () =>
+      sendToChat(Ask.brainstorm(free, total, tlds)),
+    );
+    ask.prepend(icon(Icon.Sparkles));
+    note.append(ask);
+  }
+  return note;
+}
+
+/** Under the domains: download them, and brainstorm more. */
+function bottomActions() {
+  const bar = element('div', 'actions');
+  if (state.can.downloadFile) {
+    const download = button('action', Copy.DownloadCsv, downloadCsv);
+    download.prepend(icon(Icon.Download));
+    bar.append(download);
+  }
+  if (state.can.message && state.free.length >= FEW_FREE) {
+    const ask = button('action', Copy.Brainstorm, () =>
+      sendToChat(Ask.brainstorm(state.free, state.check.total, state.check.tlds)),
+    );
+    ask.prepend(icon(Icon.Sparkles));
+    bar.append(ask);
+  }
+  return bar;
+}
+
+/** The free domains the filter lets through, in the table's sort when there is one. */
+function shownFree() {
+  const filtered = state.tld ? state.free.filter((item) => item.tld === state.tld) : state.free;
+  return state.view === View.Table ? sorted(filtered) : filtered;
+}
+
+/** The free domains in the chosen view, into the box made for them. */
 function renderFree() {
   const box = content.querySelector('.free');
   if (!box) return;
-  const parts = state.view === View.Table ? priceTable(state.free) : freeList(state.free);
+  starButtons.clear();
+  const items = shownFree();
+  const parts = state.view === View.Table ? priceTable(items) : freeList(items);
   box.replaceChildren(...parts);
 }
 
@@ -600,21 +757,209 @@ function paged(items, container, build, moreLabel) {
   let shown = Math.min(PAGE_SIZE, items.length);
   container.append(...items.slice(0, shown).flatMap(build));
   if (shown >= items.length) return [];
-  const more = element('button', 'more');
-  more.type = 'button';
-  const label = () => moreLabel(items.length - shown);
-  more.textContent = label();
-  more.addEventListener('click', () => {
+  const more = button('more', moreLabel(items.length - shown), () => {
     const page = items.slice(shown, shown + PAGE_SIZE).flatMap(build);
     container.append(...page);
     shown += PAGE_SIZE;
-    page[0].tabIndex = Number(FOCUSABLE_FROM_SCRIPT);
+    page[0].tabIndex = FOCUSABLE_FROM_SCRIPT;
     page[0].focus();
     if (shown >= items.length) more.remove();
-    else more.textContent = label();
+    else more.textContent = moreLabel(items.length - shown);
   });
   return [more];
 }
+
+// ── Filter: one TLD or all ────────────────────────────────────────────────────────────────────
+
+/** "All · .com · .ai" over the free domains, when they are in more than one TLD. */
+function renderFilters() {
+  const box = content.querySelector('.filters');
+  if (!box) return;
+  const tlds = [...new Set(state.free.map((item) => item.tld))];
+  if (tlds.length < 2) {
+    box.replaceChildren();
+    return;
+  }
+  const group = element('div', 'filter');
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', Copy.TldFilter);
+  const options = [
+    { value: undefined, text: Copy.AllTlds },
+    ...tlds.map((tld) => ({ value: tld, text: `.${tld}` })),
+  ];
+  for (const option of options) {
+    const count = option.value
+      ? state.free.filter((item) => item.tld === option.value).length
+      : state.free.length;
+    const node = button('filter__option', option.text, () => {
+      state.tld = option.value;
+      renderFilters();
+      renderFree();
+    });
+    node.append(element('span', 'filter__count', String(count)));
+    node.setAttribute('aria-pressed', String(state.tld === option.value));
+    group.append(node);
+  }
+  box.replaceChildren(group);
+}
+
+// ── Shortlist: starred domains, shared with the chat ─────────────────────────────────────────
+
+/** The star buttons of each domain, so starring one updates every view of it. */
+const starButtons = new Map();
+
+function domainKey(item) {
+  return item.domain;
+}
+
+/** A star that adds the domain to the shortlist or takes it off. */
+function starButton(item) {
+  const key = domainKey(item);
+  const node = button('star', undefined, () => toggleShortlist(item));
+  node.append(icon(Icon.Star));
+  const buttons = starButtons.get(key) ?? new Set();
+  buttons.add(node);
+  starButtons.set(key, buttons);
+  syncStar(node, state.shortlist.has(key), item);
+  return node;
+}
+
+function syncStar(node, starred, item) {
+  const text = `${starred ? Copy.RemoveFromShortlist : Copy.AddToShortlist}: ${item.display || item.domain}`;
+  node.setAttribute('aria-pressed', String(starred));
+  node.setAttribute('aria-label', text);
+  node.title = text;
+}
+
+function toggleShortlist(item) {
+  const key = domainKey(item);
+  if (state.shortlist.has(key)) state.shortlist.delete(key);
+  else state.shortlist.set(key, item);
+  const starred = state.shortlist.has(key);
+  for (const node of starButtons.get(key) ?? []) {
+    if (node.isConnected) syncStar(node, starred, item);
+  }
+  renderShortlist();
+  shareShortlist();
+}
+
+/** The shortlist above the domains: each starred name with a way to take it off, and "Compare". */
+function renderShortlist() {
+  const box = content.querySelector('.shortlist');
+  if (!box) return;
+  const items = [...state.shortlist.values()];
+  if (!items.length) {
+    box.replaceChildren();
+    return;
+  }
+  const title = element('h2', 'shortlist__title', `${Copy.Shortlist} · ${items.length}`);
+  const chips = element('ul', 'shortlist__items');
+  for (const item of items) {
+    const chip = element('li', 'shortlist__item', item.display || item.domain);
+    const remove = button('shortlist__remove', undefined, () => toggleShortlist(item));
+    remove.setAttribute(
+      'aria-label',
+      `${Copy.RemoveFromShortlist}: ${item.display || item.domain}`,
+    );
+    remove.append(icon(Icon.Close));
+    chip.append(remove);
+    chips.append(chip);
+  }
+  const parts = [title, chips];
+  if (state.can.message && items.length > 1) {
+    const compare = button('action', Copy.CompareShortlist, () => sendToChat(Ask.compare(items)));
+    compare.prepend(icon(Icon.Sparkles));
+    parts.push(compare);
+  }
+  box.replaceChildren(...parts);
+}
+
+/** Tells the model what is on the shortlist, so the chat can talk about the visitor's picks. */
+function shareShortlist() {
+  if (!state.can.updateModelContext) return;
+  const items = [...state.shortlist.values()];
+  const text = items.length
+    ? `The user shortlisted these domains in the DomainScout panel: ${items.map(describeForChat).join('; ')}.`
+    : 'The DomainScout shortlist is empty.';
+  const shortlist = items.map((item) => ({ domain: item.domain, ...cheapest(item) }));
+  request(Method.UpdateModelContext, {
+    content: [{ type: TEXT_BLOCK, text }],
+    structuredContent: { shortlist },
+  }).catch(() => {
+    // The chat simply won't know about the stars; the shortlist still works on the panel.
+  });
+}
+
+/** The cheapest priced offer's facts, for the shortlist and the CSV. */
+function cheapest(item) {
+  const lead = (item.buy ?? []).find((offer) => offer.price) ?? item.buy?.[0];
+  return {
+    registrar: lead?.registrar,
+    registration: lead?.price?.registration,
+    renewal: lead?.price?.renewal,
+    currency: lead?.price?.currency,
+    url: lead?.url,
+  };
+}
+
+// ── CSV: the free domains to take elsewhere ───────────────────────────────────────────────────
+
+/** The file the free domains download as. */
+const CSV_FILE_URI = 'file:///domainscout-free-domains.csv';
+const CSV_MIME_TYPE = 'text/csv';
+/** A resource block holding the file's text, as ui/download-file takes it. */
+const RESOURCE_BLOCK = 'resource';
+const CSV_COLUMNS = [
+  'domain',
+  'tld',
+  'premium',
+  'min_years',
+  'registrar',
+  'registration',
+  'renewal',
+  'currency',
+  'buy_url',
+  'shortlisted',
+];
+/** A CSV field with a comma, a quote or a line break goes in quotes, its quotes doubled. */
+const CSV_NEEDS_QUOTES = /[",\n]/;
+
+function csvField(value) {
+  const text = value === undefined || value === null ? '' : String(value);
+  return CSV_NEEDS_QUOTES.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function csvText() {
+  const rows = shownFree().map((item) => {
+    const offer = cheapest(item);
+    const minYears = (item.buy ?? []).find((each) => each.price)?.price.minYears ?? 1;
+    return [
+      item.domain,
+      item.tld,
+      Boolean(item.premium),
+      minYears,
+      offer.registrar,
+      offer.registration,
+      offer.renewal,
+      offer.currency,
+      offer.url,
+      state.shortlist.has(domainKey(item)),
+    ];
+  });
+  return [CSV_COLUMNS, ...rows].map((row) => row.map(csvField).join(',')).join('\n');
+}
+
+function downloadCsv() {
+  const text = csvText();
+  const contents = [
+    { type: RESOURCE_BLOCK, resource: { uri: CSV_FILE_URI, mimeType: CSV_MIME_TYPE, text } },
+  ];
+  requestOrFallback(Method.DownloadFile, { contents }, () =>
+    showCopyFallback(Copy.DownloadBlocked, text),
+  );
+}
+
+// ── The list and the cards ────────────────────────────────────────────────────────────────────
 
 /** The free domains as a list or as cards: the same list, a class apart. */
 function freeList(free) {
@@ -633,7 +978,8 @@ function freeList(free) {
 function freeDomain(item) {
   const domain = item.display || item.domain;
   const row = element('li', 'result');
-  const name = element('span', 'result__domain', domain);
+  const name = element('span', 'result__domain');
+  name.append(starButton(item), element('span', 'result__name', domain));
   row.append(name);
   if (item.display && item.display !== item.domain) {
     // An internationalized name: show what is actually registered, too.
@@ -650,18 +996,38 @@ function freeDomain(item) {
   const offers = item.buy ?? [];
   const line = element('div', 'result__line');
   line.append(element('span', 'result__price', priceSummary(item, offers)));
+  const actions = element('span', 'result__actions');
+  if (state.can.message) actions.append(similarButton(item));
   row.append(line);
+  line.append(actions);
   if (!offers.length) return row;
   const list = registrarList(offers, domain);
-  line.append(disclosure('toggle', `All ${offers.length} registrars`, list, ` for ${domain}`));
+  actions.append(disclosure('toggle', `All ${offers.length} registrars`, list, ` for ${domain}`));
   row.append(list);
   return row;
 }
 
+/** "Similar": asks the chat for more names like this one, checked in the same TLDs. */
+function similarButton(item, iconOnly) {
+  const node = button(
+    iconOnly ? 'toggle similar similar--icon' : 'toggle similar',
+    iconOnly ? undefined : Copy.Similar,
+    () => sendToChat(Ask.similar(item, state.check.tlds)),
+  );
+  node.prepend(icon(Icon.Sparkles));
+  node.title = Copy.SimilarLabel;
+  const spoken = iconOnly
+    ? `${Copy.Similar} to ${item.display || item.domain}`
+    : ` to ${item.display || item.domain}`;
+  node.append(hiddenText(spoken));
+  return node;
+}
+
 /**
  * "$10.46–$11.08/yr" from the cheapest registrar to the dearest one that publishes a price, in
- * the cheapest one's currency, with the minimum term and what it costs upfront. A premium name
- * has its own price, so it says so instead of showing the standard one.
+ * the cheapest one's currency, then what renewing costs when it differs from the first year,
+ * and the minimum term with what it costs upfront. A premium name has its own price, so it says
+ * so instead of showing the standard one.
  */
 function priceSummary(item, offers) {
   const tld = item.tld ? `.${item.tld}` : '';
@@ -669,20 +1035,46 @@ function priceSummary(item, offers) {
   if (item.premium) return Copy.PremiumPrice;
   const lead = offers.find((offer) => offer.price)?.price;
   if (!lead) return Copy.NoPrices;
-  const amounts = offers
+  const prices = offers
     .map((offer) => offer.price)
-    .filter((price) => price?.currency === lead.currency)
-    .map((price) => price.registration);
-  const low = money(Math.min(...amounts), lead.currency);
-  const high = money(Math.max(...amounts), lead.currency);
-  const range = low === high ? low : `${low}${RANGE_DASH}${high}`;
-  if (lead.minYears <= 1) return `${range}/yr`;
-  const upfront = money(lead.registration * lead.minYears, lead.currency);
-  return `${range}/yr, ${minimumTerm(lead.minYears)} (${upfront} upfront)`;
+    .filter((price) => price?.currency === lead.currency);
+  const parts = [
+    `${range(
+      prices.map((price) => price.registration),
+      lead.currency,
+    )}/yr`,
+  ];
+  if (prices.some((price) => price.renewal !== price.registration)) {
+    parts.push(
+      `renews at ${range(
+        prices.map((price) => price.renewal),
+        lead.currency,
+      )}`,
+    );
+  }
+  if (lead.minYears > 1) {
+    const upfront = money(lead.registration * lead.minYears, lead.currency);
+    parts.push(`${minimumTerm(lead.minYears)} (${upfront} upfront)`);
+  }
+  return parts.join(', ');
+}
+
+/** "$10.46" or "$10.46–$11.08". */
+function range(amounts, currency) {
+  const low = money(Math.min(...amounts), currency);
+  const high = money(Math.max(...amounts), currency);
+  return low === high ? low : `${low}${RANGE_DASH}${high}`;
 }
 
 function minimumTerm(years) {
   return `${years}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`;
+}
+
+/** "$28.12/yr, renews at $51.80" or "$10.46/yr": a registrar's own price. */
+function offerPrice(price) {
+  const first = `${money(price.registration, price.currency)}/yr`;
+  if (price.renewal === price.registration) return first;
+  return `${first}, renews at ${money(price.renewal, price.currency)}`;
 }
 
 /** A link to a registrar's page for the name; the host opens it, as the sandbox blocks navigation. */
@@ -708,9 +1100,7 @@ function registrarList(offers, domain) {
   list.setAttribute('aria-label', `Registrars for ${domain}`);
   for (const offer of offers) {
     const link = registrarLink(offer, 'registrar');
-    const price = offer.price
-      ? `${money(offer.price.registration, offer.price.currency)}/yr`
-      : Copy.PriceOnSite;
+    const price = offer.price ? offerPrice(offer.price) : Copy.PriceOnSite;
     link.append(
       element('span', 'registrar__name', offer.registrar),
       element('span', 'registrar__price', price),
@@ -750,6 +1140,54 @@ function otherOffers(item, columns) {
   return (item.buy ?? []).filter((offer) => !columns.includes(offer.registrar));
 }
 
+/** A name's first-year price at a registrar, for sorting; none when it has no public price. */
+function priceAt(item, registrar) {
+  return (item.buy ?? []).find((offer) => offer.registrar === registrar)?.price?.registration;
+}
+
+/** The free domains in the table's sort; names without a price at the sorted registrar go last. */
+function sorted(items) {
+  const { column, direction } = state.sort;
+  if (!column) return items;
+  const sign = direction === SortDirection.Ascending ? 1 : -1;
+  const byName = (a, b) => (a.display || a.domain).localeCompare(b.display || b.domain);
+  if (column === DOMAIN_COLUMN) return [...items].sort((a, b) => sign * byName(a, b));
+  return [...items].sort((a, b) => {
+    const priceA = priceAt(a, column);
+    const priceB = priceAt(b, column);
+    if (priceA === undefined || priceB === undefined) {
+      return (priceA === undefined) - (priceB === undefined) || byName(a, b);
+    }
+    return sign * (priceA - priceB) || byName(a, b);
+  });
+}
+
+/** A click on a column's heading sorts by it; a second click turns the order around. */
+function sortBy(column) {
+  const same = state.sort.column === column;
+  const ascending = !same || state.sort.direction === SortDirection.Descending;
+  state.sort = {
+    column,
+    direction: ascending ? SortDirection.Ascending : SortDirection.Descending,
+  };
+  renderFree();
+  content.querySelector(`[data-column="${CSS.escape(column)}"] button`)?.focus();
+}
+
+/** A heading that sorts its column, with aria-sort saying how the table is sorted now. */
+function sortableHeading(text, column) {
+  const cell = element('th');
+  cell.scope = 'col';
+  cell.dataset.column = column;
+  const sortedNow = state.sort.column === column;
+  if (sortedNow) cell.setAttribute('aria-sort', state.sort.direction);
+  const node = button('sort', text, () => sortBy(column));
+  node.append(icon(Icon.Sort));
+  if (sortedNow) node.classList.add(`sort--${state.sort.direction}`);
+  cell.append(node);
+  return cell;
+}
+
 /** The free domains as a table of prices: every price a link to that registrar. */
 function priceTable(free) {
   const columns = pricedColumns(free);
@@ -757,11 +1195,12 @@ function priceTable(free) {
   const table = element('table', 'matrix');
   const caption = element('caption', 'visually-hidden', Copy.TableCaption);
   const headRow = element('tr');
-  const headings = [Copy.DomainHeading, ...columns, ...(hasOthers ? [Copy.OthersHeading] : [])];
-  for (const text of headings) {
-    const cell = element('th', '', text);
-    cell.scope = 'col';
-    headRow.append(cell);
+  headRow.append(sortableHeading(Copy.DomainHeading, DOMAIN_COLUMN));
+  for (const registrar of columns) headRow.append(sortableHeading(registrar, registrar));
+  if (hasOthers) {
+    const others = element('th', '', Copy.OthersHeading);
+    others.scope = 'col';
+    headRow.append(others);
   }
   const head = element('thead');
   head.append(headRow);
@@ -814,7 +1253,11 @@ function tableRows(item, columns, hasOthers) {
 function domainCell(item) {
   const cell = element('th', 'matrix__domain');
   cell.scope = 'row';
-  cell.append(element('span', 'result__domain', item.display || item.domain));
+  const name = element('span', 'matrix__name');
+  name.append(starButton(item), element('span', 'result__domain', item.display || item.domain));
+  // In the table the button is the icon alone; its tooltip and spoken label say what it does.
+  if (state.can.message) name.append(similarButton(item, true));
+  cell.append(name);
   if (item.premium)
     cell.append(element('span', 'matrix__note matrix__note--premium', Copy.Premium));
   const minYears = (item.buy ?? []).find((offer) => offer.price)?.price.minYears ?? 1;
@@ -822,15 +1265,26 @@ function domainCell(item) {
   return cell;
 }
 
-/** A price that links to the registrar, "site" where it has none, a dash where it does not sell. */
+/**
+ * A price that links to the registrar, with what renewing costs under it when that differs;
+ * "site" where the registrar publishes no price, a dash where it does not sell the name.
+ */
 function priceCell(offer, domain) {
   if (!offer) return noneCell();
   const cell = element('td');
   const className = offer.price ? 'matrix__link' : 'matrix__link matrix__link--site';
   const link = registrarLink(offer, className);
-  link.textContent = offer.price
-    ? money(offer.price.registration, offer.price.currency)
-    : Copy.SiteCell;
+  if (offer.price) {
+    const { price } = offer;
+    link.append(money(price.registration, price.currency));
+    if (price.renewal !== price.registration) {
+      link.append(
+        element('span', 'matrix__renewal', `renews ${money(price.renewal, price.currency)}`),
+      );
+    }
+  } else {
+    link.append(Copy.SiteCell);
+  }
   link.append(hiddenText(` at ${offer.registrar} for ${domain}`));
   cell.append(link);
   return cell;
@@ -851,33 +1305,49 @@ function otherLinksRow(offers, span, domain) {
   row.hidden = true;
   const cell = element('td');
   cell.colSpan = span;
-  const label = element('span', 'matrix__extra-label', `Prices on their sites for ${domain}:`);
+  const caption = element('span', 'matrix__extra-label', `Prices on their sites for ${domain}:`);
   const links = element('span', 'matrix__extra-links');
   for (const offer of offers) {
     const link = registrarLink(offer, 'matrix__chip');
     link.append(offer.registrar, icon(Icon.External));
     links.append(link);
   }
-  cell.append(label, links);
+  cell.append(caption, links);
   row.append(cell);
   return row;
 }
 
 // ── Taken, reserved and unverified names ─────────────────────────────────────────────────────
 
-function group(label, items, chip) {
+function group(title, items, chip, actions) {
   const box = element('section', 'group');
-  const title = element('h2', 'group__label', `${label} · ${items.length}`);
+  const heading = element('div', 'group__header');
+  heading.append(element('h2', 'group__label', `${title} · ${items.length}`));
+  if (actions) heading.append(actions);
   const chips = element('ul', 'chips');
-  chips.setAttribute('aria-label', label);
+  chips.setAttribute('aria-label', title);
   const more = paged(
     items,
     chips,
     (item) => [chip(item)],
     (left) => `Show ${left} more`,
   );
-  box.append(title, chips, ...more);
+  box.append(heading, chips, ...more);
   return box;
+}
+
+/**
+ * "Try other TLDs": asks the chat to check the taken names in other TLDs - those not already
+ * free in one of the checked ones.
+ */
+function takenActions(taken) {
+  if (!state.can.message) return undefined;
+  const freeNames = new Set(state.free.map(label));
+  const names = [...new Set(taken.map(label))].filter((name) => !freeNames.has(name));
+  if (!names.length) return undefined;
+  const ask = button('toggle', Copy.OtherTlds, () => sendToChat(Ask.otherTlds(names)));
+  ask.prepend(icon(Icon.Sparkles));
+  return ask;
 }
 
 /** A taken name; one being deleted says so, visibly, as it may be free soon. */
@@ -952,6 +1422,16 @@ function showPanel() {
   document.documentElement.classList.add(READY_CLASS);
 }
 
+/** What the host said it can do, in the shape the panel checks. */
+function readCapabilities(capabilities) {
+  return {
+    openLinks: Boolean(capabilities?.openLinks),
+    message: Boolean(capabilities?.message),
+    updateModelContext: Boolean(capabilities?.updateModelContext),
+    downloadFile: Boolean(capabilities?.downloadFile),
+  };
+}
+
 async function start() {
   applyTheme();
   showChecking();
@@ -964,7 +1444,7 @@ async function start() {
     appCapabilities: {},
     protocolVersion: PROTOCOL_VERSION,
   });
-  state.hostOpensLinks = Boolean(result?.hostCapabilities?.openLinks);
+  state.can = readCapabilities(result?.hostCapabilities);
   applyHostContext(result?.hostContext);
   showPanel();
   notify(Method.Initialized);
