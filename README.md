@@ -151,7 +151,7 @@ The panel ships in the package (`ui/`), loads nothing from elsewhere, and uses o
 offers: a client that can't send messages or save files simply doesn't show those buttons. Other
 clients show the text report.
 
-![The results panel: a summary line, then each free domain with its price range and an open list of every registrar](assets/results-card.png)
+![The results panel: the price table filtered to .com, two names starred on the shortlist, the taken names and the actions](assets/results-card.png)
 
 ## How it checks
 
