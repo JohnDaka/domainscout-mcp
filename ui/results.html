@@ -11,36 +11,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DomainScout results</title>
     <style>
-      /* The host's theme variables where it sends them, these defaults where it doesn't. */
+      /*
+        The landing page's results panel (domainscout.dakaio.com): a glass panel, a summary line,
+        then one row per free domain with its name in monospace, an "Available" pill and its
+        price. Dark like the landing page by default, light when the host is light.
+      */
       :root {
-        --ds-text: var(--color-text-primary, #1f1e1d);
-        --ds-text-muted: var(--color-text-secondary, #6b6a68);
-        --ds-surface: var(--color-background-secondary, #f5f4f1);
-        --ds-card: var(--color-background-primary, #ffffff);
-        --ds-border: var(--color-border-tertiary, rgba(31, 30, 29, 0.12));
-        --ds-border-strong: var(--color-border-secondary, rgba(31, 30, 29, 0.24));
-        --ds-success: var(--color-text-success, #2f7a3b);
-        --ds-warning: var(--color-text-warning, #8a5a00);
-        --ds-warning-bg: var(--color-background-warning, #fbf0d9);
-        --ds-info: var(--color-text-info, #1f5fa8);
-        --ds-info-bg: var(--color-background-info, #e5effa);
-        --ds-radius: var(--border-radius-md, 8px);
-        --ds-radius-lg: var(--border-radius-lg, 12px);
-        --ds-font: var(--font-sans, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+        --ds-panel: rgba(255, 255, 255, 0.04);
+        --ds-panel-border: rgba(255, 255, 255, 0.08);
+        --ds-panel-strong: rgba(255, 255, 255, 0.07);
+        --ds-divider: rgba(255, 255, 255, 0.06);
+        --ds-heading: #ffffff;
+        --ds-body: #c7c9ea;
+        --ds-muted: #a3a6d1;
+        --ds-cyan: #3cc8ff;
+        --ds-teal: #11edda;
+        --ds-amber: #facc15;
+        --ds-orange: #fb923c;
+        --ds-font: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+        --ds-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+        --ds-radius: 16px;
+        --ds-radius-small: 10px;
       }
 
-      :root[data-theme='dark'] {
-        --ds-text: var(--color-text-primary, #ecebe8);
-        --ds-text-muted: var(--color-text-secondary, #a3a19c);
-        --ds-surface: var(--color-background-secondary, #2a2927);
-        --ds-card: var(--color-background-primary, #1f1e1d);
-        --ds-border: var(--color-border-tertiary, rgba(236, 235, 232, 0.12));
-        --ds-border-strong: var(--color-border-secondary, rgba(236, 235, 232, 0.28));
-        --ds-success: var(--color-text-success, #7fcf8a);
-        --ds-warning: var(--color-text-warning, #f0c062);
-        --ds-warning-bg: var(--color-background-warning, #3d3018);
-        --ds-info: var(--color-text-info, #8ab8f0);
-        --ds-info-bg: var(--color-background-info, #1c2f47);
+      :root[data-theme='light'] {
+        --ds-panel: #ffffff;
+        --ds-panel-border: rgba(15, 18, 40, 0.1);
+        --ds-panel-strong: rgba(15, 18, 40, 0.05);
+        --ds-divider: rgba(15, 18, 40, 0.08);
+        --ds-heading: #0f1228;
+        --ds-body: #3b3f63;
+        --ds-muted: #62668c;
+        --ds-cyan: #0b7fb3;
+        --ds-teal: #087f75;
+        --ds-amber: #8a6500;
+        --ds-orange: #b4520f;
       }
 
       * {
@@ -54,35 +59,65 @@
       }
 
       body {
-        padding: 2px 1px 6px;
-        color: var(--ds-text);
+        padding: 1px;
+        color: var(--ds-body);
         font: 14px/1.5 var(--ds-font);
         -webkit-font-smoothing: antialiased;
       }
 
-      button,
-      summary {
+      button {
         font: inherit;
         color: inherit;
         cursor: pointer;
       }
 
-      button:focus-visible,
-      summary:focus-visible {
-        outline: 2px solid var(--ds-info);
+      button:focus-visible {
+        outline: 2px solid var(--ds-cyan);
         outline-offset: 2px;
       }
 
+      .panel {
+        padding: 20px 24px;
+        border: 1px solid var(--ds-panel-border);
+        border-radius: var(--ds-radius);
+        background: var(--ds-panel);
+      }
+
+      /* "DOMAINSCOUT  check_domains", as above the results on the landing page. */
+      .tool {
+        margin: 0 0 8px;
+        font-family: var(--ds-mono);
+        font-size: 13px;
+        color: var(--ds-cyan);
+      }
+
+      .tool__who {
+        margin-right: 8px;
+        font-family: var(--ds-font);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ds-muted);
+      }
+
+      .summary {
+        margin: 0 0 6px;
+        color: var(--ds-body);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
       .status {
-        margin: 8px 0;
-        color: var(--ds-text-muted);
+        margin: 0;
+        color: var(--ds-muted);
       }
 
       .progress {
         height: 3px;
-        margin-top: 10px;
+        margin-top: 12px;
         border-radius: 3px;
-        background: var(--ds-border);
+        background: var(--ds-divider);
         overflow: hidden;
       }
 
@@ -92,7 +127,7 @@
         width: 40%;
         height: 100%;
         border-radius: inherit;
-        background: var(--ds-text-muted);
+        background: var(--ds-cyan);
         animation: slide 1.2s ease-in-out infinite;
       }
 
@@ -105,219 +140,216 @@
         }
       }
 
-      /* Counts: checked, free, taken, time. */
-      .tiles {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-        margin: 0 0 20px;
-      }
-
-      .tile {
-        padding: 16px;
-        border-radius: var(--ds-radius);
-        background: var(--ds-surface);
-      }
-
-      .tile__label {
+      /* One row per free domain. */
+      .results {
         margin: 0;
-        font-size: 13px;
-        color: var(--ds-text-muted);
+        padding: 0;
+        list-style: none;
       }
 
-      .tile__value {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 500;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .tile__value--free {
-        color: var(--ds-success);
-      }
-
-      /* One compact card per free domain. */
-      .cards {
+      .result {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        align-items: start;
-        gap: 12px;
-        margin: 0 0 20px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 2px 12px;
+        padding: 10px 0;
+        border-top: 1px solid var(--ds-divider);
       }
 
-      .card {
-        min-width: 0;
-        padding: 16px 20px;
-        border: 0.5px solid var(--ds-border-strong);
-        border-radius: var(--ds-radius-lg);
-        background: var(--ds-card);
-      }
-
-      .card__name {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 4px 8px;
-        margin: 0 0 4px;
-        font-size: 15px;
-        font-weight: 500;
+      .result__domain {
+        font-family: var(--ds-mono);
+        font-size: 14px;
+        color: var(--ds-heading);
         overflow-wrap: anywhere;
       }
 
-      .card__check {
-        flex: none;
-        width: 18px;
-        height: 18px;
-        color: var(--ds-success);
-      }
-
-      .tag {
-        padding: 0 6px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 500;
-        background: var(--ds-warning-bg);
-        color: var(--ds-warning);
-      }
-
-      .card__price {
-        margin: 0 0 12px;
-        font-size: 13px;
-        color: var(--ds-text-muted);
-      }
-
-      .buttons {
+      .result__line {
+        grid-column: 1 / -1;
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px 12px;
       }
 
-      .button {
-        padding: 6px 12px;
-        border: 0.5px solid var(--ds-border-strong);
-        border-radius: var(--ds-radius);
-        background: transparent;
+      .result__price {
         font-size: 13px;
+        color: var(--ds-muted);
+      }
+
+      .pill {
+        align-self: center;
+        padding: 2px 10px;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        color: var(--ds-teal);
+      }
+
+      .pill--premium {
+        color: var(--ds-amber);
+      }
+
+      .result__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 8px;
+        margin-left: auto;
+      }
+
+      .buy {
+        padding: 4px 10px;
+        border: 1px solid var(--ds-panel-border);
+        border-radius: var(--ds-radius-small);
+        background: var(--ds-panel-strong);
+        font-size: 12px;
+        color: var(--ds-body);
         white-space: nowrap;
       }
 
-      .button:hover,
-      .registrar:hover {
-        background: var(--ds-surface);
+      .buy:hover {
+        border-color: var(--ds-cyan);
+        color: var(--ds-heading);
       }
 
       .arrow {
         margin-left: 4px;
-        color: var(--ds-text-muted);
+        color: var(--ds-muted);
       }
 
-      /* The accordion: every registrar, in the same order on every card. */
-      .all {
-        margin-top: 10px;
+      /* The accordion: every registrar, in the same price order for every domain. */
+      .toggle {
+        padding: 4px 2px;
+        border: 0;
+        background: none;
+        color: var(--ds-muted);
+        font-size: 12px;
+        white-space: nowrap;
       }
 
-      .all summary {
-        width: fit-content;
-        font-size: 13px;
-        color: var(--ds-text-muted);
-        list-style: none;
+      .toggle:hover {
+        color: var(--ds-heading);
       }
 
-      .all summary::-webkit-details-marker {
-        display: none;
-      }
-
-      .all summary::after {
+      .toggle::after {
         content: '▾';
         display: inline-block;
         margin-left: 4px;
         transition: transform 0.15s ease;
       }
 
-      .all[open] summary::after {
+      .toggle[aria-expanded='true']::after {
         transform: rotate(180deg);
       }
 
       .registrars {
-        margin: 8px 0 0;
+        grid-column: 1 / -1;
+        margin: 6px 0 0;
         padding: 0;
         list-style: none;
-        border-top: 0.5px solid var(--ds-border);
       }
 
       .registrar {
         display: flex;
-        align-items: baseline;
         justify-content: space-between;
-        gap: 8px;
+        gap: 12px;
         width: 100%;
-        padding: 6px 4px;
+        padding: 5px 10px;
         border: 0;
-        border-bottom: 0.5px solid var(--ds-border);
-        border-radius: 0;
+        border-radius: 6px;
         background: transparent;
         font-size: 13px;
+        color: var(--ds-body);
         text-align: left;
       }
 
+      .registrar:hover {
+        background: var(--ds-panel-strong);
+        color: var(--ds-heading);
+      }
+
       .registrar__price {
-        color: var(--ds-text-muted);
+        color: var(--ds-muted);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
 
-      /* Taken, reserved and unverified names. */
-      .label {
-        margin: 0 0 8px;
+      .more {
+        margin: 8px 0 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--ds-muted);
         font-size: 13px;
-        color: var(--ds-text-muted);
+      }
+
+      .more:hover {
+        color: var(--ds-heading);
+      }
+
+      /* Taken, reserved and unverified names: muted pills. */
+      .group {
+        margin: 16px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid var(--ds-divider);
+      }
+
+      .group__label {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ds-muted);
       }
 
       .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin: 0 0 16px;
       }
 
       .chip {
-        padding: 4px 10px;
-        border-radius: var(--ds-radius);
-        background: var(--ds-surface);
-        color: var(--ds-text-muted);
-        font-size: 13px;
+        padding: 2px 10px;
+        border: 1px solid var(--ds-divider);
+        border-radius: 999px;
+        font-family: var(--ds-mono);
+        font-size: 12px;
+        color: var(--ds-muted);
         overflow-wrap: anywhere;
       }
 
-      .chip--taken {
-        text-decoration: line-through;
-      }
-
       .chip--dropping {
-        background: var(--ds-info-bg);
-        color: var(--ds-info);
+        border-color: currentColor;
+        color: var(--ds-cyan);
       }
 
-      .show-all {
-        margin: -8px 0 20px;
+      .chip--reserved {
+        color: var(--ds-amber);
+      }
+
+      .chip--unknown {
+        color: var(--ds-orange);
       }
 
       .notes {
-        margin: 0 0 16px;
+        margin: 16px 0 0;
         padding-left: 18px;
-        color: var(--ds-text-muted);
+        color: var(--ds-muted);
         font-size: 13px;
       }
 
       .footnote {
-        margin: 0;
-        color: var(--ds-text-muted);
+        margin: 16px 0 0;
+        color: var(--ds-muted);
         font-size: 11px;
       }
 
       @media (max-width: 480px) {
-        .tiles {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+        .panel {
+          padding: 16px;
         }
       }
 
@@ -328,7 +360,7 @@
           opacity: 0.4;
         }
 
-        .all summary::after {
+        .toggle::after {
           transition: none;
         }
       }
@@ -336,8 +368,11 @@
   </head>
   <body>
     <main id="app" aria-live="polite">
-      <p class="status">Checking domains…</p>
-      <div class="progress" aria-hidden="true"></div>
+      <section class="panel">
+        <p class="tool"><span class="tool__who">DomainScout</span>check_domains</p>
+        <p class="status">Checking domains…</p>
+        <div class="progress" aria-hidden="true"></div>
+      </section>
     </main>
 
     <script>
@@ -461,10 +496,10 @@
         Reserved: 'reserved',
         Unknown: 'unknown',
       };
-      /** Free domains shown before "Show all": enough to choose from, short enough to scan. */
-      const FREE_SHOWN = 24;
-      /** Buttons on a card: the two cheapest registrars; every registrar is in the accordion. */
-      const CARD_BUTTONS = 2;
+      /** Free domains listed before "…and N more free": as many as a screen shows. */
+      const FREE_SHOWN = 12;
+      /** Buy buttons on a row: the two cheapest registrars; the rest are under "All N registrars". */
+      const ROW_BUTTONS = 2;
       /** Characters of an ISO date that make the day: "2030-02-03". */
       const DATE_LENGTH = 10;
       /** Milliseconds in a second, for the elapsed time. */
@@ -472,12 +507,14 @@
       /** The mark after a link that leaves for a registrar's site. */
       const OUT_ARROW = '↗';
       /** A hyphen and a space that never break a line: "2-year minimum" stays whole. */
-      const NO_BREAK_HYPHEN = '\u2011';
-      const NO_BREAK_SPACE = '\u00a0';
-      /** The SVG namespace, for the check mark. */
-      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const NO_BREAK_HYPHEN = '‑';
+      const NO_BREAK_SPACE = ' ';
+      /** What the panel says it is, as on the landing page. */
+      const TOOL_WHO = 'DomainScout';
+      const TOOL_NAME = 'check_domains';
 
       const app = document.getElementById('app');
+      let nextListId = 1;
 
       /** An element with a class and, optionally, text: data always goes in as text, never as HTML. */
       function element(tag, className, text) {
@@ -491,14 +528,22 @@
         return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
       }
 
+      /** The panel with the tool's name on top, then the given parts. */
+      function showPanel(...parts) {
+        const panel = element('section', 'panel');
+        const tool = element('p', 'tool');
+        tool.append(element('span', 'tool__who', TOOL_WHO), TOOL_NAME);
+        panel.append(tool, ...parts);
+        app.replaceChildren(panel);
+      }
+
       function showMessage(text) {
-        app.replaceChildren(element('p', 'status', text));
+        showPanel(element('p', 'status', text));
       }
 
       function showChecking(input) {
         const count = Array.isArray(input?.domains) ? input.domains.length : 0;
-        const status = element('p', 'status', count ? `Checking ${count} names…` : 'Checking domains…');
-        app.replaceChildren(status, element('div', 'progress'));
+        showPanel(element('p', 'status', count ? `Checking ${count} names…` : 'Checking domains…'), element('div', 'progress'));
       }
 
       function showResult(result) {
@@ -514,11 +559,13 @@
         const reserved = byStatus([Status.Reserved]);
         const unknown = byStatus([Status.Unknown]);
 
-        const parts = [tiles(data.summary, free.length, taken.length)];
-        if (free.length) parts.push(...freeCards(free));
-        if (taken.length) parts.push(element('p', 'label', 'Taken'), takenChips(taken));
-        if (reserved.length) parts.push(element('p', 'label', 'Reserved'), chips(reserved));
-        if (unknown.length) parts.push(element('p', 'label', 'Not verified, try again later'), chips(unknown));
+        const parts = [element('p', 'summary', summaryText(data, free, taken, reserved, unknown))];
+        if (free.length) parts.push(...freeRows(free));
+        if (taken.length) parts.push(group('Taken', taken, takenChip));
+        if (reserved.length) parts.push(group('Reserved', reserved, (item) => plainChip(item, 'chip chip--reserved')));
+        if (unknown.length) {
+          parts.push(group('Not verified, try again later', unknown, (item) => plainChip(item, 'chip chip--unknown')));
+        }
         if (data.warnings?.length) parts.push(notes(data.warnings));
         parts.push(
           element(
@@ -529,91 +576,69 @@
               (data.disclosure ? ` ${data.disclosure}` : ''),
           ),
         );
-        app.replaceChildren(...parts);
+        showPanel(...parts);
       }
 
-      function tiles(summary, freeCount, takenCount) {
-        const seconds = (summary.elapsed_ms / SECOND_MS).toFixed(1);
-        const box = element('div', 'tiles');
-        const values = [
-          ['Checked', String(summary.total), ''],
-          ['Free', String(freeCount), 'tile__value--free'],
-          ['Taken', String(takenCount), ''],
-          ['Time', `${seconds} s`, ''],
-        ];
-        for (const [label, value, modifier] of values) {
-          const tile = element('div', 'tile');
-          tile.append(element('p', 'tile__label', label), element('p', `tile__value ${modifier}`, value));
-          box.append(tile);
-        }
-        return box;
+      /** "48 names checked in 4.2s: 23 free, 25 taken", naming the TLD when there is only one. */
+      function summaryText(data, free, taken, reserved, unknown) {
+        const seconds = (data.summary.elapsed_ms / SECOND_MS).toFixed(1);
+        const tlds = new Set(data.results.map((item) => item.tld));
+        const onlyTld = tlds.size === 1 ? ` .${[...tlds][0]}` : '';
+        const counts = [`${free.length} free${onlyTld}`, `${taken.length} taken`];
+        if (reserved.length) counts.push(`${reserved.length} reserved`);
+        if (unknown.length) counts.push(`${unknown.length} not verified`);
+        return `${data.summary.total} names checked in ${seconds}s: ${counts.join(', ')}`;
       }
 
-      /** The free domains' cards, the first FREE_SHOWN of them until "Show all". */
-      function freeCards(free) {
-        const box = element('div', 'cards');
-        free.slice(0, FREE_SHOWN).forEach((item) => box.append(freeCard(item)));
-        if (free.length <= FREE_SHOWN) return [box];
-        const showAll = element('button', 'button show-all', `Show all ${free.length} free domains`);
-        showAll.addEventListener('click', () => {
-          free.slice(FREE_SHOWN).forEach((item) => box.append(freeCard(item)));
-          showAll.remove();
+      /** The free domains' rows, the first FREE_SHOWN of them until "…and N more free". */
+      function freeRows(free) {
+        const list = element('ul', 'results');
+        free.slice(0, FREE_SHOWN).forEach((item) => list.append(freeRow(item)));
+        if (free.length <= FREE_SHOWN) return [list];
+        const more = element('button', 'more', `…and ${free.length - FREE_SHOWN} more free`);
+        more.addEventListener('click', () => {
+          free.slice(FREE_SHOWN).forEach((item) => list.append(freeRow(item)));
+          more.remove();
         });
-        return [box, showAll];
+        return [list, more];
       }
 
-      function freeCard(item) {
-        const card = element('article', 'card');
-        const name = element('p', 'card__name');
-        name.append(checkMark(item.confirmedBy), element('span', '', item.display || item.domain));
-        if (item.premium) name.append(element('span', 'tag', 'Premium'));
-        card.append(name);
+      function freeRow(item) {
+        const row = element('li', 'result');
+        row.append(element('span', 'result__domain', item.display || item.domain));
+        const pill = item.premium
+          ? element('span', 'pill pill--premium', 'Premium')
+          : element('span', 'pill', 'Available');
+        if (item.confirmedBy) pill.title = `Confirmed by ${item.confirmedBy}`;
+        row.append(pill);
 
         // The tool lists offers cheapest first, priced ones before the rest: one order for every
-        // card, the buttons and the accordion alike.
+        // row, the buttons and the accordion alike.
         const offers = item.buy ?? [];
         const lead = offers.find((offer) => offer.price);
-        if (lead) card.append(element('p', 'card__price', priceText(lead.price)));
+        // The price and the buy buttons share a line, which wraps on a narrow screen.
+        const line = element('div', 'result__line');
+        if (lead) line.append(element('span', 'result__price', priceText(lead)));
+        row.append(line);
+        if (!offers.length) return row;
 
-        const buttons = element('div', 'buttons');
-        for (const offer of offers.slice(0, CARD_BUTTONS)) buttons.append(buyButton(offer));
-        if (buttons.childElementCount) card.append(buttons);
-        if (offers.length > CARD_BUTTONS) card.append(allRegistrars(offers));
-        return card;
-      }
-
-      /** A green check; its title says who confirmed the name, if a registrar did. */
-      function checkMark(confirmedBy) {
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.setAttribute('class', 'card__check');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-        svg.setAttribute('stroke-width', '2');
-        svg.setAttribute('stroke-linecap', 'round');
-        svg.setAttribute('stroke-linejoin', 'round');
-        svg.setAttribute('aria-hidden', 'true');
-        const circle = document.createElementNS(SVG_NS, 'circle');
-        circle.setAttribute('cx', '12');
-        circle.setAttribute('cy', '12');
-        circle.setAttribute('r', '9');
-        const tick = document.createElementNS(SVG_NS, 'path');
-        tick.setAttribute('d', 'M8.5 12.5l2.5 2.5 4.5-5');
-        const title = document.createElementNS(SVG_NS, 'title');
-        title.textContent = confirmedBy ? `Confirmed by ${confirmedBy}` : 'Not in the registry';
-        svg.append(title, circle, tick);
-        return svg;
-      }
-
-      /** "$10.46/yr, renews at $10.46", plus the minimum term where there is one. */
-      function priceText(price) {
-        const parts = [
-          `${money(price.registration, price.currency)}/yr`,
-          `renews at ${money(price.renewal, price.currency)}`,
-        ];
-        if (price.minYears > 1) {
-          parts.push(`${price.minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`);
+        const actions = element('div', 'result__actions');
+        for (const offer of offers.slice(0, ROW_BUTTONS)) actions.append(buyButton(offer));
+        line.append(actions);
+        if (offers.length > ROW_BUTTONS) {
+          const list = registrarList(offers);
+          actions.append(accordionToggle(offers.length, list));
+          row.append(list);
         }
+        return row;
+      }
+
+      /** "$10.46/yr at Cloudflare", with the renewal when it differs and any minimum term. */
+      function priceText(offer) {
+        const { price } = offer;
+        const parts = [`${money(price.registration, price.currency)}/yr at ${offer.registrar}`];
+        if (price.renewal !== price.registration) parts.push(`renews at ${money(price.renewal, price.currency)}`);
+        if (price.minYears > 1) parts.push(`${price.minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`);
         return parts.join(', ');
       }
 
@@ -621,53 +646,65 @@
         const label = offer.price
           ? `${offer.registrar} ${money(offer.price.registration, offer.price.currency)}`
           : offer.registrar;
-        const button = element('button', 'button', label);
+        const button = element('button', 'buy', label);
         button.append(element('span', 'arrow', OUT_ARROW));
         button.addEventListener('click', () => openLink(offer.url));
         return button;
       }
 
-      /** The accordion: every registrar that sells the name, in the tool's order. */
-      function allRegistrars(offers) {
-        const details = element('details', 'all');
-        details.append(element('summary', '', `All ${offers.length} registrars`));
+      /** "All N registrars ▾": opens and closes the list under the row. */
+      function accordionToggle(count, list) {
+        const toggle = element('button', 'toggle', `All ${count} registrars`);
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-controls', list.id);
+        toggle.addEventListener('click', () => {
+          const open = toggle.getAttribute('aria-expanded') !== 'true';
+          toggle.setAttribute('aria-expanded', String(open));
+          list.hidden = !open;
+        });
+        return toggle;
+      }
+
+      /** Every registrar that sells the name, in the tool's order. */
+      function registrarList(offers) {
         const list = element('ul', 'registrars');
+        list.id = `registrars-${nextListId++}`;
+        list.hidden = true;
         for (const offer of offers) {
-          const row = element('button', 'registrar');
+          const button = element('button', 'registrar');
           const price = offer.price
             ? `${money(offer.price.registration, offer.price.currency)}/yr`
             : 'price on site';
-          row.append(element('span', '', offer.registrar), element('span', 'registrar__price', `${price} ${OUT_ARROW}`));
-          row.addEventListener('click', () => openLink(offer.url));
+          button.append(element('span', '', offer.registrar), element('span', 'registrar__price', `${price} ${OUT_ARROW}`));
+          button.addEventListener('click', () => openLink(offer.url));
           const item = element('li');
-          item.append(row);
+          item.append(button);
           list.append(item);
         }
-        details.append(list);
-        return details;
+        return list;
       }
 
-      function takenChips(items) {
-        const box = element('div', 'chips');
-        for (const item of items) {
-          const dropping = item.registration?.dropping;
-          const chip = element('span', dropping ? 'chip chip--dropping' : 'chip chip--taken', item.display || item.domain);
-          const expires = item.registration?.expires?.slice(0, DATE_LENGTH);
-          if (dropping) chip.title = 'Being deleted: may become available soon';
-          else if (expires) chip.title = `Registered until ${expires}`;
-          box.append(chip);
-        }
+      function group(label, items, chip) {
+        const box = element('div', 'group');
+        const chips = element('div', 'chips');
+        for (const item of items) chips.append(chip(item));
+        box.append(element('p', 'group__label', `${label} · ${items.length}`), chips);
         return box;
       }
 
-      function chips(items) {
-        const box = element('div', 'chips');
-        for (const item of items) {
-          const chip = element('span', 'chip', item.display || item.domain);
-          if (item.note) chip.title = item.note;
-          box.append(chip);
-        }
-        return box;
+      function takenChip(item) {
+        const dropping = item.registration?.dropping;
+        const chip = element('span', dropping ? 'chip chip--dropping' : 'chip', item.display || item.domain);
+        const expires = item.registration?.expires?.slice(0, DATE_LENGTH);
+        if (dropping) chip.title = 'Being deleted: may become available soon';
+        else if (expires) chip.title = `Registered until ${expires}`;
+        return chip;
+      }
+
+      function plainChip(item, className) {
+        const chip = element('span', className, item.display || item.domain);
+        if (item.note) chip.title = item.note;
+        return chip;
       }
 
       function notes(warnings) {
@@ -678,7 +715,11 @@
 
       // ── Start: introduce the card, take the host's look, then follow the content's size ──────
 
+      /** The system's theme, until the host says which one it uses. */
+      const LIGHT_SCHEME_QUERY = '(prefers-color-scheme: light)';
+
       async function start() {
+        document.documentElement.dataset.theme = window.matchMedia(LIGHT_SCHEME_QUERY).matches ? 'light' : 'dark';
         const result = await request(Method.Initialize, {
           appInfo: APP_INFO,
           appCapabilities: {},

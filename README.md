@@ -132,13 +132,14 @@ real output, including the command line and JSON: [examples](examples/README.md)
 
 In clients that support [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) (Claude on
 the web and desktop, VS Code, ChatGPT and others), each `check_domains` call shows an interactive
-card: the counts, every free domain with its price and the two cheapest registrars, an "All
-registrars" list that opens under each one, and the taken names. Registrars are always in price
-order, cheapest first, the same as in the text report. It follows
-the client's light or dark theme. The page ships in the package (`ui/results.html`), loads nothing
-from elsewhere, and opens buy links through the client. Other clients show the text report.
+panel, the same as on [the website](https://domainscout.dakaio.com): a summary line, then a row per
+free domain with its price and buttons for the two cheapest registrars, an "All registrars" list
+that opens under each one, and the taken names. Registrars are always in price order, cheapest
+first, the same as in the text report. The panel follows the client's light or dark theme, ships
+in the package (`ui/results.html`), loads nothing from elsewhere, and opens buy links through the
+client. Other clients show the text report.
 
-![The results card: checked, free and taken counts, then a card for each free domain with its price and Buy buttons](assets/results-card.png)
+![The results panel: a summary line, then a row per free domain with its price, buy buttons and an open list of every registrar](assets/results-card.png)
 
 ## How it checks
 
