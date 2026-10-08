@@ -345,6 +345,8 @@ export const MCP_PROGRESS_METHOD = 'notifications/progress';
 export const McpContentType = { Text: 'text' } as const;
 /** Entries accepted in one call before TLDs are added; the domain limit applies after. */
 export const MAX_INPUT_ENTRIES = 1_000;
+/** Saved domains a call may carry along: a shortlist, not a second list of names to check. */
+export const MAX_SAVED_ENTRIES = 100;
 
 // ── Output ──────────────────────────────────────────────────────────────────
 

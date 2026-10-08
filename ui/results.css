@@ -23,6 +23,8 @@
   --ds-amber: #facc15;
   --ds-orange: #fb923c;
   --ds-accent-fill: rgba(60, 200, 255, 0.14);
+  --ds-accent-border: rgba(60, 200, 255, 0.45);
+  --ds-amber-fill: rgba(250, 204, 21, 0.12);
   --ds-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --ds-font: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   --ds-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
@@ -58,6 +60,8 @@
   --ds-amber: #8a6500;
   --ds-orange: #b4520f;
   --ds-accent-fill: rgba(8, 103, 154, 0.09);
+  --ds-accent-border: rgba(8, 103, 154, 0.45);
+  --ds-amber-fill: rgba(138, 101, 0, 0.08);
   --ds-thumb-shadow: 0 1px 2px rgba(15, 18, 40, 0.12);
 }
 
@@ -142,14 +146,9 @@ input:focus-visible {
   transition: transform var(--ds-quick);
 }
 
-.similar .icon {
+.chip-button .icon {
   width: var(--ds-icon-small);
   height: var(--ds-icon-small);
-}
-
-.star .icon {
-  width: 14px;
-  height: 14px;
 }
 
 .sort .icon {
@@ -254,8 +253,18 @@ input:focus-visible {
 }
 
 /* The summary, or while checking the progress, or an error: the one line read out on change. */
+/* The summary on the left, the TLD filter on the right; they stack when the line runs out. */
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin: 0 0 8px;
+}
+
 .summary {
-  margin: 0 0 6px;
+  margin: 0;
   color: var(--ds-body);
   font-size: 14px;
   font-weight: 600;
@@ -528,30 +537,47 @@ input:focus-visible {
   margin-left: 0;
 }
 
-/* "Similar": asks the chat for more names like this one. */
-.similar:hover {
+/* A small outlined button beside a name: "☆ Save" and "✦ Similar". */
+.chip-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-body);
+  font-family: var(--ds-font);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  transition:
+    border-color var(--ds-quick),
+    color var(--ds-quick),
+    background-color var(--ds-quick);
+}
+
+/* "Similar" asks the chat: in the brand's cyan. */
+.similar {
+  border-color: var(--ds-accent-border);
   color: var(--ds-cyan);
 }
 
-/* A star that puts the domain on the shortlist. */
-.star {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--ds-radius-option);
-  background: none;
-  color: var(--ds-muted);
+.similar:hover {
+  background: var(--ds-accent-fill);
 }
 
-.star:hover {
+.save:hover {
+  border-color: var(--ds-amber);
   color: var(--ds-amber);
 }
 
-.star[aria-pressed='true'] {
+/* A saved domain's button: amber, its star filled. */
+.save[aria-pressed='true'] {
+  border-color: var(--ds-amber);
+  background: var(--ds-amber-fill);
   color: var(--ds-amber);
 }
 
@@ -672,17 +698,19 @@ input:focus-visible {
 
 .matrix__name {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.matrix__buttons {
+  display: inline-flex;
   gap: 6px;
 }
 
 .matrix__domain .result__domain {
   font-size: 13px;
-}
-
-.matrix__name .similar {
-  margin-left: 4px;
-  font-family: var(--ds-font);
 }
 
 /* A heading that sorts its column; the arrows show which way once it is sorted. */
@@ -857,7 +885,6 @@ input:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 6px 0 2px;
 }
 
 .filter__option {
@@ -889,9 +916,7 @@ input:focus-visible {
 
 /* The shortlist: the starred names, each with a way to take it off, and "Compare in chat". */
 .shortlist:not(:empty) {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
   gap: 8px;
   margin: 8px 0;
   padding: 10px 12px;
@@ -944,8 +969,13 @@ input:focus-visible {
   color: var(--ds-heading);
 }
 
-.shortlist .action {
-  margin-left: auto;
+/* The title and "Compare in chat" on one line: the button stays put as names are saved below. */
+.shortlist__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 /* ── Taken, reserved and unverified names ─────────────────────────────────────────────────── */
@@ -1053,7 +1083,7 @@ input:focus-visible {
   color: var(--ds-cyan);
 }
 
-.star[aria-pressed='true'] .icon {
+.save[aria-pressed='true'] .icon {
   fill: currentColor;
 }
 

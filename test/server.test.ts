@@ -60,6 +60,20 @@ describe('MCP server', () => {
     expect(card?.text).toContain('data-logo="data:image/png;base64,');
   });
 
+  it('checks saved domains again with the rest and marks them saved', async () => {
+    const client = await connect();
+    const result = await client.callTool({
+      name: TOOL_CHECK_DOMAINS,
+      arguments: { domains: ['fresh'], tlds: ['com'], saved: ['Kept.AI'] },
+    });
+    const { results } = result.structuredContent as {
+      results: Array<{ domain: string; saved?: boolean }>;
+    };
+    const byDomain = Object.fromEntries(results.map((item) => [item.domain, item]));
+    expect(byDomain['kept.ai']?.saved).toBe(true);
+    expect(byDomain['fresh.com']?.saved).toBeUndefined();
+  });
+
   it('lists the check_domains tool with input and output schemas', async () => {
     const client = await connect();
     const { tools } = await client.listTools();

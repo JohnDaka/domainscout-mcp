@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MAX_INPUT_ENTRIES } from '../constants.js';
+import { MAX_INPUT_ENTRIES, MAX_SAVED_ENTRIES } from '../constants.js';
 import {
   ConfirmState,
   DnsState,
@@ -60,6 +60,7 @@ const resultSchema = z.object({
   registration: registrationSchema.optional(),
   buy: z.array(buyLinkSchema).optional(),
   evidence: z.array(evidenceSchema).optional(),
+  saved: z.boolean().optional().describe(ToolText.SavedInfo),
 });
 
 /** Counts per status, the total and the elapsed time, as in the Summary type. */
@@ -82,6 +83,7 @@ export function checkDomainsTool(defaultTlds: string) {
       tlds: z.array(z.string()).optional().describe(tldsParamText(defaultTlds)),
       confirm: z.boolean().optional().describe(ToolText.ConfirmParam),
       details: z.boolean().optional().describe(ToolText.DetailsParam),
+      saved: z.array(z.string()).max(MAX_SAVED_ENTRIES).optional().describe(ToolText.SavedParam),
     },
     outputSchema: {
       summary: summarySchema,

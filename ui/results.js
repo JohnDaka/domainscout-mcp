@@ -120,12 +120,14 @@ const Copy = {
   TldFilter: 'Show TLD',
   Similar: 'Similar',
   SimilarLabel: 'Ask the chat for names like this one',
-  Shortlist: 'Shortlist',
-  AddToShortlist: 'Add to shortlist',
-  RemoveFromShortlist: 'Remove from shortlist',
-  CompareShortlist: 'Compare in chat',
+  Saved: 'Saved',
+  Save: 'Save',
+  SaveLabel: 'Save',
+  Unsave: 'Remove from saved',
+  CompareSaved: 'Compare in chat',
+  Regenerate: 'Regenerate',
+  RegenerateLabel: 'New names, none of those checked so far; the saved ones stay',
   OtherTlds: 'Try other TLDs',
-  Brainstorm: 'Brainstorm more and check',
   DownloadCsv: 'Download CSV',
   LinkBlocked: "Your chat app didn't open the link. Copy it:",
   MessageBlocked: "Your chat app didn't take the message. Copy it into the chat:",
@@ -147,7 +149,9 @@ const RANGE_DASH = '\u2013';
 
 /** New names asked for, per request. */
 const SIMILAR_COUNT = 30;
-const BRAINSTORM_COUNT = 100;
+/** A new batch is as big as the last one, within these bounds. */
+const REGENERATE_MIN = 20;
+const REGENERATE_MAX = 200;
 /** Taken names passed on when asking for other TLDs: enough to go on, short enough to read. */
 const TAKEN_SAMPLE = 30;
 /** Free names given as examples of a style that works. */
@@ -172,14 +176,25 @@ const Ask = {
     `Find ${SIMILAR_COUNT} more domain names like "${label(item)}" (a similar style and length) and check them all with DomainScout in ${tldList(tlds)}.`,
   otherTlds: (names) =>
     `These names are taken: ${names.slice(0, TAKEN_SAMPLE).join(', ')}. Check the same names in other TLDs (${tldList(OTHER_TLDS)}) with DomainScout.`,
-  brainstorm: (free, total, tlds) => {
+  /**
+   * A new batch: as many names as last time, in the same style, none of them checked before. The
+   * names to leave out go in the model's context when the host takes it, so the chat stays short;
+   * otherwise they are spelled out. The saved domains go along in "saved", so they stay.
+   */
+  regenerate: ({ names, saved, tlds, free }) => {
+    const count = Math.min(Math.max(names.length, REGENERATE_MIN), REGENERATE_MAX);
     const examples = free.slice(0, STYLE_SAMPLE).map(label);
-    const liked = examples.length ? ` Names like ${examples.join(', ')} were free.` : '';
-    const only = free.length < FEW_FREE ? 'Only ' : '';
-    return `${only}${free.length} of ${total} names were free.${liked} Brainstorm ${BRAINSTORM_COUNT} more names in the same style and check them all with DomainScout in ${tldList(tlds)}.`;
+    const style = examples.length ? ` (names like ${examples.join(', ')} were free)` : '';
+    const avoid = state.can.updateModelContext
+      ? `Leave out all ${names.length} names checked so far; they are in the panel's context.`
+      : `Leave out every name checked so far: ${names.join(', ')}.`;
+    const keep = saved.length
+      ? ` Pass my saved domains in the saved parameter so they stay: ${saved.join(', ')}.`
+      : '';
+    return `Regenerate: brainstorm ${count} new domain names in the same style${style}. ${avoid} Check them all with DomainScout in ${tldList(tlds)}.${keep}`;
   },
   compare: (items) =>
-    `Compare these shortlisted domains and recommend one: ${items.map(describeForChat).join('; ')}.`,
+    `Compare these saved domains and recommend one: ${items.map(describeForChat).join('; ')}.`,
 };
 
 /** "kettlecrate.com ($10.46/yr at Cloudflare, renews at $10.46)", for messages and context. */
@@ -259,15 +274,15 @@ const state = {
   /** The host's locale, for prices. */
   locale: undefined,
   /** The last result's TLDs, total and taken names, for what the panel asks the chat. */
-  check: { tlds: [], total: 0, taken: [] },
+  check: { tlds: [], total: 0, taken: [], names: [] },
   /** The last result's free domains, so a change of view, filter or sort keeps them. */
   free: [],
   /** The TLD the free domains are filtered to; all of them while unset. */
   tld: undefined,
   /** The table's sort: a registrar's prices or the names, and which way; the tool's order while unset. */
   sort: { column: undefined, direction: SortDirection.Ascending },
-  /** The domains the visitor starred, in the order they were starred. */
-  shortlist: new Map(),
+  /** The domains the visitor saved, in the order they were saved. */
+  saved: new Map(),
 };
 
 function currentTheme() {
@@ -352,6 +367,7 @@ const Icon = {
   Download: 'download',
   Close: 'close',
   Sort: 'sort',
+  Refresh: 'refresh',
 };
 
 /** Icons as SVG path data: drawn with strokes, in the text's color. */
@@ -381,7 +397,8 @@ const ICON_PATHS = new Map()
   ])
   .set(Icon.Download, ['M12 4v11', 'M7 10l5 5 5-5', 'M5 20h14'])
   .set(Icon.Close, ['M6 6l12 12', 'M18 6L6 18'])
-  .set(Icon.Sort, ['M8 9l4-4 4 4', 'M8 15l4 4 4-4']);
+  .set(Icon.Sort, ['M8 9l4-4 4 4', 'M8 15l4 4 4-4'])
+  .set(Icon.Refresh, ['M20 11a8 8 0 1 0-2.3 5.7', 'M20 4v7h-7']);
 
 /** Attribute values used as switches. */
 const TRUE = 'true';
@@ -512,10 +529,14 @@ header.append(tool, toolbar);
 /** The one line screen readers are told about: the progress, the summary or an error. */
 const status = element('p', 'summary');
 status.setAttribute('role', 'status');
+/** The summary on the left, the TLD filter on the right, on one line. */
+const summaryRow = element('div', 'summary-row');
+const filterSlot = element('div', 'summary-row__filter');
+summaryRow.append(status, filterSlot);
 const fallbackBox = element('div', 'fallback');
 fallbackBox.hidden = true;
 const content = element('div', 'content');
-panel.append(header, status, fallbackBox, content);
+panel.append(header, summaryRow, fallbackBox, content);
 document.getElementById('app').append(panel);
 
 function chooseView(view) {
@@ -594,6 +615,7 @@ function showChecking(input) {
   const where = tlds ? ` in ${tldList(tlds)}` : '';
   setStatus(count ? `Checking ${count} names${where}…` : Copy.Checking, StatusKind.Progress);
   content.replaceChildren(element('div', 'progress'));
+  filterSlot.replaceChildren();
   layoutGroup.hidden = false;
 }
 
@@ -601,6 +623,7 @@ function showMessage(text, kind) {
   state.free = [];
   setStatus(text, kind);
   content.replaceChildren();
+  filterSlot.replaceChildren();
   layoutGroup.hidden = true;
 }
 
@@ -634,15 +657,19 @@ function renderResult(result) {
   const unknown = byStatus([Status.Unknown]);
   const tlds = [...new Set(data.results.map((item) => item.tld).filter(Boolean))];
   const total = data.summary?.total ?? data.results.length;
+  const names = [...new Set(data.results.map(label))];
   state.free = free;
-  state.check = { tlds, total, taken };
+  state.check = { tlds, total, taken, names };
   state.tld = undefined;
   state.sort = { column: undefined, direction: SortDirection.Ascending };
+  // Domains saved on an earlier panel come back marked: they start saved here too.
+  state.saved = new Map(free.filter((item) => item.saved).map((item) => [domainKey(item), item]));
   showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
+  shareContext();
 
   const top = [];
-  if (free.length < FEW_FREE) top.push(fewFreeNote(free, total, tlds));
+  if (free.length < FEW_FREE) top.push(fewFreeNote(free, total));
   const rest = [];
   if (taken.length) rest.push(group(Copy.Taken, taken, takenChip, takenActions(taken)));
   if (reserved.length) rest.push(group(Copy.Reserved, reserved, notedChip('chip--reserved')));
@@ -653,12 +680,11 @@ function renderResult(result) {
     const disclosureText = data.disclosure ? ` ${data.disclosure}` : '';
     rest.push(element('p', 'footnote', `${Copy.Footnote}${disclosureText}`));
   }
-  const shortlistBox = element('div', 'shortlist');
-  const filterBox = element('div', 'filters');
+  const savedBox = element('div', 'shortlist');
   const freeBox = element('div', 'free');
-  // The shortlist sits under the domains: when it appears, nothing above it moves under the pointer.
-  content.replaceChildren(...top, filterBox, freeBox, shortlistBox, ...rest);
-  renderShortlist();
+  // The saved domains sit under the free ones: when they appear, nothing above moves under the pointer.
+  content.replaceChildren(...top, freeBox, savedBox, ...rest);
+  renderSaved();
   renderFilters();
   renderFree();
 }
@@ -700,35 +726,37 @@ function showSummary(data, groups) {
   status.append(lead, ...stats);
 }
 
-/** Few or no free names: says so, and offers to brainstorm more right away. */
-function fewFreeNote(free, total, tlds) {
+/** Few or no free names: says so, and offers a new batch right away. */
+function fewFreeNote(free, total) {
   const note = element('div', 'few-free');
   const text = free.length ? `Only ${free.length} of ${total} are free.` : Copy.NoneFree;
   note.append(element('p', 'few-free__text', text));
-  if (state.can.message) {
-    const ask = button('action action--primary', Copy.Brainstorm, () =>
-      sendToChat(Ask.brainstorm(free, total, tlds)),
-    );
-    ask.prepend(icon(Icon.Sparkles));
-    note.append(ask);
-  }
+  if (state.can.message) note.append(regenerateButton(true));
   return note;
 }
 
-/** Under the domains: download them, and brainstorm more. */
+/**
+ * "Regenerate": asks the chat for a new batch of names, none of those checked so far, with the
+ * saved domains kept. This panel stays as it is; the new check comes as a new one under it.
+ */
+function regenerateButton(primary) {
+  const node = button(primary ? 'action action--primary' : 'action', Copy.Regenerate, () => {
+    const saved = [...state.saved.values()].map((item) => item.domain);
+    sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free }));
+  });
+  node.prepend(icon(Icon.Refresh));
+  node.title = Copy.RegenerateLabel;
+  return node;
+}
+
+/** Under the domains: a new batch, and the domains as a file. */
 function bottomActions() {
   const bar = element('div', 'actions');
+  if (state.can.message && state.free.length >= FEW_FREE) bar.append(regenerateButton(true));
   if (state.can.downloadFile) {
     const download = button('action', Copy.DownloadCsv, downloadCsv);
     download.prepend(icon(Icon.Download));
     bar.append(download);
-  }
-  if (state.can.message && state.free.length >= FEW_FREE) {
-    const ask = button('action', Copy.Brainstorm, () =>
-      sendToChat(Ask.brainstorm(state.free, state.check.total, state.check.tlds)),
-    );
-    ask.prepend(icon(Icon.Sparkles));
-    bar.append(ask);
   }
   return bar;
 }
@@ -743,7 +771,7 @@ function shownFree() {
 function renderFree() {
   const box = content.querySelector('.free');
   if (!box) return;
-  starButtons.clear();
+  saveButtons.clear();
   const items = shownFree();
   const parts = state.view === View.Table ? priceTable(items) : freeList(items);
   box.replaceChildren(...parts);
@@ -773,8 +801,7 @@ function paged(items, container, build, moreLabel) {
 
 /** "All · .com · .ai" over the free domains, when they are in more than one TLD. */
 function renderFilters() {
-  const box = content.querySelector('.filters');
-  if (!box) return;
+  const box = filterSlot;
   const tlds = [...new Set(state.free.map((item) => item.tld))];
   if (tlds.length < 2) {
     box.replaceChildren();
@@ -803,90 +830,94 @@ function renderFilters() {
   box.replaceChildren(group);
 }
 
-// ── Shortlist: starred domains, shared with the chat ─────────────────────────────────────────
+// ── Saved: the domains the visitor keeps, shared with the chat ───────────────────────────────
 
-/** The star buttons of each domain, so starring one updates every view of it. */
-const starButtons = new Map();
+/** The save buttons of each domain, so saving one updates every view of it. */
+const saveButtons = new Map();
 
 function domainKey(item) {
   return item.domain;
 }
 
-/** A star that adds the domain to the shortlist or takes it off. */
-function starButton(item) {
+/** "☆ Save" / "★ Saved": keeps the domain, or lets it go. */
+function saveButton(item) {
   const key = domainKey(item);
-  const node = button('star', undefined, () => toggleShortlist(item));
-  node.append(icon(Icon.Star));
-  const buttons = starButtons.get(key) ?? new Set();
+  const node = button('chip-button save', undefined, () => toggleSaved(item));
+  const buttons = saveButtons.get(key) ?? new Set();
   buttons.add(node);
-  starButtons.set(key, buttons);
-  syncStar(node, state.shortlist.has(key), item);
+  saveButtons.set(key, buttons);
+  syncSave(node, state.saved.has(key), item);
   return node;
 }
 
-function syncStar(node, starred, item) {
-  const text = `${starred ? Copy.RemoveFromShortlist : Copy.AddToShortlist}: ${item.display || item.domain}`;
-  node.setAttribute('aria-pressed', String(starred));
-  node.setAttribute('aria-label', text);
-  node.title = text;
+function syncSave(node, saved, item) {
+  const domain = item.display || item.domain;
+  node.replaceChildren(icon(Icon.Star), saved ? Copy.Saved : Copy.Save);
+  node.setAttribute('aria-pressed', String(saved));
+  node.setAttribute('aria-label', `${saved ? Copy.Unsave : Copy.SaveLabel}: ${domain}`);
+  node.title = saved ? Copy.Unsave : Copy.SaveLabel;
 }
 
-function toggleShortlist(item) {
+function toggleSaved(item) {
   const key = domainKey(item);
-  if (state.shortlist.has(key)) state.shortlist.delete(key);
-  else state.shortlist.set(key, item);
-  const starred = state.shortlist.has(key);
-  for (const node of starButtons.get(key) ?? []) {
-    if (node.isConnected) syncStar(node, starred, item);
+  if (state.saved.has(key)) state.saved.delete(key);
+  else state.saved.set(key, item);
+  const saved = state.saved.has(key);
+  for (const node of saveButtons.get(key) ?? []) {
+    if (node.isConnected) syncSave(node, saved, item);
   }
-  renderShortlist();
-  shareShortlist();
+  renderSaved();
+  shareContext();
 }
 
-/** The shortlist above the domains: each starred name with a way to take it off, and "Compare". */
-function renderShortlist() {
+/** The saved domains under the free ones: each with a way to let it go, and "Compare in chat". */
+function renderSaved() {
   const box = content.querySelector('.shortlist');
   if (!box) return;
-  const items = [...state.shortlist.values()];
+  const items = [...state.saved.values()];
   if (!items.length) {
     box.replaceChildren();
     return;
   }
-  const title = element('h2', 'shortlist__title', `${Copy.Shortlist} · ${items.length}`);
+  const title = element('h2', 'shortlist__title', `${Copy.Saved} · ${items.length}`);
   const chips = element('ul', 'shortlist__items');
   for (const item of items) {
     const chip = element('li', 'shortlist__item', item.display || item.domain);
-    const remove = button('shortlist__remove', undefined, () => toggleShortlist(item));
-    remove.setAttribute(
-      'aria-label',
-      `${Copy.RemoveFromShortlist}: ${item.display || item.domain}`,
-    );
+    const remove = button('shortlist__remove', undefined, () => toggleSaved(item));
+    remove.setAttribute('aria-label', `${Copy.Unsave}: ${item.display || item.domain}`);
     remove.append(icon(Icon.Close));
     chip.append(remove);
     chips.append(chip);
   }
-  const parts = [title, chips];
+  // The title and the button share a line; the saved names go below, so the button stays put.
+  const header = element('div', 'shortlist__header');
+  header.append(title);
   if (state.can.message && items.length > 1) {
-    const compare = button('action', Copy.CompareShortlist, () => sendToChat(Ask.compare(items)));
+    const compare = button('action', Copy.CompareSaved, () => sendToChat(Ask.compare(items)));
     compare.prepend(icon(Icon.Sparkles));
-    parts.push(compare);
+    header.append(compare);
   }
-  box.replaceChildren(...parts);
+  box.replaceChildren(header, chips);
 }
 
-/** Tells the model what is on the shortlist, so the chat can talk about the visitor's picks. */
-function shareShortlist() {
+/**
+ * Tells the model what the visitor saved and which names were checked, so the chat can talk
+ * about the picks and never suggests a checked name again. One update carries both, as a newer
+ * update replaces the older one.
+ */
+function shareContext() {
   if (!state.can.updateModelContext) return;
-  const items = [...state.shortlist.values()];
-  const text = items.length
-    ? `The user shortlisted these domains in the DomainScout panel: ${items.map(describeForChat).join('; ')}.`
-    : 'The DomainScout shortlist is empty.';
-  const shortlist = items.map((item) => ({ domain: item.domain, ...cheapest(item) }));
+  const items = [...state.saved.values()];
+  const savedText = items.length
+    ? `The user saved these domains in the DomainScout panel: ${items.map(describeForChat).join('; ')}.`
+    : 'The user has saved no domains in the DomainScout panel.';
+  const checkedText = `Names already checked, not to suggest again: ${state.check.names.join(', ')}.`;
+  const saved = items.map((item) => ({ domain: item.domain, ...cheapest(item) }));
   request(Method.UpdateModelContext, {
-    content: [{ type: TEXT_BLOCK, text }],
-    structuredContent: { shortlist },
+    content: [{ type: TEXT_BLOCK, text: `${savedText} ${checkedText}` }],
+    structuredContent: { saved, checked: state.check.names },
   }).catch(() => {
-    // The chat simply won't know about the stars; the shortlist still works on the panel.
+    // The chat simply won't know; saving still works on the panel.
   });
 }
 
@@ -919,7 +950,7 @@ const CSV_COLUMNS = [
   'renewal',
   'currency',
   'buy_url',
-  'shortlisted',
+  'saved',
 ];
 /** A CSV field with a comma, a quote or a line break goes in quotes, its quotes doubled. */
 const CSV_NEEDS_QUOTES = /[",\n]/;
@@ -943,7 +974,7 @@ function csvText() {
       offer.renewal,
       offer.currency,
       offer.url,
-      state.shortlist.has(domainKey(item)),
+      state.saved.has(domainKey(item)),
     ];
   });
   return [CSV_COLUMNS, ...rows].map((row) => row.map(csvField).join(',')).join('\n');
@@ -979,7 +1010,7 @@ function freeDomain(item) {
   const domain = item.display || item.domain;
   const row = element('li', 'result');
   const name = element('span', 'result__domain');
-  name.append(starButton(item), element('span', 'result__name', domain));
+  name.append(element('span', 'result__name', domain), saveButton(item));
   row.append(name);
   if (item.display && item.display !== item.domain) {
     // An internationalized name: show what is actually registered, too.
@@ -1007,19 +1038,14 @@ function freeDomain(item) {
   return row;
 }
 
-/** "Similar": asks the chat for more names like this one, checked in the same TLDs. */
-function similarButton(item, iconOnly) {
-  const node = button(
-    iconOnly ? 'toggle similar similar--icon' : 'toggle similar',
-    iconOnly ? undefined : Copy.Similar,
-    () => sendToChat(Ask.similar(item, state.check.tlds)),
+/** "✦ Similar": asks the chat for more names like this one, checked in the same TLDs. */
+function similarButton(item) {
+  const node = button('chip-button similar', Copy.Similar, () =>
+    sendToChat(Ask.similar(item, state.check.tlds)),
   );
   node.prepend(icon(Icon.Sparkles));
   node.title = Copy.SimilarLabel;
-  const spoken = iconOnly
-    ? `${Copy.Similar} to ${item.display || item.domain}`
-    : ` to ${item.display || item.domain}`;
-  node.append(hiddenText(spoken));
+  node.append(hiddenText(` to ${item.display || item.domain}`));
   return node;
 }
 
@@ -1254,9 +1280,11 @@ function domainCell(item) {
   const cell = element('th', 'matrix__domain');
   cell.scope = 'row';
   const name = element('span', 'matrix__name');
-  name.append(starButton(item), element('span', 'result__domain', item.display || item.domain));
-  // In the table the button is the icon alone; its tooltip and spoken label say what it does.
-  if (state.can.message) name.append(similarButton(item, true));
+  // The buttons line up in a column at the cell's right edge, whatever the name's length.
+  const buttons = element('span', 'matrix__buttons');
+  buttons.append(saveButton(item));
+  if (state.can.message) buttons.append(similarButton(item));
+  name.append(element('span', 'result__domain', item.display || item.domain), buttons);
   cell.append(name);
   if (item.premium)
     cell.append(element('span', 'matrix__note matrix__note--premium', Copy.Premium));

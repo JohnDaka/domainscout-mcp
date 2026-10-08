@@ -95,6 +95,7 @@ ones. Read-only: it never registers or changes anything.
 | `tlds` | string[] | `DOMAINSCOUT_TLDS` (`com,net,ai`) | TLDs for names given without one, e.g. `["com"]` for a long list |
 | `confirm` | boolean | `true` | Confirm free-looking names with registrar APIs, when you set keys |
 | `details` | boolean | `false` | Include the evidence from every source (DNS, RDAP, WHOIS, registrar API) |
+| `saved` | string[] | none | Domains the user saved in the results panel: checked again with the rest and marked `saved`, so they stay through a regenerate |
 
 It returns a short text report for the model and the same data as structured content: a summary
 with counts per status, one result per domain (status, note, registration dates, buy links with
@@ -141,11 +142,12 @@ panel, the same as on [the website](https://domainscout.dakaio.com):
   first year and what a minimum term costs upfront. Registrars are always in price order,
   cheapest first, the same as in the text report.
 - **Every registrar** for a name under "All registrars" or the table's "N more", each a link.
-- **Ask the chat** without typing: "Similar" asks for more names like one you like, "Try other
-  TLDs" re-checks the taken names elsewhere, and "Brainstorm more and check" asks for a new batch
-  (offered at the top when few names are free).
-- **A shortlist**: star the names you like; the chat sees them, and "Compare in chat" asks it to
-  pick one. "Download CSV" saves the free domains with prices and links.
+- **Ask the chat** without typing: "Similar" asks for more names like one you like, and "Try other
+  TLDs" re-checks the taken names elsewhere.
+- **Save** the names you like, then **Regenerate**: the chat brainstorms a new batch that leaves
+  out every name checked so far, and the saved domains come along in the new check (the
+  `saved` parameter), still marked as saved. "Compare in chat" asks it to pick one; the chat
+  sees what you saved. "Download CSV" saves the free domains with prices and links.
 
 The panel ships in the package (`ui/`), loads nothing from elsewhere, and uses only what the client
 offers: a client that can't send messages or save files simply doesn't show those buttons. Other
