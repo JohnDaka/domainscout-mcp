@@ -62,6 +62,7 @@ function openLink(url) {
 const View = {
   List: 'list',
   Grid: 'grid',
+  Table: 'table',
 };
 
 /** The panel's color theme. */
@@ -156,6 +157,7 @@ const ICON_VIEW_BOX = '0 0 24 24';
 const ICON_PATHS = new Map()
   .set('list', ['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4.5 6h.01', 'M4.5 12h.01', 'M4.5 18h.01'])
   .set('grid', ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'])
+  .set('table', ['M4 5h16v14H4z', 'M4 10h16', 'M4 15h16', 'M10 5v14'])
   .set('sun', [
     'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z',
     'M12 2v2',
@@ -202,6 +204,7 @@ function money(amount, currency) {
 const VIEW_OPTIONS = [
   { value: View.List, icon: 'list', label: 'Show as a list' },
   { value: View.Grid, icon: 'grid', label: 'Show as cards' },
+  { value: View.Table, icon: 'table', label: 'Show as a price table' },
 ];
 const THEME_OPTIONS = [
   { value: Theme.Light, icon: 'sun', label: 'Light theme' },
@@ -352,6 +355,7 @@ function summaryText(data, free, taken, reserved, unknown) {
 
 /** The free domains, the first FREE_SHOWN of them until "…and N more free". */
 function freeDomains(free) {
+  if (state.view === View.Table) return priceTable(free);
   const listClass = state.view === View.Grid ? 'results results--grid' : 'results';
   const list = element('ul', listClass);
   list.setAttribute('aria-label', 'Free domains');
@@ -404,6 +408,104 @@ function priceRange(offers) {
   const range = low === high ? low : `${low}${RANGE_DASH}${high}`;
   const term = minYears > 1 ? `, ${minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum` : '';
   return `${range}/yr${term}`;
+}
+
+// ── The price table: domains down the side, registrars across the top ───────────────────────
+
+/** What a cell shows for a registrar that sells the name but publishes no price list. */
+const PRICE_ON_SITE = 'site';
+/** What a cell shows for a registrar that does not sell the name. */
+const NOT_SOLD = '—';
+
+/**
+ * The registrars across the top, in one order for every row: by the place each one takes in the
+ * tool's price-sorted lists on average, so the usually cheapest come first.
+ */
+function tableRegistrars(free) {
+  const places = new Map();
+  for (const item of free) {
+    (item.buy ?? []).forEach((offer, place) => {
+      const seen = places.get(offer.registrar) ?? [];
+      places.set(offer.registrar, [...seen, place]);
+    });
+  }
+  const average = (list) => list.reduce((sum, place) => sum + place, 0) / list.length;
+  return [...places.entries()]
+    .sort(([, a], [, b]) => average(a) - average(b))
+    .map(([registrar]) => registrar);
+}
+
+/** The free domains as a table of prices: every cell a link to that registrar. */
+function priceTable(free) {
+  const registrars = tableRegistrars(free);
+  const table = element('table', 'matrix');
+  const caption = element(
+    'caption',
+    'visually-hidden',
+    'Yearly price of each free domain at each registrar',
+  );
+  const head = element('thead');
+  const headRow = element('tr');
+  const corner = element('th', 'matrix__corner', 'Domain');
+  corner.scope = 'col';
+  headRow.append(corner);
+  for (const registrar of registrars) {
+    const cell = element('th', '', registrar);
+    cell.scope = 'col';
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  const body = element('tbody');
+  body.append(...free.slice(0, FREE_SHOWN).map((item) => tableRow(item, registrars)));
+  table.append(caption, head, body);
+  const wrap = element('div', 'matrix-wrap');
+  wrap.append(table);
+  if (free.length <= FREE_SHOWN) return [wrap];
+  const more = element('button', 'more', `…and ${free.length - FREE_SHOWN} more free`);
+  more.type = 'button';
+  more.addEventListener('click', () => {
+    body.append(...free.slice(FREE_SHOWN).map((item) => tableRow(item, registrars)));
+    more.remove();
+  });
+  return [wrap, more];
+}
+
+function tableRow(item, registrars) {
+  const row = element('tr');
+  const name = element('th', 'matrix__domain');
+  name.scope = 'row';
+  name.append(element('span', 'result__domain', item.display || item.domain));
+  if (item.premium) name.append(element('span', 'matrix__note matrix__note--premium', 'Premium'));
+  const minYears = (item.buy ?? []).find((offer) => offer.price)?.price.minYears ?? 1;
+  if (minYears > 1) {
+    name.append(
+      element('span', 'matrix__note', `${minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`),
+    );
+  }
+  row.append(name);
+  const offers = new Map((item.buy ?? []).map((offer) => [offer.registrar, offer]));
+  for (const registrar of registrars) row.append(priceCell(offers.get(registrar)));
+  return row;
+}
+
+/** A price that links to the registrar, "site" where it publishes none, a dash where it does not sell. */
+function priceCell(offer) {
+  const cell = element('td');
+  if (!offer) {
+    cell.append(element('span', 'matrix__none', NOT_SOLD));
+    return cell;
+  }
+  const text = offer.price ? money(offer.price.registration, offer.price.currency) : PRICE_ON_SITE;
+  const link = element('a', offer.price ? 'matrix__link' : 'matrix__link matrix__link--site', text);
+  link.href = offer.url;
+  link.rel = 'noopener';
+  link.title = `Buy at ${offer.registrar}`;
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    openLink(offer.url);
+  });
+  cell.append(link);
+  return cell;
 }
 
 /** "All N registrars": opens and closes the list under the domain. */

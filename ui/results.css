@@ -371,6 +371,111 @@ button:focus-visible {
   color: var(--ds-heading);
 }
 
+/* ── The price table: domains down the side, registrars across the top ─────────────────────── */
+
+/* The table scrolls sideways inside its frame when there are many registrars; the page never does. */
+.matrix-wrap {
+  margin-top: 8px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.matrix th,
+.matrix td {
+  padding: 0;
+  border-bottom: 1px solid var(--ds-divider);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.matrix tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.matrix thead th {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+/* The domains stay in view while the prices scroll. */
+.matrix th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--ds-panel);
+  text-align: left;
+}
+
+.matrix .matrix__domain {
+  padding: 8px 12px;
+  font-weight: 400;
+}
+
+.matrix__domain .result__domain {
+  display: block;
+  font-size: 13px;
+}
+
+.matrix__note {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-muted);
+}
+
+.matrix__note--premium {
+  color: var(--ds-amber);
+}
+
+.matrix tbody tr:hover > * {
+  background: var(--ds-raised);
+}
+
+/* Every price is a link that fills its cell. */
+.matrix__link {
+  display: block;
+  padding: 8px 12px;
+  color: var(--ds-body);
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+/* A registrar without a public price: the link is there, quieter than the prices. */
+.matrix__link--site {
+  color: var(--ds-muted);
+}
+
+.matrix__link:hover,
+.matrix__link:focus-visible {
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
+}
+
+.matrix__link:focus-visible {
+  outline: 2px solid var(--ds-cyan);
+  outline-offset: -2px;
+}
+
+.matrix__none {
+  display: block;
+  padding: 8px 12px;
+  color: var(--ds-divider);
+}
+
 /* ── Taken, reserved and unverified names ─────────────────────────────────────────────────── */
 
 .group {
@@ -460,6 +565,7 @@ button:focus-visible {
   }
 
   .registrar,
+  .matrix__link,
   .toggle .icon {
     transition: none;
   }

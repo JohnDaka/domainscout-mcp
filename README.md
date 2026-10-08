@@ -134,8 +134,9 @@ In clients that support [MCP Apps](https://modelcontextprotocol.io/docs/extensio
 the web and desktop, VS Code, ChatGPT and others), each `check_domains` call shows an interactive
 panel, the same as on [the website](https://domainscout.dakaio.com): a summary line, then every free
 domain with its price range across registrars, and an "All registrars" list under each one where
-every row is a link to that registrar. The free domains show as a list or as cards, in a light or
-dark theme, switched from the panel's top-right corner. Registrars are always in price order,
+every row is a link to that registrar. The free domains show as a list, as cards or as a price
+table (domains down the side, registrars across the top, every price a link), in a light or dark
+theme, switched from the panel's top-right corner. Registrars are always in price order,
 cheapest first, the same as in the text report. The panel ships in the package (`ui/`), loads
 nothing from elsewhere, and opens links through the client. Other clients show the text report.
 
