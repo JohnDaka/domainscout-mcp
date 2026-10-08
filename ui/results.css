@@ -696,17 +696,11 @@ input:focus-visible {
   font-weight: 400;
 }
 
-.matrix__name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 16px;
-}
-
-.matrix__buttons {
-  display: inline-flex;
-  gap: 6px;
+/* A button's own column: as narrow as the button, beside the domain. */
+.matrix .matrix__action {
+  width: 1%;
+  padding: 0 4px;
+  text-align: left;
 }
 
 .matrix__domain .result__domain {
@@ -1091,10 +1085,18 @@ input:focus-visible {
   transform: rotate(180deg);
 }
 
-/* A phone: less padding around the panel. */
+/* A phone: less padding around the panel, and the table's buttons as icons, so the prices fit. */
 @media (max-width: 480px) {
   .panel {
     padding: 16px;
+  }
+
+  .matrix .chip-button__label {
+    display: none;
+  }
+
+  .matrix .chip-button {
+    padding: 3px 6px;
   }
 }
 

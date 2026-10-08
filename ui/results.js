@@ -852,7 +852,10 @@ function saveButton(item) {
 
 function syncSave(node, saved, item) {
   const domain = item.display || item.domain;
-  node.replaceChildren(icon(Icon.Star), saved ? Copy.Saved : Copy.Save);
+  node.replaceChildren(
+    icon(Icon.Star),
+    element('span', 'chip-button__label', saved ? Copy.Saved : Copy.Save),
+  );
   node.setAttribute('aria-pressed', String(saved));
   node.setAttribute('aria-label', `${saved ? Copy.Unsave : Copy.SaveLabel}: ${domain}`);
   node.title = saved ? Copy.Unsave : Copy.SaveLabel;
@@ -1040,10 +1043,10 @@ function freeDomain(item) {
 
 /** "✦ Similar": asks the chat for more names like this one, checked in the same TLDs. */
 function similarButton(item) {
-  const node = button('chip-button similar', Copy.Similar, () =>
+  const node = button('chip-button similar', undefined, () =>
     sendToChat(Ask.similar(item, state.check.tlds)),
   );
-  node.prepend(icon(Icon.Sparkles));
+  node.append(icon(Icon.Sparkles), element('span', 'chip-button__label', Copy.Similar));
   node.title = Copy.SimilarLabel;
   node.append(hiddenText(` to ${item.display || item.domain}`));
   return node;
@@ -1222,6 +1225,13 @@ function priceTable(free) {
   const caption = element('caption', 'visually-hidden', Copy.TableCaption);
   const headRow = element('tr');
   headRow.append(sortableHeading(Copy.DomainHeading, DOMAIN_COLUMN));
+  // The buttons' columns: no visible heading, a spoken one.
+  for (const text of actionHeadings()) {
+    const cell = element('th', 'matrix__action');
+    cell.scope = 'col';
+    cell.append(hiddenText(text));
+    headRow.append(cell);
+  }
   for (const registrar of columns) headRow.append(sortableHeading(registrar, registrar));
   if (hasOthers) {
     const others = element('th', '', Copy.OthersHeading);
@@ -1258,7 +1268,8 @@ function watchOverflow(wrap) {
 function tableRows(item, columns, hasOthers) {
   const domain = item.display || item.domain;
   const row = element('tr');
-  row.append(domainCell(item));
+  row.append(domainCell(item), actionCell(saveButton(item)));
+  if (state.can.message) row.append(actionCell(similarButton(item)));
   const offers = new Map((item.buy ?? []).map((offer) => [offer.registrar, offer]));
   for (const registrar of columns) row.append(priceCell(offers.get(registrar), domain));
   if (!hasOthers) return [row];
@@ -1267,7 +1278,8 @@ function tableRows(item, columns, hasOthers) {
     row.append(noneCell());
     return [row];
   }
-  const extra = otherLinksRow(others, columns.length + 2, domain);
+  const span = 1 + actionHeadings().length + columns.length + 1;
+  const extra = otherLinksRow(others, span, domain);
   const cell = element('td');
   cell.append(
     disclosure('toggle matrix__toggle', `${others.length} more`, extra, ` for ${domain}`),
@@ -1276,16 +1288,22 @@ function tableRows(item, columns, hasOthers) {
   return [row, extra];
 }
 
+/** The headings of the buttons' columns: Save, and Similar when the host takes messages. */
+function actionHeadings() {
+  return state.can.message ? [Copy.Save, Copy.Similar] : [Copy.Save];
+}
+
+/** A column of its own for one button, so the buttons line up row after row. */
+function actionCell(node) {
+  const cell = element('td', 'matrix__action');
+  cell.append(node);
+  return cell;
+}
+
 function domainCell(item) {
   const cell = element('th', 'matrix__domain');
   cell.scope = 'row';
-  const name = element('span', 'matrix__name');
-  // The buttons line up in a column at the cell's right edge, whatever the name's length.
-  const buttons = element('span', 'matrix__buttons');
-  buttons.append(saveButton(item));
-  if (state.can.message) buttons.append(similarButton(item));
-  name.append(element('span', 'result__domain', item.display || item.domain), buttons);
-  cell.append(name);
+  cell.append(element('span', 'result__domain', item.display || item.domain));
   if (item.premium)
     cell.append(element('span', 'matrix__note matrix__note--premium', Copy.Premium));
   const minYears = (item.buy ?? []).find((offer) => offer.price)?.price.minYears ?? 1;
