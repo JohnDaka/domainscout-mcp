@@ -15,12 +15,12 @@
     "url": "https://github.com/JohnDaka/domainscout-mcp",
     "source": "github"
   },
-  "version": "1.3.0",
+  "version": "1.4.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@dakaio/domainscout-mcp",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

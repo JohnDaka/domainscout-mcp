@@ -1,6 +1,6 @@
 {
   "name": "@dakaio/domainscout-mcp",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Domain research for AI agents: an MCP server that checks hundreds of domain names in one call (DNS, RDAP, WHOIS) and shows prices and where to buy.",
   "mcpName": "com.dakaio/domainscout",
   "author": "dakaio.com",
