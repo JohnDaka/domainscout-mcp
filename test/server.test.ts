@@ -42,6 +42,10 @@ describe('MCP server', () => {
     const tool = tools.find((candidate) => candidate.name === TOOL_CHECK_DOMAINS);
     expect(tool?.inputSchema.properties).toHaveProperty('domains');
     expect(tool?.outputSchema?.properties).toHaveProperty('results');
+    // No dialect: clients that follow MCP's 2020-12 default refuse a schema marked draft-07.
+    expect(tool?.inputSchema).not.toHaveProperty('$schema');
+    expect(tool?.outputSchema).not.toHaveProperty('$schema');
+    expect(tool?.title).toBe(ToolText.Title);
     expect(tool?.annotations).toMatchObject({
       title: ToolText.Title,
       readOnlyHint: true,
