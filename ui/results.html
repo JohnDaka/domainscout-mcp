@@ -20,16 +20,13 @@
         --ds-border: var(--color-border-tertiary, rgba(31, 30, 29, 0.12));
         --ds-border-strong: var(--color-border-secondary, rgba(31, 30, 29, 0.24));
         --ds-success: var(--color-text-success, #2f7a3b);
-        --ds-success-bg: var(--color-background-success, #e6f3e7);
         --ds-warning: var(--color-text-warning, #8a5a00);
         --ds-warning-bg: var(--color-background-warning, #fbf0d9);
         --ds-info: var(--color-text-info, #1f5fa8);
         --ds-info-bg: var(--color-background-info, #e5effa);
-        --ds-accent: #6d4aff;
         --ds-radius: var(--border-radius-md, 8px);
         --ds-radius-lg: var(--border-radius-lg, 12px);
         --ds-font: var(--font-sans, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
-        --ds-mono: var(--font-mono, ui-monospace, 'SF Mono', Consolas, monospace);
       }
 
       :root[data-theme='dark'] {
@@ -38,14 +35,12 @@
         --ds-surface: var(--color-background-secondary, #2a2927);
         --ds-card: var(--color-background-primary, #1f1e1d);
         --ds-border: var(--color-border-tertiary, rgba(236, 235, 232, 0.12));
-        --ds-border-strong: var(--color-border-secondary, rgba(236, 235, 232, 0.24));
+        --ds-border-strong: var(--color-border-secondary, rgba(236, 235, 232, 0.28));
         --ds-success: var(--color-text-success, #7fcf8a);
-        --ds-success-bg: var(--color-background-success, #1f3a24);
         --ds-warning: var(--color-text-warning, #f0c062);
         --ds-warning-bg: var(--color-background-warning, #3d3018);
         --ds-info: var(--color-text-info, #8ab8f0);
         --ds-info-bg: var(--color-background-info, #1c2f47);
-        --ds-accent: #a48bff;
       }
 
       * {
@@ -59,20 +54,22 @@
       }
 
       body {
-        padding: 4px 2px 8px;
+        padding: 2px 1px 6px;
         color: var(--ds-text);
         font: 14px/1.5 var(--ds-font);
         -webkit-font-smoothing: antialiased;
       }
 
-      button {
+      button,
+      summary {
         font: inherit;
         color: inherit;
         cursor: pointer;
       }
 
-      button:focus-visible {
-        outline: 2px solid var(--ds-accent);
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--ds-info);
         outline-offset: 2px;
       }
 
@@ -95,7 +92,7 @@
         width: 40%;
         height: 100%;
         border-radius: inherit;
-        background: var(--ds-accent);
+        background: var(--ds-text-muted);
         animation: slide 1.2s ease-in-out infinite;
       }
 
@@ -108,29 +105,30 @@
         }
       }
 
+      /* Counts: checked, free, taken, time. */
       .tiles {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 12px;
+        margin: 0 0 20px;
       }
 
       .tile {
-        padding: 10px 12px;
+        padding: 16px;
         border-radius: var(--ds-radius);
         background: var(--ds-surface);
       }
 
       .tile__label {
         margin: 0;
-        font-size: 12px;
+        font-size: 13px;
         color: var(--ds-text-muted);
       }
 
       .tile__value {
         margin: 0;
-        font-size: 22px;
-        font-weight: 600;
+        font-size: 24px;
+        font-weight: 500;
         font-variant-numeric: tabular-nums;
       }
 
@@ -138,186 +136,186 @@
         color: var(--ds-success);
       }
 
-      .section-title {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        margin: 18px 0 8px;
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-      .section-title span {
-        font-weight: 400;
-        color: var(--ds-text-muted);
-      }
-
+      /* One compact card per free domain. */
       .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        align-items: start;
+        gap: 12px;
+        margin: 0 0 20px;
       }
 
       .card {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
         min-width: 0;
-        padding: 12px 14px;
-        border: 1px solid var(--ds-border);
+        padding: 16px 20px;
+        border: 0.5px solid var(--ds-border-strong);
         border-radius: var(--ds-radius-lg);
         background: var(--ds-card);
       }
 
-      .card__domain {
-        margin: 0;
+      .card__name {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+        margin: 0 0 4px;
         font-size: 15px;
-        font-weight: 600;
+        font-weight: 500;
         overflow-wrap: anywhere;
       }
 
-      .badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-
-      .badge {
-        padding: 1px 8px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 500;
-        background: var(--ds-surface);
-        color: var(--ds-text-muted);
-      }
-
-      .badge--success {
-        background: var(--ds-success-bg);
+      .card__check {
+        flex: none;
+        width: 18px;
+        height: 18px;
         color: var(--ds-success);
       }
 
-      .badge--warning {
+      .tag {
+        padding: 0 6px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
         background: var(--ds-warning-bg);
         color: var(--ds-warning);
       }
 
-      .price {
-        margin: 0;
-      }
-
-      .price__amount {
-        font-size: 20px;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .price__unit,
-      .price__renewal {
+      .card__price {
+        margin: 0 0 12px;
+        font-size: 13px;
         color: var(--ds-text-muted);
-        font-size: 12px;
       }
 
-      .price__renewal {
-        display: block;
-      }
-
-      .buy {
+      .buttons {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        margin-top: auto;
+        gap: 8px;
       }
 
       .button {
-        padding: 5px 10px;
-        border: 1px solid var(--ds-border-strong);
+        padding: 6px 12px;
+        border: 0.5px solid var(--ds-border-strong);
         border-radius: var(--ds-radius);
         background: transparent;
-        font-size: 12px;
-        font-weight: 500;
+        font-size: 13px;
         white-space: nowrap;
       }
 
-      .button:hover {
+      .button:hover,
+      .registrar:hover {
         background: var(--ds-surface);
       }
 
-      .button--primary {
-        border-color: transparent;
-        background: var(--ds-accent);
-        color: #ffffff;
-      }
-
-      .button--primary:hover {
-        background: var(--ds-accent);
-        filter: brightness(1.08);
-      }
-
-      .button--quiet {
-        border-color: transparent;
+      .arrow {
+        margin-left: 4px;
         color: var(--ds-text-muted);
       }
 
-      .more {
-        margin: 0;
-        font-size: 12px;
-        color: var(--ds-text-muted);
+      /* The accordion: every registrar, in the same order on every card. */
+      .all {
+        margin-top: 10px;
       }
 
-      .link {
+      .all summary {
+        width: fit-content;
+        font-size: 13px;
+        color: var(--ds-text-muted);
+        list-style: none;
+      }
+
+      .all summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .all summary::after {
+        content: '▾';
+        display: inline-block;
+        margin-left: 4px;
+        transition: transform 0.15s ease;
+      }
+
+      .all[open] summary::after {
+        transform: rotate(180deg);
+      }
+
+      .registrars {
+        margin: 8px 0 0;
         padding: 0;
+        list-style: none;
+        border-top: 0.5px solid var(--ds-border);
+      }
+
+      .registrar {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 6px 4px;
         border: 0;
-        background: none;
-        color: var(--ds-info);
-        font-size: 12px;
-        text-decoration: underline;
-        text-underline-offset: 2px;
+        border-bottom: 0.5px solid var(--ds-border);
+        border-radius: 0;
+        background: transparent;
+        font-size: 13px;
+        text-align: left;
+      }
+
+      .registrar__price {
+        color: var(--ds-text-muted);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      /* Taken, reserved and unverified names. */
+      .label {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: var(--ds-text-muted);
       }
 
       .chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 6px;
+        margin: 0 0 16px;
       }
 
       .chip {
-        padding: 2px 8px;
+        padding: 4px 10px;
         border-radius: var(--ds-radius);
         background: var(--ds-surface);
         color: var(--ds-text-muted);
-        font-size: 12px;
+        font-size: 13px;
         overflow-wrap: anywhere;
       }
 
       .chip--taken {
         text-decoration: line-through;
-        text-decoration-color: var(--ds-border-strong);
       }
 
       .chip--dropping {
         background: var(--ds-info-bg);
         color: var(--ds-info);
-        text-decoration: none;
       }
 
       .show-all {
-        margin-top: 8px;
+        margin: -8px 0 20px;
       }
 
       .notes {
-        margin: 0;
+        margin: 0 0 16px;
         padding-left: 18px;
         color: var(--ds-text-muted);
-        font-size: 12px;
+        font-size: 13px;
       }
 
       .footnote {
-        margin: 16px 0 0;
+        margin: 0;
         color: var(--ds-text-muted);
         font-size: 11px;
       }
 
-      @media (max-width: 420px) {
+      @media (max-width: 480px) {
         .tiles {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -328,6 +326,10 @@
           animation: none;
           width: 100%;
           opacity: 0.4;
+        }
+
+        .all summary::after {
+          transition: none;
         }
       }
     </style>
@@ -461,10 +463,19 @@
       };
       /** Free domains shown before "Show all": enough to choose from, short enough to scan. */
       const FREE_SHOWN = 24;
+      /** Buttons on a card: the two cheapest registrars; every registrar is in the accordion. */
+      const CARD_BUTTONS = 2;
       /** Characters of an ISO date that make the day: "2030-02-03". */
       const DATE_LENGTH = 10;
       /** Milliseconds in a second, for the elapsed time. */
       const SECOND_MS = 1000;
+      /** The mark after a link that leaves for a registrar's site. */
+      const OUT_ARROW = '↗';
+      /** A hyphen and a space that never break a line: "2-year minimum" stays whole. */
+      const NO_BREAK_HYPHEN = '\u2011';
+      const NO_BREAK_SPACE = '\u00a0';
+      /** The SVG namespace, for the check mark. */
+      const SVG_NS = 'http://www.w3.org/2000/svg';
 
       const app = document.getElementById('app');
 
@@ -504,19 +515,17 @@
         const unknown = byStatus([Status.Unknown]);
 
         const parts = [tiles(data.summary, free.length, taken.length)];
-        if (free.length) parts.push(sectionTitle('Free to register', free.length), freeCards(free));
-        if (taken.length) parts.push(sectionTitle('Taken', taken.length), takenChips(taken));
-        if (reserved.length) parts.push(sectionTitle('Reserved', reserved.length), chips(reserved));
-        if (unknown.length) {
-          parts.push(sectionTitle('Not verified, try again later', unknown.length), chips(unknown));
-        }
-        if (data.warnings?.length) parts.push(sectionTitle('Notes'), notes(data.warnings));
+        if (free.length) parts.push(...freeCards(free));
+        if (taken.length) parts.push(element('p', 'label', 'Taken'), takenChips(taken));
+        if (reserved.length) parts.push(element('p', 'label', 'Reserved'), chips(reserved));
+        if (unknown.length) parts.push(element('p', 'label', 'Not verified, try again later'), chips(unknown));
+        if (data.warnings?.length) parts.push(notes(data.warnings));
         parts.push(
           element(
             'p',
             'footnote',
-            'Free means the registry has no record of the name; the registrar confirms it at checkout. ' +
-              'Prices are standard yearly prices for the TLD; premium names cost more.' +
+            'Registrars are listed cheapest first. Prices are standard yearly prices for the TLD; ' +
+              'premium names cost more.' +
               (data.disclosure ? ` ${data.disclosure}` : ''),
           ),
         );
@@ -540,94 +549,102 @@
         return box;
       }
 
-      function sectionTitle(text, count) {
-        const title = element('h2', 'section-title', text);
-        if (count !== undefined) title.append(element('span', '', String(count)));
-        return title;
-      }
-
+      /** The free domains' cards, the first FREE_SHOWN of them until "Show all". */
       function freeCards(free) {
         const box = element('div', 'cards');
         free.slice(0, FREE_SHOWN).forEach((item) => box.append(freeCard(item)));
-        if (free.length <= FREE_SHOWN) return box;
-        const wrapper = element('div');
-        const showAll = element('button', 'button show-all', `Show all ${free.length}`);
+        if (free.length <= FREE_SHOWN) return [box];
+        const showAll = element('button', 'button show-all', `Show all ${free.length} free domains`);
         showAll.addEventListener('click', () => {
           free.slice(FREE_SHOWN).forEach((item) => box.append(freeCard(item)));
           showAll.remove();
         });
-        wrapper.append(box, showAll);
-        return wrapper;
+        return [box, showAll];
       }
 
       function freeCard(item) {
         const card = element('article', 'card');
-        card.append(element('h3', 'card__domain', item.display || item.domain));
+        const name = element('p', 'card__name');
+        name.append(checkMark(item.confirmedBy), element('span', '', item.display || item.domain));
+        if (item.premium) name.append(element('span', 'tag', 'Premium'));
+        card.append(name);
 
-        // Free-looking names are the norm here, so only what sets a name apart gets a badge.
-        const badges = element('div', 'badges');
-        if (item.confirmedBy) badges.append(element('span', 'badge badge--success', `Confirmed by ${item.confirmedBy}`));
-        if (item.premium) badges.append(element('span', 'badge badge--warning', 'Premium'));
-        if (badges.childElementCount) card.append(badges);
+        // The tool lists offers cheapest first, priced ones before the rest: one order for every
+        // card, the buttons and the accordion alike.
+        const offers = item.buy ?? [];
+        const lead = offers.find((offer) => offer.price);
+        if (lead) card.append(element('p', 'card__price', priceText(lead.price)));
 
-        // Offers come cheapest first: the first one with a price leads, the next priced one is
-        // there to compare, and the rest wait behind "+N more".
-        const offers = [...(item.buy ?? [])];
-        const priced = offers.filter((offer) => offer.price);
-        const lead = priced[0] ?? offers[0];
-        const runnerUp = priced[1];
-        if (priced[0]) card.append(priceLine(priced[0]));
-
-        const buttons = element('div', 'buy');
-        if (lead) buttons.append(buyButton(`Buy at ${lead.registrar}`, lead.url, true));
-        if (runnerUp) {
-          const label = `${runnerUp.registrar} ${money(runnerUp.price.registration, runnerUp.price.currency)}`;
-          buttons.append(buyButton(label, runnerUp.url, false));
-        }
-        const rest = offers.filter((offer) => offer !== lead && offer !== runnerUp);
-        if (rest.length) buttons.append(moreToggle(card, rest));
+        const buttons = element('div', 'buttons');
+        for (const offer of offers.slice(0, CARD_BUTTONS)) buttons.append(buyButton(offer));
         if (buttons.childElementCount) card.append(buttons);
+        if (offers.length > CARD_BUTTONS) card.append(allRegistrars(offers));
         return card;
       }
 
-      function buyButton(label, url, primary) {
-        const button = element('button', primary ? 'button button--primary' : 'button', label);
-        button.addEventListener('click', () => openLink(url));
+      /** A green check; its title says who confirmed the name, if a registrar did. */
+      function checkMark(confirmedBy) {
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('class', 'card__check');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.setAttribute('aria-hidden', 'true');
+        const circle = document.createElementNS(SVG_NS, 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '12');
+        circle.setAttribute('r', '9');
+        const tick = document.createElementNS(SVG_NS, 'path');
+        tick.setAttribute('d', 'M8.5 12.5l2.5 2.5 4.5-5');
+        const title = document.createElementNS(SVG_NS, 'title');
+        title.textContent = confirmedBy ? `Confirmed by ${confirmedBy}` : 'Not in the registry';
+        svg.append(title, circle, tick);
+        return svg;
+      }
+
+      /** "$10.46/yr, renews at $10.46", plus the minimum term where there is one. */
+      function priceText(price) {
+        const parts = [
+          `${money(price.registration, price.currency)}/yr`,
+          `renews at ${money(price.renewal, price.currency)}`,
+        ];
+        if (price.minYears > 1) {
+          parts.push(`${price.minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`);
+        }
+        return parts.join(', ');
+      }
+
+      function buyButton(offer) {
+        const label = offer.price
+          ? `${offer.registrar} ${money(offer.price.registration, offer.price.currency)}`
+          : offer.registrar;
+        const button = element('button', 'button', label);
+        button.append(element('span', 'arrow', OUT_ARROW));
+        button.addEventListener('click', () => openLink(offer.url));
         return button;
       }
 
-      /** "+N more": shows the other registrars' links under the buttons. */
-      function moreToggle(card, offers) {
-        const toggle = element('button', 'button button--quiet', `+${offers.length} more`);
-        toggle.addEventListener('click', () => {
-          toggle.remove();
-          card.append(moreLinks(offers));
-        });
-        return toggle;
-      }
-
-      function priceLine(offer) {
-        const { price } = offer;
-        const line = element('p', 'price');
-        line.append(
-          element('span', 'price__amount', money(price.registration, price.currency)),
-          element('span', 'price__unit', ` /yr at ${offer.registrar}`),
-        );
-        const terms = [`Renews at ${money(price.renewal, price.currency)}/yr`];
-        if (price.minYears > 1) terms.push(`${price.minYears}-year minimum`);
-        line.append(element('span', 'price__renewal', terms.join(' · ')));
-        return line;
-      }
-
-      function moreLinks(offers) {
-        const line = element('p', 'more', 'Also at ');
-        offers.forEach((offer, index) => {
-          const link = element('button', 'link', offer.registrar);
-          link.addEventListener('click', () => openLink(offer.url));
-          line.append(link);
-          if (index < offers.length - 1) line.append(', ');
-        });
-        return line;
+      /** The accordion: every registrar that sells the name, in the tool's order. */
+      function allRegistrars(offers) {
+        const details = element('details', 'all');
+        details.append(element('summary', '', `All ${offers.length} registrars`));
+        const list = element('ul', 'registrars');
+        for (const offer of offers) {
+          const row = element('button', 'registrar');
+          const price = offer.price
+            ? `${money(offer.price.registration, offer.price.currency)}/yr`
+            : 'price on site';
+          row.append(element('span', '', offer.registrar), element('span', 'registrar__price', `${price} ${OUT_ARROW}`));
+          row.addEventListener('click', () => openLink(offer.url));
+          const item = element('li');
+          item.append(row);
+          list.append(item);
+        }
+        details.append(list);
+        return details;
       }
 
       function takenChips(items) {
