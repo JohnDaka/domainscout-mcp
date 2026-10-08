@@ -843,6 +843,11 @@ function domainKey(item) {
 function saveButton(item) {
   const key = domainKey(item);
   const node = button('chip-button save', undefined, () => toggleSaved(item));
+  // Both words sit in one cell, one of them hidden: the button is as wide as "Saved" either way,
+  // so pressing it moves nothing.
+  const words = element('span', 'chip-button__label swap');
+  words.append(element('span', 'swap__off', Copy.Save), element('span', 'swap__on', Copy.Saved));
+  node.append(icon(Icon.Star), words);
   const buttons = saveButtons.get(key) ?? new Set();
   buttons.add(node);
   saveButtons.set(key, buttons);
@@ -852,10 +857,6 @@ function saveButton(item) {
 
 function syncSave(node, saved, item) {
   const domain = item.display || item.domain;
-  node.replaceChildren(
-    icon(Icon.Star),
-    element('span', 'chip-button__label', saved ? Copy.Saved : Copy.Save),
-  );
   node.setAttribute('aria-pressed', String(saved));
   node.setAttribute('aria-label', `${saved ? Copy.Unsave : Copy.SaveLabel}: ${domain}`);
   node.title = saved ? Copy.Unsave : Copy.SaveLabel;

@@ -559,6 +559,20 @@ input:focus-visible {
     background-color var(--ds-quick);
 }
 
+/* "Save" and "Saved" stacked in one cell, so the button keeps the longer word's width. */
+.swap {
+  display: inline-grid;
+}
+
+.swap > * {
+  grid-area: 1 / 1;
+}
+
+.save[aria-pressed='true'] .swap__off,
+.save:not([aria-pressed='true']) .swap__on {
+  visibility: hidden;
+}
+
 /* "Similar" asks the chat: in the brand's cyan. */
 .similar {
   border-color: var(--ds-accent-border);
