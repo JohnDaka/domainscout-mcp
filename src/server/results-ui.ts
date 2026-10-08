@@ -44,12 +44,17 @@ function readUiFile(name: string): string {
 /**
  * The card as one self-contained page: results.html with results.css and results.js inlined in
  * place of their tags. The sources stay separate files, so Biome lints them like the site's.
- * Replacer functions keep "$" in the sources from being read as replacement patterns.
+ * Replacer functions keep "$" in the sources from being read as replacement patterns. A tag
+ * that was reworded would leave the page without its styles or script, so that fails loudly.
  */
 export function resultsPage(): string {
+  const page = readUiFile(ResultsUiFile.Page);
+  for (const tag of [STYLESHEET_TAG, SCRIPT_TAG]) {
+    if (!page.includes(tag)) throw new Error(`${ResultsUiFile.Page} lacks ${tag}`);
+  }
   const styles = readUiFile(ResultsUiFile.Styles);
   const script = readUiFile(ResultsUiFile.Script);
-  return readUiFile(ResultsUiFile.Page)
+  return page
     .replace(STYLESHEET_TAG, () => `<style>\n${styles}</style>`)
     .replace(SCRIPT_TAG, () => `<script>\n${script}</script>`);
 }

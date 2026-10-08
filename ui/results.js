@@ -7,11 +7,13 @@
 /** The MCP Apps protocol version this panel speaks. */
 const PROTOCOL_VERSION = '2026-01-26';
 /** How this panel introduces itself to the host. */
-const APP_INFO = { name: 'DomainScout results', version: '1.1.0' };
+const APP_INFO = { name: 'DomainScout results', version: '1.2.0' };
 /** The JSON-RPC version of every message. */
 const JSONRPC = '2.0';
 /** Where messages go: the host is the frame that embeds this panel. */
 const ANY_ORIGIN = '*';
+/** How long a host gets to open a link before the panel offers the link to copy instead. */
+const OPEN_LINK_TIMEOUT_MS = 3000;
 
 /** The protocol's methods this panel sends or handles. */
 const Method = {
@@ -51,12 +53,72 @@ function settle(response) {
   else waiting.resolve(response.result);
 }
 
-/** Opens a buy link: the sandbox blocks navigation, so the host opens it. */
-function openLink(url) {
-  request(Method.OpenLink, { url }).catch(() => window.open(url, '_blank', 'noopener'));
+/** A promise that gives up after the given time. */
+function withTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) => window.setTimeout(reject, ms));
+  return Promise.race([promise, timeout]);
 }
 
-// ── Preferences: list or cards, light or dark ─────────────────────────────────────────────────
+/**
+ * Opens a registrar's page. The sandbox blocks navigation and pop-ups, so only the host can open
+ * it; when the host can't, refuses, or doesn't answer, the panel shows the link to copy.
+ */
+function openLink(url) {
+  if (!state.hostOpensLinks) {
+    showLinkFallback(url);
+    return;
+  }
+  withTimeout(request(Method.OpenLink, { url }), OPEN_LINK_TIMEOUT_MS)
+    .then((result) => {
+      if (result?.isError) showLinkFallback(url);
+    })
+    .catch(() => showLinkFallback(url));
+}
+
+// ── Words on the panel ────────────────────────────────────────────────────────────────────────
+
+/** Every fixed text the panel shows or reads out. */
+const Copy = {
+  ToolWho: 'DomainScout',
+  ToolName: 'check_domains',
+  Checking: 'Checking domains…',
+  Cancelled: 'The check was cancelled.',
+  NoResults: 'The check did not return results.',
+  NothingToCheck: 'No names to check.',
+  NoneFree: 'None of these are free. Ask for variations of the names or other TLDs.',
+  FreeDomains: 'Free domains',
+  Taken: 'Taken',
+  Reserved: 'Reserved',
+  Unknown: 'Not verified, try again later',
+  Available: 'Available',
+  Premium: 'Premium',
+  PremiumPrice: 'Premium price, set by the registry',
+  NoPrices: "Prices on the registrars' sites",
+  PriceOnSite: 'price on site',
+  Dropping: 'may free up soon',
+  DroppingNote: 'Being deleted: may become available soon',
+  Layout: 'Layout',
+  Theme: 'Theme',
+  TableCaption: 'Yearly price of each free domain at each registrar',
+  DomainHeading: 'Domain',
+  OthersHeading: 'Others',
+  SiteCell: 'site',
+  NotSold: 'not sold here',
+  LinkBlocked: "Your chat app didn't open the link. Copy it:",
+  Close: 'Close',
+  Footnote:
+    'Registrars are listed cheapest first. Prices are standard yearly prices where a registrar publishes them; premium names cost more.',
+};
+
+/** What a table cell shows for a registrar that does not sell the name. */
+const NOT_SOLD_MARK = '—';
+/** A hyphen and a space that never break a line: "2-year minimum" stays whole. */
+const NO_BREAK_HYPHEN = '‑';
+const NO_BREAK_SPACE = ' ';
+/** Between the lowest and the highest price: an en dash, as in "$10.46-$11.08". */
+const RANGE_DASH = '–';
+
+// ── Preferences: list, cards or table; light or dark ──────────────────────────────────────────
 
 /** How the free domains are laid out. */
 const View = {
@@ -98,37 +160,73 @@ function keepChoice(key, value) {
   }
 }
 
+function forgetChoice(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Nothing was stored.
+  }
+}
+
 const state = {
   view: readChoice(StorageKey.View, View) ?? View.List,
   /** The visitor's own theme; while unset, the host's theme applies. */
   chosenTheme: readChoice(StorageKey.Theme, Theme),
   hostTheme: window.matchMedia(LIGHT_SCHEME_QUERY).matches ? Theme.Light : Theme.Dark,
-  /** The last tool result, drawn again when the view changes. */
-  result: undefined,
+  /** Whether the host said which theme it uses: only then does the canvas follow it. */
+  hostThemeKnown: false,
+  /** Whether the host offers to open links; assumed until it says otherwise. */
+  hostOpensLinks: true,
+  /** The host's locale, for prices. */
+  locale: undefined,
+  /** The last tool result's free domains, so a change of view keeps them. */
+  free: [],
 };
 
+function currentTheme() {
+  return state.chosenTheme ?? state.hostTheme;
+}
+
+/**
+ * The panel's colors follow the chosen theme; the page's color scheme follows the host's, so
+ * the browser keeps the iframe's canvas transparent instead of painting it white or black.
+ */
 function applyTheme() {
-  document.documentElement.dataset.theme = state.chosenTheme ?? state.hostTheme;
+  const root = document.documentElement;
+  root.dataset.theme = currentTheme();
+  if (state.hostThemeKnown) root.style.colorScheme = state.hostTheme;
   syncToolbar();
 }
 
-// ── The host's look: its theme and font ───────────────────────────────────────────────────────
+// ── The host's look: its theme, font and locale ───────────────────────────────────────────────
+
+/** The class that lets the page scroll, when the host caps the frame's height. */
+const CAPPED_CLASS = 'is-capped';
+
+/** The one style element that holds the host's font faces. */
+const hostFonts = document.createElement('style');
+document.head.append(hostFonts);
 
 function applyHostContext(context) {
   if (!context) return;
-  if (Object.values(Theme).includes(context.theme)) state.hostTheme = context.theme;
+  if (Object.values(Theme).includes(context.theme)) {
+    state.hostTheme = context.theme;
+    state.hostThemeKnown = true;
+  }
+  if (context.locale) state.locale = context.locale;
+  const capped = Boolean(context.containerDimensions?.maxHeight);
+  document.documentElement.classList.toggle(CAPPED_CLASS, capped);
   const font = context.styles?.variables?.['--font-sans'];
   if (font) document.documentElement.style.setProperty('--font-sans', font);
   const fonts = context.styles?.css?.fonts;
-  if (fonts) {
-    const style = document.createElement('style');
-    style.textContent = fonts;
-    document.head.append(style);
-  }
+  if (fonts) hostFonts.textContent = fonts;
   applyTheme();
 }
 
 // ── The panel's height follows its content ────────────────────────────────────────────────────
+
+/** How the page is measured at its natural height. */
+const MEASURE_HEIGHT = 'max-content';
 
 let reportedWidth = 0;
 let reportedHeight = 0;
@@ -136,7 +234,7 @@ let reportedHeight = 0;
 function reportSize() {
   const root = document.documentElement;
   const previous = root.style.height;
-  root.style.height = 'max-content';
+  root.style.height = MEASURE_HEIGHT;
   const height = Math.ceil(root.getBoundingClientRect().height);
   root.style.height = previous;
   const width = Math.ceil(window.innerWidth);
@@ -153,12 +251,23 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /** The icons' drawing area. */
 const ICON_VIEW_BOX = '0 0 24 24';
 
+/** The panel's icons. */
+const Icon = {
+  List: 'list',
+  Grid: 'grid',
+  Table: 'table',
+  Sun: 'sun',
+  Moon: 'moon',
+  External: 'external',
+  Chevron: 'chevron',
+};
+
 /** Icons as SVG path data: drawn with strokes, in the text's color. */
 const ICON_PATHS = new Map()
-  .set('list', ['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4.5 6h.01', 'M4.5 12h.01', 'M4.5 18h.01'])
-  .set('grid', ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'])
-  .set('table', ['M4 5h16v14H4z', 'M4 10h16', 'M4 15h16', 'M10 5v14'])
-  .set('sun', [
+  .set(Icon.List, ['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4.5 6h.01', 'M4.5 12h.01', 'M4.5 18h.01'])
+  .set(Icon.Grid, ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'])
+  .set(Icon.Table, ['M4 5h16v14H4z', 'M4 10h16', 'M4 15h16', 'M10 5v14'])
+  .set(Icon.Sun, [
     'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z',
     'M12 2v2',
     'M12 20v2',
@@ -169,15 +278,19 @@ const ICON_PATHS = new Map()
     'M4.9 19.1l1.4-1.4',
     'M17.7 6.3l1.4-1.4',
   ])
-  .set('moon', ['M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z'])
-  .set('external', ['M7 17L17 7', 'M8 7h9v9'])
-  .set('chevron', ['M6 9l6 6 6-6']);
+  .set(Icon.Moon, ['M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z'])
+  .set(Icon.External, ['M7 17L17 7', 'M8 7h9v9'])
+  .set(Icon.Chevron, ['M6 9l6 6 6-6']);
+
+/** Attribute values used as switches. */
+const TRUE = 'true';
+const FALSE = 'false';
 
 function icon(name) {
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'icon');
   svg.setAttribute('viewBox', ICON_VIEW_BOX);
-  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('aria-hidden', TRUE);
   for (const data of ICON_PATHS.get(name)) {
     const path = document.createElementNS(SVG_NS, 'path');
     path.setAttribute('d', data);
@@ -194,21 +307,48 @@ function element(tag, className, text) {
   return node;
 }
 
-function money(amount, currency) {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
+/** Text only screen readers hear, such as which domain a button belongs to. */
+function hiddenText(text) {
+  return element('span', 'visually-hidden', text);
 }
 
-// ── The toolbar: two button groups, view and theme ────────────────────────────────────────────
+function money(amount, currency) {
+  return new Intl.NumberFormat(state.locale, { style: 'currency', currency }).format(amount);
+}
+
+/** A button that opens and closes the given element, which starts closed. */
+function disclosure(className, label, target, hiddenLabel) {
+  const toggle = element('button', className, label);
+  toggle.type = 'button';
+  toggle.setAttribute('aria-expanded', FALSE);
+  toggle.setAttribute('aria-controls', target.id);
+  if (hiddenLabel) toggle.append(hiddenText(hiddenLabel));
+  toggle.append(icon(Icon.Chevron));
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== TRUE;
+    toggle.setAttribute('aria-expanded', String(open));
+    target.hidden = !open;
+  });
+  return toggle;
+}
+
+let nextId = 1;
+
+function uniqueId(prefix) {
+  return `${prefix}-${nextId++}`;
+}
+
+// ── The panel's frame: built once, so the toolbar keeps focus while the content changes ──────
 
 /** The groups' options: the value each sets, its icon and its name for screen readers. */
 const VIEW_OPTIONS = [
-  { value: View.List, icon: 'list', label: 'Show as a list' },
-  { value: View.Grid, icon: 'grid', label: 'Show as cards' },
-  { value: View.Table, icon: 'table', label: 'Show as a price table' },
+  { value: View.List, icon: Icon.List, label: 'Show as a list' },
+  { value: View.Grid, icon: Icon.Grid, label: 'Show as cards' },
+  { value: View.Table, icon: Icon.Table, label: 'Show as a price table' },
 ];
 const THEME_OPTIONS = [
-  { value: Theme.Light, icon: 'sun', label: 'Light theme' },
-  { value: Theme.Dark, icon: 'moon', label: 'Dark theme' },
+  { value: Theme.Light, icon: Icon.Sun, label: 'Light theme' },
+  { value: Theme.Dark, icon: Icon.Moon, label: 'Dark theme' },
 ];
 
 /** The toolbar's buttons, so a change of state can update their pressed look. */
@@ -231,32 +371,84 @@ function segmented(groupLabel, options, current, choose) {
   return group;
 }
 
-function toolbar() {
-  toolbarButtons.length = 0;
-  const bar = element('div', 'toolbar');
-  bar.append(
-    segmented('Layout', VIEW_OPTIONS, () => state.view, chooseView),
-    segmented('Theme', THEME_OPTIONS, () => document.documentElement.dataset.theme, chooseTheme),
-  );
-  return bar;
-}
-
 function syncToolbar() {
   for (const { button, isPressed } of toolbarButtons) {
     button.setAttribute('aria-pressed', String(isPressed()));
   }
 }
 
+const panel = element('section', 'panel');
+const header = element('div', 'header');
+const tool = element('p', 'tool');
+tool.append(element('span', 'tool__who', Copy.ToolWho), Copy.ToolName);
+const layoutGroup = segmented(Copy.Layout, VIEW_OPTIONS, () => state.view, chooseView);
+const themeGroup = segmented(Copy.Theme, THEME_OPTIONS, currentTheme, chooseTheme);
+const toolbar = element('div', 'toolbar');
+toolbar.append(layoutGroup, themeGroup);
+header.append(tool, toolbar);
+/** The one line screen readers are told about: the progress, the summary or an error. */
+const status = element('p', 'summary');
+status.setAttribute('role', 'status');
+const linkFallback = element('div', 'fallback');
+linkFallback.hidden = true;
+const content = element('div', 'content');
+panel.append(header, status, linkFallback, content);
+document.getElementById('app').append(panel);
+
 function chooseView(view) {
+  const wasTable = state.view === View.Table;
   state.view = view;
   keepChoice(StorageKey.View, view);
-  if (state.result) showResult(state.result);
+  syncToolbar();
+  const list = content.querySelector('.results');
+  // List and cards are one list with a different class: open rows stay open.
+  if (list && !wasTable && view !== View.Table) {
+    list.classList.toggle('results--grid', view === View.Grid);
+    return;
+  }
+  if (state.free.length) renderFree();
 }
 
+/** Choosing the host's own theme goes back to following the host. */
 function chooseTheme(theme) {
-  state.chosenTheme = theme;
-  keepChoice(StorageKey.Theme, theme);
+  if (theme === state.hostTheme) {
+    state.chosenTheme = undefined;
+    forgetChoice(StorageKey.Theme);
+  } else {
+    state.chosenTheme = theme;
+    keepChoice(StorageKey.Theme, theme);
+  }
   applyTheme();
+}
+
+function setStatus(text, kind) {
+  status.textContent = text;
+  status.className = kind ? `summary summary--${kind}` : 'summary';
+  status.setAttribute('role', kind === StatusKind.Error ? 'alert' : 'status');
+}
+
+/** How the status line looks. */
+const StatusKind = {
+  Progress: 'progress',
+  Error: 'error',
+};
+
+/** "Your chat app didn't open the link. Copy it:" with the link, selected, and a close button. */
+function showLinkFallback(url) {
+  const field = element('input', 'fallback__url');
+  field.type = 'text';
+  field.readOnly = true;
+  field.value = url;
+  field.setAttribute('aria-label', Copy.LinkBlocked);
+  const close = element('button', 'fallback__close', Copy.Close);
+  close.type = 'button';
+  close.addEventListener('click', () => {
+    linkFallback.hidden = true;
+  });
+  linkFallback.replaceChildren(element('p', 'fallback__text', Copy.LinkBlocked), field, close);
+  linkFallback.hidden = false;
+  field.focus();
+  field.select();
 }
 
 // ── Rendering a check_domains result ─────────────────────────────────────────────────────────
@@ -269,52 +461,55 @@ const Status = {
   Reserved: 'reserved',
   Unknown: 'unknown',
 };
-/** Free domains shown before "…and N more free": about a screenful. */
-const FREE_SHOWN = 12;
+/** The content type of the tool's text report. */
+const TEXT_BLOCK = 'text';
+/** Names shown at a time, in each list and each "show more" step: about a screenful. */
+const PAGE_SIZE = 24;
 /** Characters of an ISO date that make the day: "2030-02-03". */
 const DATE_LENGTH = 10;
 /** Milliseconds in a second, for the elapsed time. */
 const SECOND_MS = 1000;
-/** A hyphen and a space that never break a line: "2-year minimum" stays whole. */
-const NO_BREAK_HYPHEN = '\u2011';
-const NO_BREAK_SPACE = '\u00a0';
-/** Between the lowest and the highest price: an en dash, as in "$10.46-$11.08". */
-const RANGE_DASH = '\u2013';
-/** What the panel says it is, as on the landing page. */
-const TOOL_WHO = 'DomainScout';
-const TOOL_NAME = 'check_domains';
-
-const app = document.getElementById('app');
-let nextListId = 1;
-
-/** The panel: the header with the toolbar, then the given parts. */
-function showPanel(...parts) {
-  const panel = element('section', 'panel');
-  const header = element('div', 'header');
-  const tool = element('p', 'tool');
-  tool.append(element('span', 'tool__who', TOOL_WHO), TOOL_NAME);
-  header.append(tool, toolbar());
-  panel.append(header, ...parts);
-  app.replaceChildren(panel);
-  syncToolbar();
-}
-
-function showMessage(text) {
-  showPanel(element('p', 'status', text));
-}
+/** Rows a "show more" button has revealed get focus, so the keyboard carries on from there. */
+const FOCUSABLE_FROM_SCRIPT = '-1';
 
 function showChecking(input) {
+  state.free = [];
   const count = Array.isArray(input?.domains) ? input.domains.length : 0;
-  const text = count ? `Checking ${count} names…` : 'Checking domains…';
-  showPanel(element('p', 'status', text), element('div', 'progress'));
+  const tlds = Array.isArray(input?.tlds) && input.tlds.length ? input.tlds : undefined;
+  const where = tlds ? ` in ${tlds.map((tld) => `.${tld}`).join(', ')}` : '';
+  setStatus(count ? `Checking ${count} names${where}…` : Copy.Checking, StatusKind.Progress);
+  content.replaceChildren(element('div', 'progress'));
+  layoutGroup.hidden = false;
+}
+
+function showMessage(text, kind) {
+  state.free = [];
+  setStatus(text, kind);
+  content.replaceChildren();
+  layoutGroup.hidden = true;
 }
 
 function showResult(result) {
-  state.result = result;
+  try {
+    renderResult(result);
+  } catch {
+    // A result shaped unlike this panel expects: the tool's own text report still says it all.
+    showMessage(reportText(result) ?? Copy.NoResults, StatusKind.Error);
+  }
+}
+
+function reportText(result) {
+  return result?.content?.find((block) => block.type === TEXT_BLOCK)?.text;
+}
+
+function renderResult(result) {
   const data = result?.structuredContent;
-  if (result?.isError || !data?.results) {
-    const text = result?.content?.find((block) => block.type === 'text')?.text;
-    showMessage(text ?? 'The check did not return results.');
+  if (result?.isError || !Array.isArray(data?.results)) {
+    showMessage(reportText(result) ?? Copy.NoResults, StatusKind.Error);
+    return;
+  }
+  if (!data.results.length) {
+    showMessage(Copy.NothingToCheck);
     return;
   }
   const byStatus = (statuses) => data.results.filter((item) => statuses.includes(item.status));
@@ -322,102 +517,178 @@ function showResult(result) {
   const taken = byStatus([Status.Taken]);
   const reserved = byStatus([Status.Reserved]);
   const unknown = byStatus([Status.Unknown]);
+  state.free = free;
+  setStatus(summaryText(data, free, taken, reserved, unknown));
+  layoutGroup.hidden = !free.length;
 
-  const parts = [element('p', 'summary', summaryText(data, free, taken, reserved, unknown))];
-  if (free.length) parts.push(...freeDomains(free));
-  if (taken.length) parts.push(group('Taken', taken, takenChip));
-  if (reserved.length) parts.push(group('Reserved', reserved, labelledChip('chip--reserved')));
-  if (unknown.length) {
-    parts.push(group('Not verified, try again later', unknown, labelledChip('chip--unknown')));
+  const rest = [];
+  if (!free.length) rest.push(element('p', 'empty', Copy.NoneFree));
+  if (taken.length) rest.push(group(Copy.Taken, taken, takenChip));
+  if (reserved.length) rest.push(group(Copy.Reserved, reserved, notedChip('chip--reserved')));
+  if (unknown.length) rest.push(group(Copy.Unknown, unknown, notedChip('chip--unknown')));
+  if (data.warnings?.length) rest.push(notes(data.warnings));
+  if (free.length) {
+    const disclosureText = data.disclosure ? ` ${data.disclosure}` : '';
+    rest.push(element('p', 'footnote', `${Copy.Footnote}${disclosureText}`));
   }
-  if (data.warnings?.length) parts.push(notes(data.warnings));
-  const disclosure = data.disclosure ? ` ${data.disclosure}` : '';
-  parts.push(
-    element(
-      'p',
-      'footnote',
-      `Registrars are listed cheapest first. Prices are standard yearly prices for the TLD; premium names cost more.${disclosure}`,
-    ),
-  );
-  showPanel(...parts);
+  const freeBox = element('div', 'free');
+  content.replaceChildren(freeBox, ...rest);
+  renderFree();
 }
 
-/** "48 names checked in 4.2s: 23 free, 25 taken", naming the TLD when there is only one. */
+/** "48 domains checked in 4.2s: 23 free, 25 taken", naming the TLD when there is only one. */
 function summaryText(data, free, taken, reserved, unknown) {
-  const seconds = (data.summary.elapsed_ms / SECOND_MS).toFixed(1);
+  const total = data.summary?.total ?? data.results.length;
+  const elapsed = data.summary?.elapsed_ms;
+  const time = Number.isFinite(elapsed) ? ` in ${(elapsed / SECOND_MS).toFixed(1)}s` : '';
   const tlds = new Set(data.results.map((item) => item.tld));
   const onlyTld = tlds.size === 1 ? ` .${[...tlds][0]}` : '';
   const counts = [`${free.length} free${onlyTld}`, `${taken.length} taken`];
   if (reserved.length) counts.push(`${reserved.length} reserved`);
   if (unknown.length) counts.push(`${unknown.length} not verified`);
-  return `${data.summary.total} names checked in ${seconds}s: ${counts.join(', ')}`;
+  return `${total} domains checked${time}: ${counts.join(', ')}`;
 }
 
-/** The free domains, the first FREE_SHOWN of them until "…and N more free". */
-function freeDomains(free) {
-  if (state.view === View.Table) return priceTable(free);
+/** The free domains in the chosen view, into the box at the top of the content. */
+function renderFree() {
+  const box = content.querySelector('.free');
+  if (!box) return;
+  const parts = state.view === View.Table ? priceTable(state.free) : freeList(state.free);
+  box.replaceChildren(...parts);
+}
+
+/**
+ * The first page of items, then a button that adds a page at a time and moves focus to the first
+ * new item, so a keyboard user carries on where the button was.
+ */
+function paged(items, container, build, moreLabel) {
+  let shown = Math.min(PAGE_SIZE, items.length);
+  container.append(...items.slice(0, shown).flatMap(build));
+  if (shown >= items.length) return [];
+  const more = element('button', 'more');
+  more.type = 'button';
+  const label = () => moreLabel(items.length - shown);
+  more.textContent = label();
+  more.addEventListener('click', () => {
+    const page = items.slice(shown, shown + PAGE_SIZE).flatMap(build);
+    container.append(...page);
+    shown += PAGE_SIZE;
+    page[0].tabIndex = Number(FOCUSABLE_FROM_SCRIPT);
+    page[0].focus();
+    if (shown >= items.length) more.remove();
+    else more.textContent = label();
+  });
+  return [more];
+}
+
+/** The free domains as a list or as cards: the same list, a class apart. */
+function freeList(free) {
   const listClass = state.view === View.Grid ? 'results results--grid' : 'results';
   const list = element('ul', listClass);
-  list.setAttribute('aria-label', 'Free domains');
-  list.append(...free.slice(0, FREE_SHOWN).map(freeDomain));
-  if (free.length <= FREE_SHOWN) return [list];
-  const more = element('button', 'more', `…and ${free.length - FREE_SHOWN} more free`);
-  more.type = 'button';
-  more.addEventListener('click', () => {
-    list.append(...free.slice(FREE_SHOWN).map(freeDomain));
-    more.remove();
-  });
-  return [list, more];
+  list.setAttribute('aria-label', Copy.FreeDomains);
+  const more = paged(
+    free,
+    list,
+    (item) => [freeDomain(item)],
+    (left) => `…and ${left} more free`,
+  );
+  return [list, ...more];
 }
 
 function freeDomain(item) {
   const domain = item.display || item.domain;
   const row = element('li', 'result');
-  row.append(element('span', 'result__domain', domain));
+  const name = element('span', 'result__domain', domain);
+  row.append(name);
+  if (item.display && item.display !== item.domain) {
+    // An internationalized name: show what is actually registered, too.
+    name.append(element('span', 'result__ascii', item.domain));
+  }
   const pill = item.premium
-    ? element('span', 'pill pill--premium', 'Premium')
-    : element('span', 'pill', 'Available');
-  if (item.confirmedBy) pill.title = `Confirmed by ${item.confirmedBy}`;
+    ? element('span', 'pill pill--premium', Copy.Premium)
+    : element('span', 'pill', Copy.Available);
+  if (item.confirmedBy) pill.append(hiddenText(`, confirmed by ${item.confirmedBy}`));
   row.append(pill);
 
   // The tool lists offers cheapest first, priced ones before the rest: the range reads from the
   // priced ones, and the accordion keeps the tool's order.
   const offers = item.buy ?? [];
   const line = element('div', 'result__line');
-  line.append(element('span', 'result__price', priceRange(offers)));
+  line.append(element('span', 'result__price', priceSummary(item, offers)));
   row.append(line);
   if (!offers.length) return row;
   const list = registrarList(offers, domain);
-  line.append(accordionToggle(offers.length, list));
+  line.append(disclosure('toggle', `All ${offers.length} registrars`, list, ` for ${domain}`));
   row.append(list);
   return row;
 }
 
 /**
- * "$10.46–$11.08/yr", from the cheapest registrar to the dearest one with a known price, plus the
- * minimum term where there is one. One price when only one is known; none at all, then
- * "Price on the registrars' sites".
+ * "$10.46–$11.08/yr" from the cheapest registrar to the dearest one that publishes a price, in
+ * the cheapest one's currency, with the minimum term and what it costs upfront. A premium name
+ * has its own price, so it says so instead of showing the standard one.
  */
-function priceRange(offers) {
-  const prices = offers.map((offer) => offer.price).filter(Boolean);
-  if (!prices.length) return "Price on the registrars' sites";
-  const amounts = prices.map((price) => price.registration);
-  const { currency, minYears } = prices[0];
-  const low = money(Math.min(...amounts), currency);
-  const high = money(Math.max(...amounts), currency);
+function priceSummary(item, offers) {
+  const tld = item.tld ? `.${item.tld}` : '';
+  if (!offers.length) return `No registrar in our list sells ${tld}`;
+  if (item.premium) return Copy.PremiumPrice;
+  const lead = offers.find((offer) => offer.price)?.price;
+  if (!lead) return Copy.NoPrices;
+  const amounts = offers
+    .map((offer) => offer.price)
+    .filter((price) => price?.currency === lead.currency)
+    .map((price) => price.registration);
+  const low = money(Math.min(...amounts), lead.currency);
+  const high = money(Math.max(...amounts), lead.currency);
   const range = low === high ? low : `${low}${RANGE_DASH}${high}`;
-  const term = minYears > 1 ? `, ${minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum` : '';
-  return `${range}/yr${term}`;
+  if (lead.minYears <= 1) return `${range}/yr`;
+  const upfront = money(lead.registration * lead.minYears, lead.currency);
+  return `${range}/yr, ${minimumTerm(lead.minYears)} (${upfront} upfront)`;
+}
+
+function minimumTerm(years) {
+  return `${years}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`;
+}
+
+/** A link to a registrar's page for the name; the host opens it, as the sandbox blocks navigation. */
+function registrarLink(offer, className) {
+  const link = element('a', className);
+  link.href = offer.url;
+  link.rel = 'noopener';
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    openLink(offer.url);
+  });
+  return link;
+}
+
+/**
+ * Every registrar that sells the name, in the tool's order. Each row is one link, the whole row
+ * clickable: the registrar, its price and the arrow in columns that line up from row to row.
+ */
+function registrarList(offers, domain) {
+  const list = element('ul', 'registrars');
+  list.id = uniqueId('registrars');
+  list.hidden = true;
+  list.setAttribute('aria-label', `Registrars for ${domain}`);
+  for (const offer of offers) {
+    const link = registrarLink(offer, 'registrar');
+    const price = offer.price
+      ? `${money(offer.price.registration, offer.price.currency)}/yr`
+      : Copy.PriceOnSite;
+    link.append(
+      element('span', 'registrar__name', offer.registrar),
+      element('span', 'registrar__price', price),
+      icon(Icon.External),
+    );
+    const item = element('li');
+    item.append(link);
+    list.append(item);
+  }
+  return list;
 }
 
 // ── The price table: domains down the side, registrars across the top ───────────────────────
-
-/** What a cell shows for a registrar that sells the name but publishes no price list. */
-const PRICE_ON_SITE = 'site';
-/** What a cell shows for a registrar that does not sell the name. */
-const NOT_SOLD = '—';
-/** The last column: the registrars without a public price, behind "N more". */
-const OTHERS_HEADING = 'Others';
 
 /**
  * The registrars across the top: only those with a public price for at least one of the names,
@@ -449,52 +720,58 @@ function priceTable(free) {
   const columns = pricedColumns(free);
   const hasOthers = free.some((item) => otherOffers(item, columns).length > 0);
   const table = element('table', 'matrix');
-  const caption = element(
-    'caption',
-    'visually-hidden',
-    'Yearly price of each free domain at each registrar',
-  );
+  const caption = element('caption', 'visually-hidden', Copy.TableCaption);
   const headRow = element('tr');
-  const headings = ['Domain', ...columns, ...(hasOthers ? [OTHERS_HEADING] : [])];
-  headings.forEach((text, index) => {
-    const cell = element('th', index === 0 ? 'matrix__corner' : '', text);
+  const headings = [Copy.DomainHeading, ...columns, ...(hasOthers ? [Copy.OthersHeading] : [])];
+  for (const text of headings) {
+    const cell = element('th', '', text);
     cell.scope = 'col';
     headRow.append(cell);
-  });
+  }
   const head = element('thead');
   head.append(headRow);
   const body = element('tbody');
-  const rows = (items) => items.flatMap((item) => tableRows(item, columns, hasOthers));
-  body.append(...rows(free.slice(0, FREE_SHOWN)));
   table.append(caption, head, body);
   const wrap = element('div', 'matrix-wrap');
   wrap.append(table);
-  if (free.length <= FREE_SHOWN) return [wrap];
-  const more = element('button', 'more', `…and ${free.length - FREE_SHOWN} more free`);
-  more.type = 'button';
-  more.addEventListener('click', () => {
-    body.append(...rows(free.slice(FREE_SHOWN)));
-    more.remove();
-  });
-  return [wrap, more];
+  const more = paged(
+    free,
+    body,
+    (item) => tableRows(item, columns, hasOthers),
+    (left) => `…and ${left} more free`,
+  );
+  watchOverflow(wrap);
+  return [wrap, ...more];
+}
+
+/** Marks the table's frame while it can scroll sideways, so a fade shows there is more. */
+function watchOverflow(wrap) {
+  const update = () => {
+    const more = wrap.scrollWidth - wrap.clientWidth - wrap.scrollLeft > 1;
+    wrap.classList.toggle('matrix-wrap--more', more);
+  };
+  wrap.addEventListener('scroll', update, { passive: true });
+  new ResizeObserver(update).observe(wrap);
 }
 
 /** A name's row and, when it has other registrars, the row that opens under it with their links. */
 function tableRows(item, columns, hasOthers) {
+  const domain = item.display || item.domain;
   const row = element('tr');
   row.append(domainCell(item));
   const offers = new Map((item.buy ?? []).map((offer) => [offer.registrar, offer]));
-  for (const registrar of columns) row.append(priceCell(offers.get(registrar)));
+  for (const registrar of columns) row.append(priceCell(offers.get(registrar), domain));
   if (!hasOthers) return [row];
   const others = otherOffers(item, columns);
   if (!others.length) {
     row.append(noneCell());
     return [row];
   }
-  const span = 1 + columns.length + 1;
-  const extra = otherLinksRow(others, span, item.display || item.domain);
+  const extra = otherLinksRow(others, columns.length + 2, domain);
   const cell = element('td');
-  cell.append(othersToggle(others.length, extra));
+  cell.append(
+    disclosure('toggle matrix__toggle', `${others.length} more`, extra, ` for ${domain}`),
+  );
   row.append(cell);
   return [row, extra];
 }
@@ -503,72 +780,47 @@ function domainCell(item) {
   const cell = element('th', 'matrix__domain');
   cell.scope = 'row';
   cell.append(element('span', 'result__domain', item.display || item.domain));
-  if (item.premium) cell.append(element('span', 'matrix__note matrix__note--premium', 'Premium'));
+  if (item.premium)
+    cell.append(element('span', 'matrix__note matrix__note--premium', Copy.Premium));
   const minYears = (item.buy ?? []).find((offer) => offer.price)?.price.minYears ?? 1;
-  if (minYears > 1) {
-    cell.append(
-      element('span', 'matrix__note', `${minYears}${NO_BREAK_HYPHEN}year${NO_BREAK_SPACE}minimum`),
-    );
-  }
+  if (minYears > 1) cell.append(element('span', 'matrix__note', minimumTerm(minYears)));
   return cell;
 }
 
 /** A price that links to the registrar, "site" where it has none, a dash where it does not sell. */
-function priceCell(offer) {
+function priceCell(offer, domain) {
   if (!offer) return noneCell();
   const cell = element('td');
-  const text = offer.price ? money(offer.price.registration, offer.price.currency) : PRICE_ON_SITE;
   const className = offer.price ? 'matrix__link' : 'matrix__link matrix__link--site';
-  cell.append(registrarLink(offer, className, text));
+  const link = registrarLink(offer, className);
+  link.textContent = offer.price
+    ? money(offer.price.registration, offer.price.currency)
+    : Copy.SiteCell;
+  link.append(hiddenText(` at ${offer.registrar} for ${domain}`));
+  cell.append(link);
   return cell;
 }
 
 function noneCell() {
   const cell = element('td');
-  cell.append(element('span', 'matrix__none', NOT_SOLD));
+  const mark = element('span', 'matrix__none', NOT_SOLD_MARK);
+  mark.setAttribute('aria-hidden', TRUE);
+  cell.append(mark, hiddenText(Copy.NotSold));
   return cell;
-}
-
-/** A link to a registrar's page for the name; the host opens it, as the sandbox blocks navigation. */
-function registrarLink(offer, className, text) {
-  const link = element('a', className, text);
-  link.href = offer.url;
-  link.rel = 'noopener';
-  link.title = `Buy at ${offer.registrar}`;
-  link.addEventListener('click', (event) => {
-    event.preventDefault();
-    openLink(offer.url);
-  });
-  return link;
-}
-
-/** "7 more": opens the row with the other registrars' links under the name. */
-function othersToggle(count, extra) {
-  const toggle = element('button', 'toggle matrix__toggle', `${count} more`);
-  toggle.type = 'button';
-  toggle.setAttribute('aria-expanded', 'false');
-  toggle.setAttribute('aria-controls', extra.id);
-  toggle.append(icon('chevron'));
-  toggle.addEventListener('click', () => {
-    const open = toggle.getAttribute('aria-expanded') !== 'true';
-    toggle.setAttribute('aria-expanded', String(open));
-    extra.hidden = !open;
-  });
-  return toggle;
 }
 
 /** The row under a name: its other registrars as links, prices on their own sites. */
 function otherLinksRow(offers, span, domain) {
   const row = element('tr', 'matrix__extra');
-  row.id = `others-${nextListId++}`;
+  row.id = uniqueId('others');
   row.hidden = true;
   const cell = element('td');
   cell.colSpan = span;
   const label = element('span', 'matrix__extra-label', `Prices on their sites for ${domain}:`);
   const links = element('span', 'matrix__extra-links');
   for (const offer of offers) {
-    const link = registrarLink(offer, 'matrix__chip', offer.registrar);
-    link.append(icon('external'));
+    const link = registrarLink(offer, 'matrix__chip');
+    link.append(offer.registrar, icon(Icon.External));
     links.append(link);
   }
   cell.append(label, links);
@@ -576,63 +828,24 @@ function otherLinksRow(offers, span, domain) {
   return row;
 }
 
-/** "All N registrars": opens and closes the list under the domain. */
-function accordionToggle(count, list) {
-  const toggle = element('button', 'toggle', `All ${count} registrars`);
-  toggle.type = 'button';
-  toggle.setAttribute('aria-expanded', 'false');
-  toggle.setAttribute('aria-controls', list.id);
-  toggle.append(icon('chevron'));
-  toggle.addEventListener('click', () => {
-    const open = toggle.getAttribute('aria-expanded') !== 'true';
-    toggle.setAttribute('aria-expanded', String(open));
-    list.hidden = !open;
-  });
-  return toggle;
-}
-
-/**
- * Every registrar that sells the name, in the tool's order. Each row is one link, the whole row
- * clickable: the registrar, its price and the arrow in columns that line up from row to row.
- * The sandbox blocks navigation, so the host opens the link.
- */
-function registrarList(offers, domain) {
-  const list = element('ul', 'registrars');
-  list.id = `registrars-${nextListId++}`;
-  list.hidden = true;
-  list.setAttribute('aria-label', `Registrars for ${domain}`);
-  for (const offer of offers) {
-    const link = element('a', 'registrar');
-    link.href = offer.url;
-    link.rel = 'noopener';
-    const price = offer.price
-      ? `${money(offer.price.registration, offer.price.currency)}/yr`
-      : 'price on site';
-    link.append(
-      element('span', 'registrar__name', offer.registrar),
-      element('span', 'registrar__price', price),
-      icon('external'),
-    );
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-      openLink(offer.url);
-    });
-    const item = element('li');
-    item.append(link);
-    list.append(item);
-  }
-  return list;
-}
+// ── Taken, reserved and unverified names ─────────────────────────────────────────────────────
 
 function group(label, items, chip) {
-  const box = element('div', 'group');
+  const box = element('section', 'group');
+  const title = element('h2', 'group__label', `${label} · ${items.length}`);
   const chips = element('ul', 'chips');
   chips.setAttribute('aria-label', label);
-  for (const item of items) chips.append(chip(item));
-  box.append(element('p', 'group__label', `${label} · ${items.length}`), chips);
+  const more = paged(
+    items,
+    chips,
+    (item) => [chip(item)],
+    (left) => `Show ${left} more`,
+  );
+  box.append(title, chips, ...more);
   return box;
 }
 
+/** A taken name; one being deleted says so, visibly, as it may be free soon. */
 function takenChip(item) {
   const dropping = item.registration?.dropping;
   const chip = element(
@@ -640,17 +853,26 @@ function takenChip(item) {
     dropping ? 'chip chip--dropping' : 'chip',
     item.display || item.domain,
   );
+  if (dropping) {
+    chip.append(element('span', 'chip__note', Copy.Dropping));
+    chip.title = Copy.DroppingNote;
+  }
   const expires = item.registration?.expires?.slice(0, DATE_LENGTH);
-  if (dropping) chip.title = 'Being deleted: may become available soon';
-  else if (expires) chip.title = `Registered until ${expires}`;
+  if (!dropping && expires) {
+    chip.title = `Registered until ${expires}`;
+    chip.append(hiddenText(`, registered until ${expires}`));
+  }
   return chip;
 }
 
-/** A chip in the given color, with the tool's note as its title. */
-function labelledChip(modifier) {
+/** A chip in the given color, with the tool's note for screen readers and as a tooltip. */
+function notedChip(modifier) {
   return (item) => {
     const chip = element('li', `chip ${modifier}`, item.display || item.domain);
-    if (item.note) chip.title = item.note;
+    if (item.note) {
+      chip.title = item.note;
+      chip.append(hiddenText(`: ${item.note}`));
+    }
     return chip;
   };
 }
@@ -667,7 +889,7 @@ function notes(warnings) {
 const notificationHandlers = new Map()
   .set(Method.ToolInput, (params) => showChecking(params?.arguments))
   .set(Method.ToolResult, (params) => showResult(params))
-  .set(Method.ToolCancelled, () => showMessage('The check was cancelled.'))
+  .set(Method.ToolCancelled, () => showMessage(Copy.Cancelled))
   .set(Method.HostContextChanged, (params) => applyHostContext(params));
 
 window.addEventListener('message', (event) => {
@@ -686,19 +908,31 @@ window.addEventListener('message', (event) => {
 
 // ── Start: introduce the panel, take the host's look, then follow the content's size ──────────
 
+/** The class that shows the panel, once it has the host's theme (or after a short wait). */
+const READY_CLASS = 'is-ready';
+/** How long the panel waits for the host's theme before showing itself anyway. */
+const SHOW_ANYWAY_MS = 150;
+
+function showPanel() {
+  document.documentElement.classList.add(READY_CLASS);
+}
+
 async function start() {
   applyTheme();
   showChecking();
+  window.setTimeout(showPanel, SHOW_ANYWAY_MS);
+  const observer = new ResizeObserver(() => window.requestAnimationFrame(reportSize));
+  observer.observe(document.documentElement);
+  observer.observe(document.body);
   const result = await request(Method.Initialize, {
     appInfo: APP_INFO,
     appCapabilities: {},
     protocolVersion: PROTOCOL_VERSION,
   });
+  state.hostOpensLinks = Boolean(result?.hostCapabilities?.openLinks);
   applyHostContext(result?.hostContext);
+  showPanel();
   notify(Method.Initialized);
-  const observer = new ResizeObserver(() => requestAnimationFrame(reportSize));
-  observer.observe(document.documentElement);
-  observer.observe(document.body);
   reportSize();
 }
 

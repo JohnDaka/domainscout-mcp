@@ -1,7 +1,7 @@
 /*
   The results panel, as on the landing page (domainscout.dakaio.com): the panel, a summary line,
-  then the free domains as a list or as cards. Dark like the landing page by default, light when
-  the host or the visitor picks light.
+  then the free domains as a list, cards or a price table. Dark like the landing page by default,
+  light when the host or the visitor picks light.
 */
 
 /*
@@ -23,12 +23,27 @@
   --ds-amber: #facc15;
   --ds-orange: #fb923c;
   --ds-accent-fill: rgba(60, 200, 255, 0.14);
+  --ds-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --ds-font: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   --ds-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Corners: the panel, the cards and table frame, controls, the toolbar's options, pills. */
   --ds-radius: 16px;
+  --ds-radius-card: 12px;
   --ds-radius-control: 8px;
+  --ds-radius-option: 6px;
+  --ds-radius-pill: 999px;
+  /* Sizes: the smallest icons, a card's narrowest width, a touch target's least height. */
+  --ds-icon-small: 12px;
+  --ds-card-min: 250px;
+  --ds-touch-target: 32px;
+  /* How quickly hover and open states change. */
+  --ds-quick: 0.15s ease;
 }
 
+/*
+  Light. The cyan is darker than the landing page's so that text in it keeps a 4.5:1 contrast on
+  white and on the tinted hover background alike.
+*/
 :root[data-theme='light'] {
   --ds-panel: #ffffff;
   --ds-panel-border: rgba(15, 18, 40, 0.1);
@@ -37,21 +52,27 @@
   --ds-heading: #0f1228;
   --ds-body: #3b3f63;
   --ds-muted: #5e6288;
-  --ds-cyan: #0a74a6;
+  --ds-cyan: #08679a;
   --ds-violet: #7b2fc9;
   --ds-teal: #077a70;
   --ds-amber: #8a6500;
   --ds-orange: #b4520f;
-  --ds-accent-fill: rgba(10, 116, 166, 0.09);
+  --ds-accent-fill: rgba(8, 103, 154, 0.09);
+  --ds-thumb-shadow: 0 1px 2px rgba(15, 18, 40, 0.12);
 }
 
 * {
   box-sizing: border-box;
 }
 
+/*
+  The host sets the frame's height from the page's own, so the page never scrolls: a scrollbar
+  that came and went while the frame caught up would shift everything sideways for a moment.
+*/
 html,
 body {
   margin: 0;
+  overflow: hidden;
   background: transparent;
 }
 
@@ -62,13 +83,36 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+  A host that caps the frame's height: then the page scrolls, with room for the scrollbar kept
+  from the start so nothing moves when it appears.
+*/
+html.is-capped {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+html.is-capped body {
+  overflow: visible;
+}
+
+/* Hidden until it has the host's theme, so it doesn't flash in the wrong one. */
+#app {
+  visibility: hidden;
+}
+
+.is-ready #app {
+  visibility: visible;
+}
+
 button {
   font: inherit;
   color: inherit;
   cursor: pointer;
 }
 
-button:focus-visible {
+button:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--ds-cyan);
   outline-offset: 2px;
 }
@@ -84,7 +128,7 @@ button:focus-visible {
   stroke-linejoin: round;
 }
 
-/* ── Panel and header ─────────────────────────────────────────────────────────────────────── */
+/* ── Panel, header and status ─────────────────────────────────────────────────────────────── */
 
 .panel {
   padding: 20px 24px;
@@ -125,7 +169,7 @@ button:focus-visible {
   gap: 8px;
 }
 
-/* A button group: icons only, the pressed one raised. */
+/* A button group: icons only, the pressed option a raised thumb. */
 .segmented {
   display: inline-flex;
   padding: 2px;
@@ -134,14 +178,18 @@ button:focus-visible {
   background: var(--ds-raised);
 }
 
+.segmented[hidden] {
+  display: none;
+}
+
 .segmented__option {
   display: grid;
   place-items: center;
   width: 28px;
   height: 24px;
   padding: 0;
-  border: 0;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-option);
   background: transparent;
   color: var(--ds-muted);
 }
@@ -151,10 +199,13 @@ button:focus-visible {
 }
 
 .segmented__option[aria-pressed='true'] {
-  background: var(--ds-accent-fill);
+  border-color: var(--ds-panel-border);
+  background: var(--ds-panel);
   color: var(--ds-cyan);
+  box-shadow: var(--ds-thumb-shadow);
 }
 
+/* The summary, or while checking the progress, or an error: the one line read out on change. */
 .summary {
   margin: 0 0 6px;
   color: var(--ds-body);
@@ -162,9 +213,14 @@ button:focus-visible {
   font-weight: 600;
 }
 
-.status {
-  margin: 0;
+.summary--progress {
   color: var(--ds-muted);
+  font-weight: 400;
+}
+
+.summary--error {
+  color: var(--ds-orange);
+  font-weight: 400;
 }
 
 .progress {
@@ -194,6 +250,53 @@ button:focus-visible {
   }
 }
 
+.empty {
+  margin: 8px 0 0;
+  color: var(--ds-muted);
+}
+
+/* A link the host would not open, offered to copy. */
+.fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-orange);
+  border-radius: var(--ds-radius-control);
+}
+
+.fallback[hidden] {
+  display: none;
+}
+
+.fallback__text {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-body);
+}
+
+.fallback__url {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-option);
+  background: var(--ds-raised);
+  color: var(--ds-heading);
+  font: 12px var(--ds-mono);
+}
+
+.fallback__close {
+  padding: 6px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-option);
+  background: transparent;
+  font-size: 12px;
+}
+
 /* ── A free domain: a row in the list, a card in the grid ─────────────────────────────────── */
 
 .results {
@@ -204,7 +307,7 @@ button:focus-visible {
 
 .results--grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--ds-card-min), 1fr));
   align-items: start;
   gap: 12px;
   margin-top: 8px;
@@ -218,11 +321,15 @@ button:focus-visible {
   border-top: 1px solid var(--ds-divider);
 }
 
+.result:focus {
+  outline: none;
+}
+
 .results--grid .result {
   gap: 6px 12px;
   padding: 14px;
   border: 1px solid var(--ds-panel-border);
-  border-radius: 12px;
+  border-radius: var(--ds-radius-card);
   background: var(--ds-raised);
 }
 
@@ -231,6 +338,13 @@ button:focus-visible {
   font-size: 14px;
   color: var(--ds-heading);
   overflow-wrap: anywhere;
+}
+
+/* An internationalized name's ASCII form: what is actually registered. */
+.result__ascii {
+  display: block;
+  font-size: 12px;
+  color: var(--ds-muted);
 }
 
 /* The price range, and "All N registrars" at the end of the same line. */
@@ -259,7 +373,7 @@ button:focus-visible {
   align-self: center;
   padding: 2px 10px;
   border: 1px solid currentColor;
-  border-radius: 999px;
+  border-radius: var(--ds-radius-pill);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -270,7 +384,7 @@ button:focus-visible {
   color: var(--ds-amber);
 }
 
-/* "All N registrars": opens every registrar under the domain. */
+/* "All N registrars" and the table's "N more": open a list under the domain. */
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -291,15 +405,15 @@ button:focus-visible {
 
 .registrar .icon,
 .matrix__chip .icon {
-  width: 12px;
-  height: 12px;
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
   color: var(--ds-muted);
 }
 
 .toggle .icon {
-  width: 12px;
-  height: 12px;
-  transition: transform 0.15s ease;
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  transition: transform var(--ds-quick);
 }
 
 .toggle[aria-expanded='true'] .icon {
@@ -323,7 +437,7 @@ button:focus-visible {
 */
 .registrar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 12px;
+  grid-template-columns: minmax(0, 1fr) auto var(--ds-icon-small);
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
@@ -332,8 +446,8 @@ button:focus-visible {
   font-size: 13px;
   text-decoration: none;
   transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+    background-color var(--ds-quick),
+    color var(--ds-quick);
 }
 
 .registrar:hover,
@@ -378,8 +492,13 @@ button:focus-visible {
 .matrix-wrap {
   margin-top: 8px;
   border: 1px solid var(--ds-panel-border);
-  border-radius: 12px;
+  border-radius: var(--ds-radius-card);
   overflow-x: auto;
+}
+
+/* While there is more to the right, the right edge fades out. */
+.matrix-wrap--more {
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
 }
 
 .matrix {
@@ -451,8 +570,8 @@ button:focus-visible {
   color: var(--ds-body);
   text-decoration: none;
   transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+    background-color var(--ds-quick),
+    color var(--ds-quick);
 }
 
 /* A registrar without a public price: the link is there, quieter than the prices. */
@@ -474,7 +593,7 @@ button:focus-visible {
 .matrix__none {
   display: block;
   padding: 8px 12px;
-  color: var(--ds-divider);
+  color: var(--ds-muted);
 }
 
 /* "7 more" in the Others column, and the row of links it opens under the name. */
@@ -508,7 +627,7 @@ button:focus-visible {
   gap: 6px;
   padding: 4px 10px;
   border: 1px solid var(--ds-panel-border);
-  border-radius: 999px;
+  border-radius: var(--ds-radius-pill);
   color: var(--ds-body);
   font-size: 12px;
   text-decoration: none;
@@ -549,16 +668,27 @@ button:focus-visible {
 .chip {
   padding: 2px 10px;
   border: 1px solid var(--ds-divider);
-  border-radius: 999px;
+  border-radius: var(--ds-radius-pill);
   font-family: var(--ds-mono);
   font-size: 12px;
   color: var(--ds-muted);
   overflow-wrap: anywhere;
 }
 
+.chip:focus {
+  outline: none;
+}
+
 .chip--dropping {
   border-color: currentColor;
   color: var(--ds-cyan);
+}
+
+/* "may free up soon" on a name being deleted. */
+.chip__note {
+  margin-left: 6px;
+  font-family: var(--ds-font);
+  font-size: 11px;
 }
 
 .chip--reserved {
@@ -579,7 +709,7 @@ button:focus-visible {
 .footnote {
   margin: 16px 0 0;
   color: var(--ds-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Text for screen readers only. */
@@ -595,17 +725,26 @@ button:focus-visible {
   white-space: nowrap;
 }
 
+/* A phone: less padding around the panel. */
 @media (max-width: 480px) {
   .panel {
     padding: 16px;
   }
 }
 
+/* Fingers need bigger targets than a pointer. */
+@media (pointer: coarse) {
+  .toggle,
+  .more,
+  .segmented__option {
+    min-height: var(--ds-touch-target);
+  }
+}
+
+/* With less motion the bar would only look finished: the status line says it is checking. */
 @media (prefers-reduced-motion: reduce) {
-  .progress::after {
-    animation: none;
-    width: 100%;
-    opacity: 0.5;
+  .progress {
+    display: none;
   }
 
   .registrar,
