@@ -28,6 +28,8 @@ const Method = {
   Message: 'ui/message',
   UpdateModelContext: 'ui/update-model-context',
   DownloadFile: 'ui/download-file',
+  CreateMessage: 'sampling/createMessage',
+  CallTool: 'tools/call',
 };
 
 /** Requests sent to the host that wait for an answer, by id. */
@@ -129,6 +131,9 @@ const Copy = {
   RegenerateAll: 'Regenerate all',
   RegenerateWith: 'Regenerate with',
   SentToChat: 'Sent to chat',
+  Regenerating: 'Regenerating: new names on the way…',
+  NewBatchBelow: 'Asked the chat for a new batch: it will appear below this panel.',
+  NoNewNames: 'The model suggested no new names.',
   RegenerateLabel: 'New names, none of those checked so far; the saved ones stay',
   RegenerateHint: 'Regenerate for a new batch.',
   OtherTlds: 'Try other TLDs',
@@ -197,6 +202,16 @@ const Ask = {
       ? ` Pass my saved domains in the saved parameter so they stay: ${saved.join(', ')}.`
       : '';
     return `Regenerate: brainstorm ${count} new domain names${style}. ${avoid} Check them all with DomainScout in ${tldList(tlds)}.${keep}`;
+  },
+  /** For the in-place path: the names only, to check right here. */
+  names: ({ names, saved, tlds, free, similar }) => {
+    const count = Math.min(Math.max(state.check.names.length, REGENERATE_MIN), REGENERATE_MAX);
+    const examples = [...new Set(free.map(label))].slice(0, STYLE_SAMPLE);
+    const style = similar.length
+      ? `similar to ${similar.join(', ')} (the same style and length)`
+      : `in the same style as ${examples.join(', ')}`;
+    const keep = saved.length ? ` The user keeps ${saved.join(', ')}.` : '';
+    return `Brainstorm ${count} new domain names ${style}, for ${tldList(tlds)}.${keep} Leave out these names, already checked: ${names.join(', ')}. Reply with the names only, one per line, without a TLD.`;
   },
   compare: (items) =>
     `Compare these saved domains and recommend one: ${items.map(describeForChat).join('; ')}.`,
@@ -275,7 +290,18 @@ const state = {
   /** Whether the host said which theme it uses: only then does the canvas follow it. */
   hostThemeKnown: false,
   /** What the host offers to do for the panel; links are assumed until it says otherwise. */
-  can: { openLinks: true, message: false, updateModelContext: false, downloadFile: false },
+  can: {
+    openLinks: true,
+    message: false,
+    updateModelContext: false,
+    downloadFile: false,
+    serverTools: false,
+    sampling: false,
+  },
+  /** Every name checked in this panel so far, across regenerations, so none comes back. */
+  everChecked: new Set(),
+  /** The result on show, to go back to if a regeneration through the chat leaves this panel. */
+  lastResult: undefined,
   /** The host's locale, for prices. */
   locale: undefined,
   /** The last result's TLDs, total and taken names, for what the panel asks the chat. */
@@ -597,6 +623,7 @@ function showCopyFallback(note, text) {
   const close = button('fallback__close', Copy.Close, () => {
     fallbackBox.hidden = true;
   });
+  fallbackBox.className = 'fallback';
   fallbackBox.replaceChildren(element('p', 'fallback__note', note), field, close);
   fallbackBox.hidden = false;
   field.focus();
@@ -622,12 +649,18 @@ const SECOND_MS = 1000;
 /** Rows a "show more" button has revealed get focus, so the keyboard carries on from there. */
 const FOCUSABLE_FROM_SCRIPT = -1;
 
-function showChecking(input) {
+/**
+ * The progress line and a skeleton of the results to come. The names may be a list or just how
+ * many there will be; a regeneration says so in its own words.
+ */
+function showChecking(input, text) {
   state.free = [];
-  const count = Array.isArray(input?.domains) ? input.domains.length : 0;
+  const count = Number(input?.domains?.length) || 0;
   const tlds = Array.isArray(input?.tlds) && input.tlds.length ? input.tlds : undefined;
   const where = tlds ? ` in ${tldList(tlds)}` : '';
-  setStatus(count ? `Checking ${count} names${where}…` : Copy.Checking, StatusKind.Progress);
+  const checking = count ? `Checking ${count} names${where}…` : Copy.Checking;
+  setStatus(text ?? checking, StatusKind.Progress);
+  fallbackBox.hidden = true;
   content.replaceChildren(element('div', 'progress'), skeleton(count));
   filterSlot.replaceChildren();
   regenerateSlot.replaceChildren();
@@ -698,6 +731,8 @@ function renderResult(result) {
   const names = [...new Set(data.results.map(label))];
   state.free = free;
   state.check = { tlds, total, taken, names };
+  for (const name of names) state.everChecked.add(name);
+  state.lastResult = result;
   state.tld = undefined;
   state.sort = { column: undefined, direction: SortDirection.Ascending };
   // Domains saved on an earlier panel come back marked: they start saved here too.
@@ -785,8 +820,10 @@ function regenerateButton() {
     if (node.classList.contains(SENT_CLASS)) return;
     const saved = [...state.saved.values()].map((item) => item.domain);
     const similar = [...new Set([...state.similar.values()].map(label))];
-    sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free, similar }));
-    showSent(node);
+    const names = [...state.everChecked];
+    const batch = { ...state.check, names, saved, free: state.free, similar };
+    if (state.can.sampling && state.can.serverTools) regenerateInPlace(batch);
+    else regenerateThroughChat(batch, node);
   });
   node.title = Copy.RegenerateLabel;
   // "Regenerate all" and "Regenerate with 2" share one cell, one of them hidden: the button keeps
@@ -818,6 +855,78 @@ const SENT_CLASS = 'regenerate--sent';
 const SENT_SHOWN_MS = 4000;
 let sentTimer;
 
+/** The skeleton of a batch of the same size, at once, while the new names are on their way. */
+function showRegenerating(batch) {
+  const count = Math.min(Math.max(batch.names.length, REGENERATE_MIN), REGENERATE_MAX);
+  showChecking({ domains: { length: count }, tlds: batch.tlds }, Copy.Regenerating);
+}
+
+/**
+ * In this panel, when the host lets it ask the model and call the tool: the skeleton at once,
+ * then the model's new names, checked with the saved domains, in place of the old ones. Anything
+ * that fails falls back to asking through the chat.
+ */
+async function regenerateInPlace(batch) {
+  showRegenerating(batch);
+  try {
+    const reply = await request(Method.CreateMessage, {
+      messages: [{ role: 'user', content: { type: TEXT_BLOCK, text: Ask.names(batch) } }],
+      maxTokens: NAMES_MAX_TOKENS,
+    });
+    const names = parseNames(reply?.content?.text, state.everChecked);
+    if (!names.length) throw new Error(Copy.NoNewNames);
+    showChecking({ domains: names, tlds: batch.tlds });
+    const args = { domains: names, tlds: batch.tlds, saved: batch.saved };
+    const result = await request(Method.CallTool, { name: Copy.ToolName, arguments: args });
+    showResult(result);
+  } catch {
+    regenerateThroughChat(batch, regenerateButtonNode);
+  }
+}
+
+/**
+ * Through the chat: the skeleton at once, the request as a message, then this panel goes back
+ * to its results with a note - the new batch comes as a new panel under the message.
+ */
+function regenerateThroughChat(batch, node) {
+  showRegenerating(batch);
+  sendToChat(Ask.regenerate(batch));
+  window.setTimeout(() => {
+    if (state.lastResult) showResult(state.lastResult);
+    showNotice(Copy.NewBatchBelow);
+    if (regenerateButtonNode) showSent(regenerateButtonNode);
+  }, BACK_TO_RESULTS_MS);
+  if (node) showSent(node);
+}
+
+/** How long the skeleton stays before a regeneration through the chat gives the panel back. */
+const BACK_TO_RESULTS_MS = 1500;
+/** Room for the model's reply: a hundred or two short names. */
+const NAMES_MAX_TOKENS = 2000;
+/** One name as the model may write it: letters, digits and hyphens, maybe with a TLD after it. */
+const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+/** List markers and punctuation around names in the model's reply. */
+const NAME_SEPARATORS = /[\s,;]+/;
+const LIST_MARKER = /^(\d+[.)]|[-*\u2022])/;
+
+/** The new names in the model's reply: one each, none checked before, as many as a batch takes. */
+function parseNames(text, checked) {
+  const names = (text ?? '')
+    .toLowerCase()
+    .split(NAME_SEPARATORS)
+    .map((word) => word.replace(LIST_MARKER, '').split('.')[0])
+    .filter((name) => NAME_PATTERN.test(name) && !checked.has(name));
+  return [...new Set(names)].slice(0, REGENERATE_MAX);
+}
+
+/** A one-line note under the summary, such as where the new batch will appear. */
+function showNotice(text) {
+  const note = element('p', 'notice', text);
+  fallbackBox.className = 'fallback fallback--notice';
+  fallbackBox.replaceChildren(note);
+  fallbackBox.hidden = false;
+}
+
 /** The Regenerate button and its count, updated as names are marked Similar. */
 let regenerateButtonNode;
 let regenerateCount;
@@ -843,9 +952,16 @@ function bottomActions() {
 }
 
 /** The free domains the filter lets through, in the table's sort when there is one. */
+/**
+ * The free domains the filter lets through, the saved ones first, the rest in the table's sort
+ * when there is one. The order is set when the domains are drawn: saving one does not move its
+ * row from under the pointer.
+ */
 function shownFree() {
   const filtered = state.tld ? state.free.filter((item) => item.tld === state.tld) : state.free;
-  return state.view === View.Table ? sorted(filtered) : filtered;
+  const ordered = state.view === View.Table ? sorted(filtered) : filtered;
+  const isSaved = (item) => state.saved.has(domainKey(item));
+  return [...ordered.filter(isSaved), ...ordered.filter((item) => !isSaved(item))];
 }
 
 /** The free domains in the chosen view, into the box made for them. */
@@ -1581,6 +1697,8 @@ function readCapabilities(capabilities) {
     message: Boolean(capabilities?.message),
     updateModelContext: Boolean(capabilities?.updateModelContext),
     downloadFile: Boolean(capabilities?.downloadFile),
+    serverTools: Boolean(capabilities?.serverTools),
+    sampling: Boolean(capabilities?.sampling),
   };
 }
 

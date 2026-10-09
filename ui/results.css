@@ -440,6 +440,17 @@ input:focus-visible {
   border-radius: var(--ds-radius-control);
 }
 
+/* A note under the summary, such as where a new batch will appear. */
+.fallback--notice {
+  border-color: var(--ds-accent-border);
+}
+
+.notice {
+  margin: 0;
+  color: var(--ds-body);
+  font-size: 13px;
+}
+
 .fallback[hidden] {
   display: none;
 }
