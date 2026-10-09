@@ -43,6 +43,31 @@ export const ICON_SIZE_WEBSITE = '512x512';
 /** How the packaged icon is encoded into a data URI. */
 export const ICON_ENCODING = 'base64';
 
+// ── Results card (MCP Apps) ─────────────────────────────────────────────────
+
+/** The results card's address, as hosts that support MCP Apps fetch it. */
+export const RESULTS_UI_URI = 'ui://domainscout/results.html';
+/** The resource's name in resources/list. */
+export const RESULTS_UI_NAME = 'results-card';
+/** The resource's title, where a host shows one. */
+export const RESULTS_UI_TITLE = 'DomainScout results';
+/** The type MCP Apps hosts look for: an HTML page that talks to the host. */
+export const RESULTS_UI_MIME_TYPE = 'text/html;profile=mcp-app';
+/** The card's folder in the package, relative to a module one folder below the package root. */
+export const RESULTS_UI_DIR = '../../ui/';
+/** The card's files: the page, and the stylesheet and script inlined into it. */
+export const ResultsUiFile = {
+  Page: 'results.html',
+  Styles: 'results.css',
+  Script: 'results.js',
+  Logo: 'logo.png',
+} as const;
+/**
+ * The key older MCP Apps hosts read for a tool's card. Current ones read `_meta.ui.resourceUri`;
+ * the tool sends both.
+ */
+export const LEGACY_RESOURCE_URI_KEY = 'ui/resourceUri';
+
 // ── Settings ────────────────────────────────────────────────────────────────
 
 /** Environment variables a user can set in the MCP client config. */
@@ -320,6 +345,8 @@ export const MCP_PROGRESS_METHOD = 'notifications/progress';
 export const McpContentType = { Text: 'text' } as const;
 /** Entries accepted in one call before TLDs are added; the domain limit applies after. */
 export const MAX_INPUT_ENTRIES = 1_000;
+/** Saved domains a call may carry along: a shortlist, not a second list of names to check. */
+export const MAX_SAVED_ENTRIES = 100;
 
 // ── Output ──────────────────────────────────────────────────────────────────
 

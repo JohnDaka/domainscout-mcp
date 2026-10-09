@@ -75,6 +75,7 @@ jobs:
           mkdir -p bundle/assets
           cp -r dist package.json package-lock.json LICENSE README.md manifest.json bundle/
           cp assets/icon-128.png bundle/assets/
+          cp -r ui bundle/
           cp site/icon-512.png bundle/icon.png
           (cd bundle && npm ci --omit=dev --ignore-scripts)
           npx -y @anthropic-ai/mcpb@2 validate bundle/manifest.json

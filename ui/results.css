@@ -1,0 +1,1452 @@
+/*
+  The results panel, as on the landing page (domainscout.dakaio.com): the panel, a summary line,
+  then the free domains as a list, cards or a price table. Dark like the landing page by default,
+  light when the host or the visitor picks light.
+*/
+
+/*
+  Dark: the landing page's colors as they come out on screen. There the panel is 4% white over
+  the page's #00030a; here it sits on the host's own background, so the result is set solid:
+  #0a0d14, with the landing page's 8% white border and 6% white dividers on top of it.
+*/
+:root {
+  --ds-panel: #0a0d14;
+  --ds-panel-border: #1e2027;
+  --ds-raised: #12151c;
+  --ds-tip: #181b21;
+  --ds-divider: #181b21;
+  --ds-heading: #ffffff;
+  --ds-body: #c7c9ea;
+  --ds-muted: #a3a6d1;
+  --ds-cyan: #3cc8ff;
+  --ds-violet: #bd5fff;
+  --ds-teal: #11edda;
+  --ds-amber: #facc15;
+  --ds-orange: #fb923c;
+  --ds-accent-fill: rgba(60, 200, 255, 0.14);
+  --ds-accent-border: rgba(60, 200, 255, 0.45);
+  --ds-amber-fill: rgba(250, 204, 21, 0.12);
+  --ds-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ds-font: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  --ds-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  /* Corners: the panel, the cards and table frame, controls, the toolbar's options, pills. */
+  --ds-radius: 16px;
+  --ds-radius-card: 12px;
+  --ds-radius-control: 8px;
+  --ds-radius-option: 6px;
+  --ds-radius-pill: 999px;
+  /* Sizes: the smallest icons, a card's narrowest width, a touch target's least height. */
+  --ds-icon-small: 12px;
+  --ds-card-min: 250px;
+  --ds-touch-target: 32px;
+  /* How quickly hover and open states change. */
+  --ds-quick: 0.15s ease;
+}
+
+/*
+  Light. The cyan is darker than the landing page's so that text in it keeps a 4.5:1 contrast on
+  white and on the tinted hover background alike.
+*/
+:root[data-theme='light'] {
+  --ds-panel: #ffffff;
+  --ds-panel-border: rgba(15, 18, 40, 0.1);
+  --ds-raised: rgba(15, 18, 40, 0.045);
+  --ds-tip: #ffffff;
+  --ds-divider: rgba(15, 18, 40, 0.08);
+  --ds-heading: #0f1228;
+  --ds-body: #3b3f63;
+  --ds-muted: #5e6288;
+  --ds-cyan: #08679a;
+  --ds-violet: #7b2fc9;
+  --ds-teal: #077a70;
+  --ds-amber: #8a6500;
+  --ds-orange: #b4520f;
+  --ds-accent-fill: rgba(8, 103, 154, 0.09);
+  --ds-accent-border: rgba(8, 103, 154, 0.45);
+  --ds-amber-fill: rgba(138, 101, 0, 0.08);
+  --ds-thumb-shadow: 0 1px 2px rgba(15, 18, 40, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+  The host sets the frame's height from the page's own, so the page never scrolls: a scrollbar
+  that came and went while the frame caught up would shift everything sideways for a moment.
+*/
+html,
+body {
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  padding: 1px;
+  color: var(--ds-body);
+  font: 14px / 1.5 var(--ds-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+  A host that caps the frame's height: then the page scrolls, with room for the scrollbar kept
+  from the start so nothing moves when it appears.
+*/
+html.is-capped {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+html.is-capped body {
+  overflow: visible;
+}
+
+/* Hidden until it has the host's theme, so it doesn't flash in the wrong one. */
+#app {
+  visibility: hidden;
+}
+
+.is-ready #app {
+  visibility: visible;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--ds-cyan);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Icons inside controls: smaller than the toolbar's. */
+.registrar .icon,
+.matrix__chip .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  color: var(--ds-muted);
+}
+
+.toggle .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  transition: transform var(--ds-quick);
+}
+
+.chip-button .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+}
+
+.sort .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+  opacity: 0.6;
+}
+
+.action .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.shortlist__remove .icon {
+  width: var(--ds-icon-small);
+  height: var(--ds-icon-small);
+}
+
+/* ── Panel, header and status ─────────────────────────────────────────────────────────────── */
+
+.panel {
+  padding: 20px 24px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius);
+  background: var(--ds-panel);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+/* The logo, "DOMAINSCOUT" and "check_domains", as above the results on the landing page. */
+.tool {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  font-family: var(--ds-mono);
+  font-size: 13px;
+  color: var(--ds-cyan);
+}
+
+.tool__logo {
+  flex: none;
+  margin-right: 8px;
+  border-radius: var(--ds-radius-option);
+}
+
+.tool__who {
+  margin-right: 8px;
+  font-family: var(--ds-font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+/* A button group: icons only, the pressed option a raised thumb. */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-control);
+  background: var(--ds-raised);
+}
+
+.segmented[hidden] {
+  display: none;
+}
+
+.segmented__option {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-option);
+  background: transparent;
+  color: var(--ds-muted);
+}
+
+.segmented__option:hover {
+  color: var(--ds-heading);
+}
+
+.segmented__option[aria-pressed='true'] {
+  border-color: var(--ds-panel-border);
+  background: var(--ds-panel);
+  color: var(--ds-cyan);
+  box-shadow: var(--ds-thumb-shadow);
+}
+
+/* "Regenerate" on the left; the TLD filter and the toolbar on the right. They stack when the
+   line runs out, and the right group stays right while the button is away. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 0 0 8px;
+}
+
+.controls__end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 12px;
+  margin-left: auto;
+}
+
+.controls__action {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* What a button does, under it on hover or keyboard focus: after a moment, so passing over the
+   buttons does not flash tips. Above the table, never pushing anything. */
+.controls__action [data-tip] {
+  position: relative;
+}
+
+.controls__action [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-control);
+  background: var(--ds-tip);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--ds-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--ds-quick),
+    visibility var(--ds-quick);
+}
+
+.controls__action [data-tip]:hover::after,
+.controls__action [data-tip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 400ms;
+}
+
+/* The settings for the next batch, open under the controls: the TLDs, the size, the total. */
+.settings {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius);
+  background: var(--ds-raised);
+}
+
+.settings[hidden] {
+  display: none;
+}
+
+.settings__row {
+  display: grid;
+  gap: 6px;
+}
+
+.settings__name {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings__input {
+  width: 120px;
+  padding: 3px 10px;
+  border: 1px dashed var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-body);
+  font: inherit;
+  font-size: 12px;
+}
+
+.settings__input:focus {
+  border-style: solid;
+  border-color: var(--ds-cyan);
+  outline: none;
+}
+
+.settings__input[aria-invalid='true'] {
+  border-color: var(--ds-amber);
+}
+
+.settings__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.settings__summary {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+
+/* The summary, or while checking the progress, or an error: the one line read out on change. */
+.summary {
+  margin: 0;
+  color: var(--ds-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* The result's summary: the total in quiet text, then the counts, each with its colored dot. */
+.summary--result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-weight: 400;
+}
+
+.summary__lead {
+  color: var(--ds-muted);
+}
+
+.stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ds-muted);
+  white-space: nowrap;
+}
+
+.stat__dot {
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--ds-radius-pill);
+  background: currentColor;
+}
+
+.stat__value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat--free {
+  color: var(--ds-teal);
+}
+
+.stat--taken .stat__value {
+  color: var(--ds-heading);
+}
+
+.stat--reserved {
+  color: var(--ds-amber);
+}
+
+.stat--unknown {
+  color: var(--ds-orange);
+}
+
+.summary--progress {
+  color: var(--ds-muted);
+  font-weight: 400;
+}
+
+.summary--error {
+  color: var(--ds-orange);
+  font-weight: 400;
+}
+
+.progress {
+  height: 3px;
+  margin-top: 12px;
+  border-radius: 3px;
+  background: var(--ds-divider);
+  overflow: hidden;
+}
+
+.progress::after {
+  content: '';
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ds-cyan), var(--ds-violet));
+  animation: slide 1.2s ease-in-out infinite;
+}
+
+/* The skeleton of the table to come: a row per name, its cells as shimmering bars. */
+.skeleton {
+  margin-top: 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+  overflow: hidden;
+}
+
+.skeleton__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px 80px 64px 64px 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--ds-divider);
+}
+
+.skeleton__row:last-child {
+  border-bottom: 0;
+}
+
+.skeleton__bar {
+  height: 10px;
+  border-radius: var(--ds-radius-pill);
+  background: linear-gradient(
+    90deg,
+    var(--ds-raised) 25%,
+    var(--ds-divider) 50%,
+    var(--ds-raised) 75%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton__bar--name {
+  width: 60%;
+}
+
+.skeleton__row:nth-child(3n + 2) .skeleton__bar--name {
+  width: 45%;
+}
+
+.skeleton__row:nth-child(3n) .skeleton__bar--name {
+  width: 70%;
+}
+
+.skeleton__bar--button {
+  height: 22px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.empty {
+  margin: 8px 0 0;
+  color: var(--ds-muted);
+}
+
+/* A link the host would not open, offered to copy. */
+.fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-orange);
+  border-radius: var(--ds-radius-control);
+}
+
+/* A note under the summary, such as where a new batch will appear. */
+.fallback--notice {
+  border-color: var(--ds-accent-border);
+}
+
+.notice {
+  margin: 0;
+  color: var(--ds-body);
+  font-size: 13px;
+}
+
+.fallback[hidden] {
+  display: none;
+}
+
+.fallback__note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-body);
+}
+
+.fallback__text-field {
+  flex: 1;
+  min-width: 0;
+  max-height: 160px;
+  resize: vertical;
+  padding: 6px 8px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-option);
+  background: var(--ds-raised);
+  color: var(--ds-heading);
+  font: 12px var(--ds-mono);
+}
+
+.fallback__close {
+  padding: 6px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-option);
+  background: transparent;
+  font-size: 12px;
+}
+
+/* ── A free domain: a row in the list, a card in the grid ─────────────────────────────────── */
+
+.results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.results--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ds-card-min), 1fr));
+  align-items: start;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ds-divider);
+}
+
+.result:focus {
+  outline: none;
+}
+
+.results--grid .result {
+  gap: 6px 12px;
+  padding: 14px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+  background: var(--ds-raised);
+}
+
+.result__domain {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  min-width: 0;
+  font-family: var(--ds-mono);
+  font-size: 14px;
+  color: var(--ds-heading);
+  overflow-wrap: anywhere;
+}
+
+.result__name {
+  min-width: 0;
+}
+
+/* An internationalized name's ASCII form: what is actually registered. */
+.result__ascii {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--ds-muted);
+}
+
+/* The price range, and "All N registrars" at the end of the same line. */
+.result__line {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+/* In a card the price and "All N registrars" stack, so every card has the same shape. */
+.results--grid .result__line {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.result__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px 14px;
+  margin-left: auto;
+}
+
+.results--grid .result__actions {
+  margin-left: 0;
+}
+
+.result__price {
+  font-size: 13px;
+  color: var(--ds-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  align-self: center;
+  padding: 2px 10px;
+  border: 1px solid currentColor;
+  border-radius: var(--ds-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ds-teal);
+}
+
+.pill--premium {
+  color: var(--ds-amber);
+}
+
+/* "All N registrars" and the table's "N more": open a list under the domain. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--ds-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.toggle:hover {
+  color: var(--ds-heading);
+}
+
+.results--grid .toggle,
+.result__actions .toggle {
+  margin-left: 0;
+}
+
+/* A small outlined button beside a name: "☆ Save" and "✦ Similar". */
+.chip-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-body);
+  font-family: var(--ds-font);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  transition:
+    border-color var(--ds-quick),
+    color var(--ds-quick),
+    background-color var(--ds-quick);
+}
+
+/* "Save" and "Saved" stacked in one cell, so the button keeps the longer word's width. */
+.swap {
+  display: inline-grid;
+}
+
+.swap > * {
+  grid-area: 1 / 1;
+}
+
+/* "Regenerate all" until names are marked Similar, then "Regenerate with 2", in one cell. */
+.regenerate:not(.regenerate--with) .swap__on,
+.regenerate--with .swap__off {
+  visibility: hidden;
+}
+
+/* "Sent to chat" for a moment after a click, in the same cell. */
+.regenerate:not(.regenerate--sent) .swap__sent,
+.regenerate.regenerate--sent .swap__off,
+.regenerate.regenerate--sent .swap__on {
+  visibility: hidden;
+}
+
+.save[aria-pressed='true'] .swap__off,
+.save:not([aria-pressed='true']) .swap__on {
+  visibility: hidden;
+}
+
+/* "Similar" marks a name as an example for Regenerate: quiet until marked, then cyan. */
+.similar:hover {
+  border-color: var(--ds-cyan);
+  color: var(--ds-cyan);
+}
+
+/* "Regenerate": the panel's main request to the chat, in the brand's cyan. */
+.regenerate {
+  border-color: var(--ds-accent-border);
+  color: var(--ds-cyan);
+}
+
+.regenerate:hover {
+  background: var(--ds-accent-fill);
+}
+
+/* How many names Regenerate will take as examples. */
+/* Room for two digits, so the count going from 9 to 10 moves nothing either. */
+.regenerate__count {
+  display: inline-block;
+  min-width: 2ch;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Saved 2": quiet with nothing saved, amber once something is. */
+.saved-jump[aria-disabled='true'] {
+  cursor: default;
+}
+
+.saved-jump:not(.saved-jump--some) {
+  color: var(--ds-muted);
+}
+
+.saved-jump--some {
+  border-color: var(--ds-amber);
+  color: var(--ds-amber);
+}
+
+.saved-jump--some[aria-disabled='false']:hover {
+  background: var(--ds-amber-fill);
+}
+
+/* Room for two digits, as on Regenerate. */
+.saved-jump__count {
+  display: inline-block;
+  min-width: 2ch;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A name marked as an example: filled in the brand's cyan. */
+.similar[aria-pressed='true'] {
+  border-color: var(--ds-cyan);
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
+}
+
+.save:hover {
+  border-color: var(--ds-amber);
+  color: var(--ds-amber);
+}
+
+/* A saved domain's button: amber, its star filled. */
+.save[aria-pressed='true'] {
+  border-color: var(--ds-amber);
+  background: var(--ds-amber-fill);
+  color: var(--ds-amber);
+}
+
+.registrars {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+  One registrar: the whole row is the link. Name, price and arrow sit in three columns, so the
+  prices and the arrows line up from row to row.
+*/
+.registrar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--ds-icon-small);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--ds-radius-control);
+  color: var(--ds-body);
+  font-size: 13px;
+  text-decoration: none;
+  transition:
+    background-color var(--ds-quick),
+    color var(--ds-quick);
+}
+
+.registrar:hover,
+.registrar:focus-visible {
+  background: var(--ds-accent-fill);
+  color: var(--ds-heading);
+}
+
+.registrar:focus-visible {
+  outline: 2px solid var(--ds-cyan);
+  outline-offset: -2px;
+}
+
+.registrar__price {
+  color: var(--ds-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.more {
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+
+.more:hover {
+  color: var(--ds-heading);
+}
+
+/* ── The price table: domains down the side, registrars across the top ─────────────────────── */
+
+/* The table scrolls sideways inside its frame when there are many registrars; the page never does. */
+.matrix-wrap {
+  margin-top: 8px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+  overflow-x: auto;
+}
+
+/* While there is more to the right, the right edge fades out. */
+.matrix-wrap--more {
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.matrix th,
+.matrix td {
+  padding: 0;
+  border-bottom: 1px solid var(--ds-divider);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.matrix tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.matrix thead th {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+/* The domains stay in view while the prices scroll. */
+.matrix th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--ds-panel);
+  text-align: left;
+}
+
+.matrix .matrix__domain {
+  padding: 8px 12px;
+  font-weight: 400;
+}
+
+/* A button's own column: as narrow as the button, beside the domain. */
+.matrix .matrix__action {
+  width: 1%;
+  padding: 0 4px;
+  text-align: left;
+}
+
+.matrix__domain .result__domain {
+  font-size: 13px;
+}
+
+/* A heading that sorts its column; the arrows show which way once it is sorted. */
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.sort:hover,
+.sort--ascending,
+.sort--descending {
+  color: var(--ds-heading);
+}
+
+.matrix__renewal {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-muted);
+}
+
+.matrix__note {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-muted);
+}
+
+.matrix__note--premium {
+  color: var(--ds-amber);
+}
+
+.matrix tbody tr:hover > * {
+  background: var(--ds-raised);
+}
+
+/* Every price is a link that fills its cell. */
+.matrix__link {
+  display: block;
+  padding: 8px 12px;
+  color: var(--ds-body);
+  text-decoration: none;
+  transition:
+    background-color var(--ds-quick),
+    color var(--ds-quick);
+}
+
+/* A registrar without a public price: the link is there, quieter than the prices. */
+.matrix__link--site {
+  color: var(--ds-muted);
+}
+
+.matrix__link:hover,
+.matrix__link:focus-visible {
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
+}
+
+.matrix__link:focus-visible {
+  outline: 2px solid var(--ds-cyan);
+  outline-offset: -2px;
+}
+
+.matrix__none {
+  display: block;
+  padding: 8px 12px;
+  color: var(--ds-muted);
+}
+
+/* "7 more" in the Others column, and the row of links it opens under the name. */
+.matrix .matrix__toggle {
+  margin: 0;
+  padding: 8px 12px;
+}
+
+.matrix__extra td {
+  padding: 4px 12px 12px;
+  text-align: left;
+  white-space: normal;
+}
+
+.matrix__extra-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--ds-muted);
+}
+
+.matrix__extra-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matrix__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  color: var(--ds-body);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.matrix__chip:hover,
+.matrix__chip:focus-visible {
+  border-color: var(--ds-cyan);
+  color: var(--ds-cyan);
+}
+
+/* ── Few free, filter, shortlist and actions ───────────────────────────────────────────────── */
+
+/* Few or no free names: a note with a way to get more at once. */
+.few-free {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 8px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+  background: var(--ds-raised);
+}
+
+.few-free__text {
+  margin: 0;
+  color: var(--ds-body);
+}
+
+/* A button that asks the chat for something or saves a file. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-control);
+  background: transparent;
+  color: var(--ds-body);
+  font-size: 13px;
+}
+
+.action:hover {
+  border-color: var(--ds-cyan);
+  color: var(--ds-heading);
+}
+
+.action--primary {
+  border-color: var(--ds-cyan);
+  color: var(--ds-cyan);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* "All · .com · .ai": the free domains of one TLD. */
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Many TLDs: the filter as a menu in a pill, its arrow drawn over the native one's place. */
+.filter-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-menu__select {
+  appearance: none;
+  padding: 3px 28px 3px 12px;
+  border: 1px solid var(--ds-accent-border);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filter-menu__select option {
+  background: var(--ds-tip);
+  color: var(--ds-body);
+}
+
+.filter-menu .icon {
+  position: absolute;
+  right: 10px;
+  color: var(--ds-cyan);
+  pointer-events: none;
+}
+
+.filter__option {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+
+.filter__option:hover {
+  color: var(--ds-heading);
+}
+
+.filter__option[aria-pressed='true'] {
+  border-color: var(--ds-cyan);
+  background: var(--ds-accent-fill);
+  color: var(--ds-heading);
+}
+
+.filter__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* The shortlist: the starred names, each with a way to take it off, and "Compare in chat". */
+.shortlist:not(:empty) {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+}
+
+.shortlist__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-amber);
+}
+
+.shortlist__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortlist__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  color: var(--ds-heading);
+  font: 12px var(--ds-mono);
+}
+
+.shortlist__remove {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius-pill);
+  background: none;
+  color: var(--ds-muted);
+}
+
+.shortlist__remove:hover {
+  color: var(--ds-heading);
+}
+
+/* The title and "Compare in chat" on one line: the button stays put as names are saved below. */
+.shortlist__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ── Taken, reserved and unverified names ─────────────────────────────────────────────────── */
+
+.group {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ds-divider);
+}
+
+.group__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.group__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 2px 10px;
+  border: 1px solid var(--ds-divider);
+  border-radius: var(--ds-radius-pill);
+  font-family: var(--ds-mono);
+  font-size: 12px;
+  color: var(--ds-muted);
+  overflow-wrap: anywhere;
+}
+
+.chip:focus {
+  outline: none;
+}
+
+.chip--dropping {
+  border-color: currentColor;
+  color: var(--ds-cyan);
+}
+
+/* "may free up soon" on a name being deleted. */
+.chip__note {
+  margin-left: 6px;
+  font-family: var(--ds-font);
+  font-size: 11px;
+}
+
+.chip--reserved {
+  color: var(--ds-amber);
+}
+
+.chip--unknown {
+  color: var(--ds-orange);
+}
+
+.notes {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+
+.footnote {
+  margin: 16px 0 0;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+
+/* Text for screen readers only. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Icons that change with their control's state. */
+.sort--descending .icon {
+  transform: scaleY(-1);
+}
+
+.registrar:hover .registrar__price,
+.registrar:hover .icon {
+  color: var(--ds-cyan);
+}
+
+.save[aria-pressed='true'] .icon,
+.similar[aria-pressed='true'] .icon,
+.saved-jump.saved-jump--some .icon {
+  fill: currentColor;
+}
+
+.toggle[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+/* A phone: less padding around the panel, and the table's buttons as icons, so the prices fit. */
+@media (max-width: 480px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .matrix .chip-button__label {
+    display: none;
+  }
+
+  .matrix .chip-button {
+    padding: 3px 6px;
+  }
+
+  /* Too narrow for one line: "Regenerate" and the toolbar first, the filter on a line below. */
+  .controls {
+    column-gap: 6px;
+  }
+
+  .controls__end {
+    display: contents;
+  }
+
+  .toolbar {
+    margin-left: auto;
+  }
+
+  .controls__filter {
+    flex: 1 1 100%;
+    order: 1;
+  }
+}
+
+/* Fingers need bigger targets than a pointer. */
+@media (pointer: coarse) {
+  .toggle,
+  .more,
+  .segmented__option {
+    min-height: var(--ds-touch-target);
+  }
+}
+
+/* With less motion the bar would only look finished: the status line says it is checking. */
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    display: none;
+  }
+
+  .skeleton__bar {
+    animation: none;
+  }
+
+  .registrar,
+  .matrix__link,
+  .toggle .icon {
+    transition: none;
+  }
+}

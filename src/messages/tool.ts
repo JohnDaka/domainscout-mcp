@@ -11,6 +11,11 @@ export const ToolText = {
     'Works only when the user has set registrar API keys; on by default. Set false to skip it for large lists.',
   DetailsParam:
     'Include the evidence from each source (DNS, RDAP, WHOIS, registrar API) for every domain.',
+  SavedParam:
+    'Domains the user saved in the results panel, e.g. ["acme.com"]. They are checked again with the rest ' +
+    'and come back marked saved, so they stay in the results. Pass them whenever the user asks for new names ' +
+    'but keeps the ones they saved.',
+  SavedInfo: 'The user saved this domain in the results panel',
   AsciiForm: 'ASCII (punycode) form',
   UnicodeForm: 'Unicode form',
   TldsUsed: 'TLDs used for names given without one',
@@ -57,7 +62,10 @@ line with its cheapest offer; check the user's favourites again to get every reg
 How to present the answer: list the free domains with their price and their buy link from this result - a table \
 with a link column works well - so the user can register a name in one click. Keep the links; do not replace \
 them with links of your own. Mention the renewal price when it differs from the first year, and any minimum term. \
-Pass on the NOTES and, when present, the affiliate disclosure line.`;
+Pass on the NOTES and, when present, the affiliate disclosure line.
+
+New names on request: when the user asks to regenerate, or for more or similar names, suggest only names that \
+were not checked before, and pass the domains the user saved in \`saved\` so they stay in the results.`;
 
 /** Describes the `tlds` parameter, including the configured defaults. */
 export const tldsParamText = (defaultTlds: string): string =>

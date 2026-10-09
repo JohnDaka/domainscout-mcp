@@ -26,6 +26,7 @@ import {
 import { hasAffiliateLinks, rejectionText, summarize } from '../report/summary.js';
 import { TextReport } from '../report/text-report.js';
 import { DomainScout } from '../scout/domain-scout.js';
+import { RESULTS_UI_TOOL_META, registerResultsUi } from './results-ui.js';
 import { checkDomainsTool } from './schemas.js';
 import { serverInfo } from './server-info.js';
 import { listToolsWithPlainSchemas } from './tool-list.js';
@@ -38,13 +39,16 @@ export function createServer(config: Config, services: Partial<ScoutServices> = 
   const scout = new DomainScout(config, services);
   const defaultTlds = config.defaultTlds.join(TextSeparator.List);
   const server = new McpServer(serverInfo(), { instructions: toolInstructions(defaultTlds) });
-  const tool = checkDomainsTool(defaultTlds);
+  const tool = { ...checkDomainsTool(defaultTlds), _meta: RESULTS_UI_TOOL_META };
+  registerResultsUi(server);
   server.registerTool(TOOL_CHECK_DOMAINS, tool, async (input, extra) => {
-    const { domains, tlds, confirm, details = false } = input;
+    const { domains, tlds, confirm, details = false, saved = [] } = input;
     const options = { signal: extra.signal, onProgress: progressReporter(extra) };
-    const outcome = await scout.check({ domains, tlds, confirm }, options);
+    // Saved domains are checked again with the rest: one may have been bought in the meantime.
+    const all = [...domains, ...saved];
+    const outcome = await scout.check({ domains: all, tlds, confirm }, options);
     if (!outcome.ok) return errorResult(rejectionText(outcome.message, outcome.invalid));
-    return reportResult(outcome.report, details);
+    return reportResult(outcome.report, details, savedKeys(saved));
   });
   listToolsWithPlainSchemas(server, [{ name: TOOL_CHECK_DOMAINS, ...tool }]);
   return server;
@@ -62,18 +66,37 @@ export async function startServer(
 }
 
 /** The report as text for the model, and as structured content that matches the output schema. */
-function reportResult(report: Report, details: boolean): CallToolResult {
+function reportResult(
+  report: Report,
+  details: boolean,
+  saved: ReadonlySet<string>,
+): CallToolResult {
+  const answer = (result: DomainResult) => (details ? result : withoutEvidence(result));
   return {
     content: [{ type: McpContentType.Text, text: new TextReport(report).render() }],
     structuredContent: {
       summary: summarize(report),
       tlds: report.tlds,
-      results: report.results.map((result) => (details ? result : withoutEvidence(result))),
+      results: report.results.map((result) =>
+        isSaved(result, saved) ? { ...answer(result), saved: true } : answer(result),
+      ),
       invalid: report.invalid,
       warnings: report.warnings,
       ...(hasAffiliateLinks(report) && { disclosure: AFFILIATE_DISCLOSURE }),
     },
   };
+}
+
+/** The saved domains as the forms a result may carry: lower case, trimmed. */
+function savedKeys(saved: readonly string[]): ReadonlySet<string> {
+  return new Set(saved.map((entry) => entry.trim().toLowerCase()));
+}
+
+/** Whether a result is one of the saved domains, by its ASCII form, its Unicode form or its input. */
+function isSaved(result: DomainResult, saved: ReadonlySet<string>): boolean {
+  return [result.domain, result.display, result.input].some((form) =>
+    saved.has(form.toLowerCase()),
+  );
 }
 
 /** A rejected call. Output validation does not apply to errors. */

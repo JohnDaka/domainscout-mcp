@@ -34,7 +34,7 @@
     <meta property="og:image" content="https://domainscout.dakaio.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="DomainScout: 500 names checked in one call, the free .com domains with prices" />
+    <meta property="og:image:alt" content="DomainScout: the results panel in the chat, a price table of free domains with Save and Similar buttons" />
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="DomainScout - every good .com is taken. Find the ones that aren't." />
@@ -180,22 +180,41 @@
           </ul>
         </div>
 
-        <figure class="hero__card glass" aria-label="Example: checking 500 brainstormed names">
+        <figure class="hero__card glass" aria-label="Example: brainstormed names checked, the results as a panel in the chat">
           <figcaption class="chat__prompt">
             <span class="chat__who">You</span>
-            <!-- generated:prompt -->I'm naming a note-taking app. Brainstorm 500 names and tell me which .com domains are free.<!-- /generated:prompt -->
+            I'm opening a coffee shop. Brainstorm names like beanvale and check which .com and .ai domains are free.
           </figcaption>
-          <div class="chat__tool"><span class="chat__who">DomainScout</span> check_domains</div>
-          <!-- generated:hero --><p class="results__summary">500 names checked in 20s: 27 free .com, 473 taken</p>
-<ul class="results">
-<li class="result result--likely_available"><span class="result__domain">quillloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
-<li class="result result--likely_available"><span class="result__domain">scribeloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
-<li class="result result--likely_available"><span class="result__domain">scribebloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
-<li class="result result--likely_available"><span class="result__domain">foliobloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
-<li class="result result--likely_available"><span class="result__domain">glyphbloom.com</span><span class="pill pill--likely_available">Available</span><span class="result__price">$10.46/yr at Cloudflare</span></li>
-</ul>
-<p class="results__more">…and 22 more free</p><!-- /generated:hero -->
+          <img class="hero__panel" src="panel/table-dark.webp" width="760" height="620" fetchpriority="high" decoding="async"
+            alt="The DomainScout panel in the chat: 82 domains checked, the free ones as a price table at Cloudflare and Porkbun, two saved names first" />
         </figure>
+      </section>
+
+      <section id="panel" class="section container">
+        <h2>Results you can work with</h2>
+        <p class="section__lead">
+          In Claude and other clients that show MCP Apps, the answer comes as a panel right in the chat: a price table,
+          a list or cards, dark or light. Save the names you like, mark the ones to take after, and regenerate a fresh
+          batch that leaves out everything already checked.
+        </p>
+        <div class="gallery" data-gallery>
+          <div class="gallery__controls">
+            <div class="switch" role="group" aria-label="Layout">
+              <button type="button" aria-pressed="true" data-view="table">Table</button>
+              <button type="button" aria-pressed="false" data-view="list">List</button>
+              <button type="button" aria-pressed="false" data-view="grid">Cards</button>
+            </div>
+            <div class="switch" role="group" aria-label="Theme">
+              <button type="button" aria-pressed="true" data-theme="dark">Dark</button>
+              <button type="button" aria-pressed="false" data-theme="light">Light</button>
+            </div>
+          </div>
+          <figure class="gallery__frame">
+            <img src="panel/table-dark.webp" width="760" height="620" loading="lazy" decoding="async" data-gallery-image
+              alt="The DomainScout panel as a price table in the dark theme: 82 domains checked, 68 free, two saved names first, each with Save and Similar buttons and prices at Cloudflare and Porkbun" />
+          </figure>
+          <p class="gallery__note">A real check of 82 domains, photographed on 2026-10-09.</p>
+        </div>
       </section>
 
       <section id="features" class="section container">

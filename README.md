@@ -8,7 +8,7 @@
 [![npm](https://img.shields.io/npm/v/@dakaio/domainscout-mcp)](https://www.npmjs.com/package/@dakaio/domainscout-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-![DomainScout in an AI assistant: 500 brainstormed names checked in one call, the free .com domains with their prices](assets/domainscout-bulk.png)
+![DomainScout in an AI assistant: brainstormed names checked in one call, the free domains as a price table right in the chat](assets/domainscout-bulk.png)
 
 DomainScout is an MCP server for bulk domain search. Your AI assistant brainstorms hundreds of
 names, and DomainScout checks all of them in one call: which are free, what they cost and where
@@ -95,6 +95,7 @@ ones. Read-only: it never registers or changes anything.
 | `tlds` | string[] | `DOMAINSCOUT_TLDS` (`com,net,ai`) | TLDs for names given without one, e.g. `["com"]` for a long list |
 | `confirm` | boolean | `true` | Confirm free-looking names with registrar APIs, when you set keys |
 | `details` | boolean | `false` | Include the evidence from every source (DNS, RDAP, WHOIS, registrar API) |
+| `saved` | string[] | none | Domains the user saved in the results panel: checked again with the rest and marked `saved`, so they stay through a regenerate |
 
 It returns a short text report for the model and the same data as structured content: a summary
 with counts per status, one result per domain (status, note, registration dates, buy links with
@@ -127,6 +128,33 @@ TAKEN: quillwise.com, quillnest.com, quillflow.com, quillhub.com, quillpad.com, 
 
 Ask about a few favourites afterwards and each one gets every registrar's link and price. More
 real output, including the command line and JSON: [examples](examples/README.md).
+
+## Results card
+
+In clients that support [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) (Claude on
+the web and desktop, VS Code, ChatGPT and others), each `check_domains` call shows an interactive
+panel, the same as on [the website](https://domainscout.dakaio.com):
+
+- **The free domains** as a price table (domains down the side, registrars across the top, every
+  price a link), a list or cards, in a dark or light theme, switched beside the TLD filter.
+  The table sorts by any column; a TLD filter narrows every view to one TLD.
+- **Prices** as a range across registrars, with what renewing costs when it differs from the
+  first year and what a minimum term costs upfront. Registrars are always in price order,
+  cheapest first, the same as in the text report.
+- **Every registrar** for a name under "All registrars" or the table's "N more", each a link.
+- **Save** the names you like and mark the ones to take after as **Similar**, then **Regenerate**:
+  the chat brainstorms a new batch like the marked names (or in the same style, when none are
+  marked) that leaves out every name checked so far, and the saved domains come along in the
+  new check (the `saved` parameter), still marked as saved and listed first. "Saved 3" beside
+  Regenerate asks the chat to compare the saved domains; both buttons explain themselves on hover. "Try other TLDs" re-checks the taken
+  names elsewhere, and "Compare in chat" asks the chat to pick one of the saved names; it sees
+  what you saved. "Download CSV" saves the free domains with prices and links.
+
+The panel ships in the package (`ui/`), loads nothing from elsewhere, and uses only what the client
+offers: a client that can't send messages or save files simply doesn't show those buttons. Other
+clients show the text report.
+
+![The results panel in the dark theme: 82 domains checked, the free ones as a price table with the two saved names first, Regenerate and the TLD filter above](assets/results-card.png)
 
 ## How it checks
 
