@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "domainscout",
   "display_name": "DomainScout",
-  "version": "1.5.2",
+  "version": "2.0.0",
   "description": "Domain research for AI agents: checks hundreds of names in one call, with prices and where to buy.",
   "long_description": "Almost every good .com is taken. Ask Claude to brainstorm hundreds of names, and DomainScout checks all of them in one call: DNS first, then the registry itself over RDAP, or WHOIS where there is no RDAP. Free names come with prices and links to buy them at nine registrars, cheapest to own first. It runs on your own machine: no account, no server in the middle, and registrar API keys are optional.",
   "author": {

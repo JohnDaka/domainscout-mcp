@@ -2,6 +2,12 @@
 
 Every release of `@dakaio/domainscout-mcp`, newest first. Each line is a merged pull request.
 
+## 2.0.0 - 2026-10-09
+
+### Features
+
+- Release on every merge, by the pull request's title, with a changelog in the package ([#23](https://github.com/JohnDaka/domainscout-mcp/pull/23))
+
 ## 1.5.2 - 2026-10-09
 
 ### Fixes
