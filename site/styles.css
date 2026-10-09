@@ -209,8 +209,9 @@ code {
 /* Hero */
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: 48px;
+  /* The panel gets the wider column: a price table needs the room to be read. */
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 40px;
   align-items: center;
   padding-top: 88px;
   padding-bottom: 72px;
@@ -472,7 +473,7 @@ h3 {
 /* The hero card: a short conversation and the tool's answer. */
 .hero__card {
   margin: 0;
-  padding: 24px;
+  padding: 16px;
   box-shadow:
     0 0 44px rgba(124, 92, 255, 0.18),
     0 0 110px rgba(34, 195, 245, 0.08);
