@@ -2,6 +2,16 @@
 
 Every release of `@dakaio/domainscout-mcp`, newest first. Each line is a merged pull request.
 
+## 2.0.1 - 2026-10-09
+
+### Fixes
+
+- The settings' TLD box takes com.ua and co.gb as typed, and only real TLDs ([#25](https://github.com/JohnDaka/domainscout-mcp/pull/25))
+
+### Other
+
+- A major release only for a BREAKING CHANGE: line, not for the words anywhere ([#24](https://github.com/JohnDaka/domainscout-mcp/pull/24))
+
 ## 2.0.0 - 2026-10-09
 
 ### Features
