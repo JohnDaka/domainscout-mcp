@@ -341,12 +341,75 @@ class DownloadButton {
   }
 }
 
+// ── Panel gallery ────────────────────────────────────────────────────────────
+
+/** The block that shows the results panel in each layout and theme. */
+const GALLERY_SELECTOR = '[data-gallery]';
+/** Class that shows the switches once the script can answer them. */
+const GALLERY_READY_CLASS = 'gallery--ready';
+/** Where the photographs are: panel/<layout>-<theme>.webp. */
+const GALLERY_DIR = 'panel/';
+const GALLERY_EXTENSION = '.webp';
+/** What each layout and theme is called in the photograph's description. */
+const LAYOUT_NAMES = new Map()
+  .set('table', 'a price table')
+  .set('list', 'a list')
+  .set('grid', 'cards');
+const THEME_NAMES = new Map().set('dark', 'the dark theme').set('light', 'the light theme');
+const ARIA_PRESSED = 'aria-pressed';
+
+/** Switches between photographs of the panel: the layout and the theme, each a group of buttons. */
+class Gallery {
+  constructor(root) {
+    this.root = root;
+    this.image = root.querySelector('[data-gallery-image]');
+    this.views = [...root.querySelectorAll('[data-view]')];
+    this.themes = [...root.querySelectorAll('[data-theme]')];
+    this.view = 'table';
+    this.theme = 'dark';
+  }
+
+  mount() {
+    for (const button of this.views) {
+      button.addEventListener(DomEvent.Click, () => this.show(button.dataset.view, this.theme));
+    }
+    for (const button of this.themes) {
+      button.addEventListener(DomEvent.Click, () => this.show(this.view, button.dataset.theme));
+    }
+    this.root.classList.add(GALLERY_READY_CLASS);
+    // The other photographs load once the page is idle, so a switch never waits on the network.
+    window.addEventListener('load', () => this.preload(), { once: true });
+  }
+
+  source(view, theme) {
+    return `${GALLERY_DIR}${view}-${theme}${GALLERY_EXTENSION}`;
+  }
+
+  preload() {
+    for (const view of LAYOUT_NAMES.keys()) {
+      for (const theme of THEME_NAMES.keys()) new Image().src = this.source(view, theme);
+    }
+  }
+
+  show(view, theme) {
+    this.view = view;
+    this.theme = theme;
+    this.image.src = this.source(view, theme);
+    this.image.alt = `The DomainScout panel as ${LAYOUT_NAMES.get(view)} in ${THEME_NAMES.get(theme)}, with real results`;
+    for (const button of this.views)
+      button.setAttribute(ARIA_PRESSED, String(button.dataset.view === view));
+    for (const button of this.themes)
+      button.setAttribute(ARIA_PRESSED, String(button.dataset.theme === theme));
+  }
+}
+
 const ENHANCEMENTS = new Map()
   .set(TABS_SELECTOR, Tabs)
   .set(COPY_SELECTOR, CopyButton)
   .set(FAQ_SELECTOR, FaqCard)
   .set(NAV_FRAME_SELECTOR, NavFrame)
-  .set(DOWNLOAD_SELECTOR, DownloadButton);
+  .set(DOWNLOAD_SELECTOR, DownloadButton)
+  .set(GALLERY_SELECTOR, Gallery);
 
 for (const [selector, Enhancement] of ENHANCEMENTS) {
   for (const element of document.querySelectorAll(selector)) new Enhancement(element).mount();

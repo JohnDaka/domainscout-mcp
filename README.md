@@ -154,7 +154,7 @@ The panel ships in the package (`ui/`), loads nothing from elsewhere, and uses o
 offers: a client that can't send messages or save files simply doesn't show those buttons. Other
 clients show the text report.
 
-![The results panel: the price table filtered to .com, two names starred on the shortlist, the taken names and the actions](assets/results-card.png)
+![The results panel in the dark theme: 82 domains checked, the free ones as a price table with the two saved names first, Regenerate and the TLD filter above](assets/results-card.png)
 
 ## How it checks
 

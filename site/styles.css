@@ -406,6 +406,69 @@ h3 {
   color: var(--muted);
 }
 
+/* The results panel in each layout and theme: the switches above, the photograph fading out below. */
+.gallery__controls {
+  display: none;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.gallery--ready .gallery__controls {
+  display: flex;
+}
+
+.switch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+}
+
+.switch button {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.switch button:hover {
+  color: var(--body);
+}
+
+.switch button[aria-pressed='true'] {
+  background: var(--glass-strong);
+  color: var(--cyan);
+}
+
+.gallery__frame {
+  max-width: 760px;
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow:
+    0 0 44px rgba(124, 92, 255, 0.18),
+    0 0 110px rgba(34, 195, 245, 0.08);
+  mask-image: linear-gradient(#000 78%, transparent);
+}
+
+.gallery__frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.gallery__note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 /* The hero card: a short conversation and the tool's answer. */
 .hero__card {
   margin: 0;
