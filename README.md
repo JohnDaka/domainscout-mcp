@@ -295,7 +295,7 @@ npm run build
 Releases happen on merge. A pull request's title says what it is (`feat: …`, `fix: …`,
 `docs: …`, `feat!: …`; `.github/workflows/pr-title.yml` checks it), and once it is merged into
 `main`, `.github/workflows/publish.yml` decides: `feat` raises the minor version, `fix` and
-`perf` the patch version, a `!` or "BREAKING CHANGE" the major one, and anything else, or a
+`perf` the patch version, a `!` or a line starting `BREAKING CHANGE:` the major one, and anything else, or a
 change to nothing the package ships, releases nothing. A release raises the version in
 `package.json`, `manifest.json` and `server.json`, adds the merged pull requests to
 [CHANGELOG.md](CHANGELOG.md), tags it, publishes to npm (trusted
