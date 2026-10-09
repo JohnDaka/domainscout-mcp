@@ -406,6 +406,16 @@ h3 {
   color: var(--muted);
 }
 
+/* The version: the release on npm, written in when the page goes out, linked to the changelog. */
+.badges a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.badges a:hover {
+  color: var(--cyan);
+}
+
 /* The results panel in each layout and theme: the switches above, the photograph fading out below. */
 .gallery__controls {
   display: none;

@@ -18,7 +18,8 @@ name: publish
 #      "Add to Claude Desktop" button downloads;
 #   4. the official MCP Registry, once npm serves the version and if MCP_REGISTRY_KEY is set;
 #   5. the Claude plugin (plugin/) pinned to the version with its lockfile, committed to main;
-#      Claude's plugin directory reads it from there.
+#      Claude's plugin directory reads it from there;
+#   6. the landing page (landing.yml), so its version badge names this release.
 # Actions → publish → Run workflow releases main by hand, at the size chosen there. A step whose
 # work is done already (a version on npm, a release on GitHub, a version in the Registry) says so
 # and moves on.
@@ -230,3 +231,9 @@ jobs:
           git commit -m "build: Claude plugin ${VERSION} [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
+
+  # The landing page again, so its version badge names this release.
+  landing:
+    needs: publish
+    uses: ./.github/workflows/landing.yml
+    secrets: inherit

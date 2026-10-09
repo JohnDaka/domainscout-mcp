@@ -1,7 +1,8 @@
-# The landing page goes out on every change to site/ that reaches main: the merge is the release.
-# Its site/ goes to a new release folder on the box, named after the commit, and `current` is
-# pointed at it; nginx serves `current` to domainscout.dakaio.com. Five releases stay on the box.
-# Actions → landing → Run workflow puts main out again by hand.
+# The landing page goes out on every change to site/ that reaches main, and after every release of
+# the package (publish.yml calls this), so its version badge always names the release on npm.
+# main's site/ goes to a new release folder on the box, named after the time and the commit, and
+# `current` is pointed at it; nginx serves `current` to domainscout.dakaio.com. Five releases stay
+# on the box. Actions → landing → Run workflow puts main out again by hand.
 #
 # Repository secrets (Settings → Secrets and variables → Actions):
 #   DEPLOY_HOST      the box: its IP (not a name behind Cloudflare's proxy)
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths: ['site/**']
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: landing-deploy
@@ -33,22 +35,31 @@ jobs:
       name: production
       url: https://domainscout.dakaio.com
     steps:
+      # main as it is now: after a release it has the version commit the merge did not.
       - uses: actions/checkout@v4
+        with:
+          ref: main
       # The release's name: when it went out and from which commit, so the folders sort by time.
       - name: Name the release
-        run: echo "RELEASE=$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-      # Which release this is, for the browser console (site/version.js).
+        run: |
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "RELEASE=$(date -u +%Y%m%d-%H%M%S)-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_ENV"
+          echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+      # Which release this is, for the browser console (site/version.js), and the package's version
+      # on the hero's badge.
       - name: Stamp the release
         run: |
           node -e "
-            const stamp = { version: process.env.RELEASE, commit: process.env.GITHUB_SHA, built: new Date().toISOString() };
+            const stamp = { version: process.env.RELEASE, package: process.env.PACKAGE_VERSION, commit: process.env.COMMIT, built: new Date().toISOString() };
             require('fs').writeFileSync('site/version.json', JSON.stringify(stamp) + '\n');
           "
+          sed -i -E "s#(<!-- generated:version -->)[^<]*(<!-- /generated:version -->)#\1${PACKAGE_VERSION}\2#" site/index.html
+          grep -c "generated:version -->${PACKAGE_VERSION}<" site/index.html
       # The pages are never cached but the stylesheet and scripts are, for hours: each release asks
       # for them under its own commit, so a new page never meets an old stylesheet.
       - name: Version the assets
         run: |
-          stamp="${GITHUB_SHA::7}"
+          stamp="${COMMIT::7}"
           sed -i -E "s#(href|src)=\"/(styles\.css|main\.js|version\.js)\"#\1=\"/\2?v=${stamp}\"#g" site/*.html
           grep -c "?v=${stamp}" site/index.html
       - uses: webfactory/ssh-agent@v0.9.0
