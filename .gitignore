@@ -16,3 +16,4 @@ RELEASE.md
 # Local editor and agent settings (the site preview server lives here).
 .claude/
 .idea/
+npm-shrinkwrap.json
