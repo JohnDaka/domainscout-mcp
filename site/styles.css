@@ -478,6 +478,15 @@ h3 {
     0 0 110px rgba(34, 195, 245, 0.08);
 }
 
+/* The panel the tool answers with, photographed on a real check; it fades out at the bottom. */
+.hero__panel {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-small);
+  mask-image: linear-gradient(#000 75%, transparent);
+}
+
 .chat__prompt {
   padding: 14px 16px;
   border-radius: var(--radius-small);

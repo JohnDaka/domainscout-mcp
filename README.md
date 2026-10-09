@@ -8,7 +8,7 @@
 [![npm](https://img.shields.io/npm/v/@dakaio/domainscout-mcp)](https://www.npmjs.com/package/@dakaio/domainscout-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-![DomainScout in an AI assistant: 500 brainstormed names checked in one call, the free .com domains with their prices](assets/domainscout-bulk.png)
+![DomainScout in an AI assistant: brainstormed names checked in one call, the free domains as a price table right in the chat](assets/domainscout-bulk.png)
 
 DomainScout is an MCP server for bulk domain search. Your AI assistant brainstorms hundreds of
 names, and DomainScout checks all of them in one call: which are free, what they cost and where
