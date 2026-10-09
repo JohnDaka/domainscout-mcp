@@ -58,8 +58,12 @@ jobs:
       # Types, lint and the tests with their coverage thresholds: below them nothing is published.
       - run: npm run verify
       - run: npm run build
-      # Trusted publishing needs npm 11.5.1 or later.
-      - run: npm install --global npm@latest
+      # Trusted publishing needs npm 11.5.1 or later. Not 12: npm 12 drops npm-shrinkwrap.json from
+      # the package, and the shrinkwrap is what pins the dependencies npx installs.
+      - run: npm install --global npm@11
+      # The lockfile goes into the package as its shrinkwrap; the repository keeps package-lock.json,
+      # which every npm reads.
+      - run: cp package-lock.json npm-shrinkwrap.json
       - name: Publish to npm, unless this version is on npm already
         run: |
           if npm view "${NAME}@${VERSION}" version > /dev/null 2>&1; then
@@ -72,7 +76,7 @@ jobs:
       - name: Build the Claude Desktop extension
         run: |
           mkdir -p bundle/assets
-          cp -r dist package.json npm-shrinkwrap.json LICENSE README.md manifest.json bundle/
+          cp -r dist package.json package-lock.json LICENSE README.md manifest.json bundle/
           cp assets/icon-128.png bundle/assets/
           cp -r ui bundle/
           cp site/icon-512.png bundle/icon.png
