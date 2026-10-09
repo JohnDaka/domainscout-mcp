@@ -1,7 +1,7 @@
 /*
  * What is actually running, printed to the browser console on load, as dakaio.com and beladay.com
- * do. version.json is written next to the page when a `landing-v*` tag is deployed
- * (.github/workflows/landing.yml) from site/package.json; locally there is none. The stamp also
+ * do. version.json is written next to the page when it is deployed
+ * (.github/workflows/landing.yml), named after the time and the commit; locally there is none. The stamp also
  * stays on `window.domainscout` for a look in the console later.
  */
 (() => {

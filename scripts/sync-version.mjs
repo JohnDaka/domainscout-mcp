@@ -1,7 +1,7 @@
-// Runs from `npm version` (the "version" script): copies package.json's new version into
+// Runs from `npm version` (the "version" script, which publish.yml runs on release): copies package.json's new version into
 // manifest.json (the Claude Desktop extension) and server.json (the MCP Registry), so the files
 // never disagree; publish.yml refuses to release when they do. The Claude plugin follows once the
-// version is on npm: `npm run plugin` (scripts/sync-plugin.mjs).
+// version is on npm: `npm run plugin` (scripts/sync-plugin.mjs), publish.yml's last step.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 /** How the files are read and written. */

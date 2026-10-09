@@ -1,0 +1,32 @@
+# A pull request's title decides its release once it is merged (publish.yml), so it has to say what
+# the change is: `feat: …`, `fix: …`, `docs(site): …`, `feat!: …` and so on.
+name: pr-title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: The title names the kind of change
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          kinds='feat|fix|perf|docs|build|chore|test|ci|refactor|style|revert'
+          if [[ "${TITLE}" =~ ^(${kinds})(\([^\)]*\))?!?:\ .+ ]]; then
+            case "${TITLE}" in
+              feat!*|*'!:'*) echo "A major release once merged." ;;
+              feat*) echo "A minor release once merged, if it changes what the package ships." ;;
+              fix*|perf*) echo "A patch release once merged, if it changes what the package ships." ;;
+              *) echo "No release once merged." ;;
+            esac
+            exit 0
+          fi
+          echo "::error::\"${TITLE}\" should start with one of ${kinds//|/, }, then \": \" (feat: …, fix(ui): …, feat!: …)."
+          exit 1

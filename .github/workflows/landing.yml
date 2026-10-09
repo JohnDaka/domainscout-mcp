@@ -1,12 +1,8 @@
-# The landing page goes out only when it is released: a tag `landing-v<version>`, the version being
-# site/package.json's. Merges into `main` never touch it: the page is the shop window, so putting
-# it out is a step of its own. After the version is raised in a PR and merged:
-#
-#   npm --prefix site run release   # checks out main, pulls, tags landing-v<version>, pushes the tag
-#
-# The tag's site/ goes to a new release folder on the box and `current` is pointed at it; nginx
-# serves `current` to domainscout.dakaio.com. Running it by hand (Actions → Run workflow) on a tag
-# puts that tag out again – the way back to an earlier one.
+# The landing page goes out on every change to site/ that reaches main, and after every release of
+# the package (publish.yml calls this), so its version badge always names the release on npm.
+# main's site/ goes to a new release folder on the box, named after the time and the commit, and
+# `current` is pointed at it; nginx serves `current` to domainscout.dakaio.com. Five releases stay
+# on the box. Actions → landing → Run workflow puts main out again by hand.
 #
 # Repository secrets (Settings → Secrets and variables → Actions):
 #   DEPLOY_HOST      the box: its IP (not a name behind Cloudflare's proxy)
@@ -16,8 +12,10 @@ name: landing
 
 on:
   push:
-    tags: ['landing-v*']
+    branches: [main]
+    paths: ['site/**']
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: landing-deploy
@@ -29,55 +27,57 @@ env:
 
 jobs:
   deploy:
-    # A tag only: a run by hand on a branch would put out whatever the branch has.
-    if: startsWith(github.ref, 'refs/tags/landing-v')
+    # main only: a run by hand on a branch would put out whatever the branch has.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
       name: production
       url: https://domainscout.dakaio.com
     steps:
+      # main as it is now: after a release it has the version commit the merge did not.
       - uses: actions/checkout@v4
-      # The tag says the version package.json has: a tag made by hand on the wrong commit stops
-      # here, not on the site.
-      - name: Check the version
+        with:
+          ref: main
+      # The release's name: when it went out and from which commit, so the folders sort by time.
+      - name: Name the release
         run: |
-          version=$(node -p "require('./site/package.json').version")
-          if [ "$GITHUB_REF_NAME" != "landing-v$version" ]; then
-            echo "::error::$GITHUB_REF_NAME, but site/package.json says $version"
-            exit 1
-          fi
-      # Which release this is, for the browser console (site/version.js).
-      - name: Stamp the version
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "RELEASE=$(date -u +%Y%m%d-%H%M%S)-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_ENV"
+          echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+      # Which release this is, for the browser console (site/version.js), and the package's version
+      # on the hero's badge.
+      - name: Stamp the release
         run: |
           node -e "
-            const { version } = require('./site/package.json');
-            const stamp = { version, commit: process.env.GITHUB_SHA, built: new Date().toISOString() };
+            const stamp = { version: process.env.RELEASE, package: process.env.PACKAGE_VERSION, commit: process.env.COMMIT, built: new Date().toISOString() };
             require('fs').writeFileSync('site/version.json', JSON.stringify(stamp) + '\n');
           "
+          sed -i -E "s#(<!-- generated:version -->)[^<]*(<!-- /generated:version -->)#\1${PACKAGE_VERSION}\2#" site/index.html
+          grep -c "generated:version -->${PACKAGE_VERSION}<" site/index.html
       # The pages are never cached but the stylesheet and scripts are, for hours: each release asks
-      # for them under its own version, so a new page never meets an old stylesheet.
+      # for them under its own commit, so a new page never meets an old stylesheet.
       - name: Version the assets
         run: |
-          version=$(node -p "require('./site/package.json').version")
-          sed -i -E "s#(href|src)=\"/(styles\.css|main\.js|version\.js)\"#\1=\"/\2?v=$version\"#g" site/*.html
-          grep -c "?v=$version" site/index.html
+          stamp="${COMMIT::7}"
+          sed -i -E "s#(href|src)=\"/(styles\.css|main\.js|version\.js)\"#\1=\"/\2?v=${stamp}\"#g" site/*.html
+          grep -c "?v=${stamp}" site/index.html
       - uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
       - name: Trust the box
         run: ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-      # The release's own files stay behind: the version and the release command are not pages.
+      # package.json describes the folder and is not a page.
       - name: Upload as a new release
         run: |
-          rsync -az --delete --exclude package.json --exclude release.mjs site/ \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$RELEASES_DIR/$GITHUB_REF_NAME/"
+          rsync -az --delete --exclude package.json site/ \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$RELEASES_DIR/$RELEASE/"
       # The heredoc is unquoted on purpose: the variables are the runner's. Five releases stay.
       - name: Go live
         run: |
           ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" bash -s <<EOF
             set -e
-            ln -sfn "$RELEASES_DIR/$GITHUB_REF_NAME" "$CURRENT_LINK"
+            ln -sfn "$RELEASES_DIR/$RELEASE" "$CURRENT_LINK"
             ls -1dt "$RELEASES_DIR"/*/ | tail -n +6 | xargs -r rm -rf
             curl -fsSk --resolve domainscout.dakaio.com:443:127.0.0.1 https://domainscout.dakaio.com/version.json
           EOF
