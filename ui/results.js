@@ -126,7 +126,8 @@ const Copy = {
   SaveLabel: 'Save',
   Unsave: 'Remove from saved',
   CompareSaved: 'Compare in chat',
-  Regenerate: 'Regenerate',
+  RegenerateAll: 'Regenerate all',
+  RegenerateWith: 'Regenerate with',
   RegenerateLabel: 'New names, none of those checked so far; the saved ones stay',
   RegenerateHint: 'Regenerate for a new batch.',
   OtherTlds: 'Try other TLDs',
@@ -756,31 +757,36 @@ function fewFreeNote(free, total) {
  * saved domains kept. This panel stays as it is; the new check comes as a new one under it.
  */
 function regenerateButton() {
-  const node = button('chip-button regenerate', Copy.Regenerate, () => {
+  const node = button('chip-button regenerate', undefined, () => {
     const saved = [...state.saved.values()].map((item) => item.domain);
     const similar = [...state.similar.values()].map(label);
     sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free, similar }));
   });
-  node.prepend(icon(Icon.Refresh));
   node.title = Copy.RegenerateLabel;
+  // "Regenerate all" and "Regenerate with 2" share one cell, one of them hidden: the button keeps
+  // the wider one's width, so marking the first name moves nothing and nothing wraps.
   regenerateCount = element('span', 'regenerate__count');
-  node.append(regenerateCount);
+  const withCount = element('span', 'swap__on', `${Copy.RegenerateWith} `);
+  withCount.append(regenerateCount);
+  const words = element('span', 'swap');
+  words.append(element('span', 'swap__off', Copy.RegenerateAll), withCount);
+  node.append(icon(Icon.Refresh), words);
+  regenerateButtonNode = node;
   syncRegenerateCount();
   return node;
 }
 
-/**
- * The number of examples on "Regenerate", spoken as "like 3 names". Its place is kept while it is
- * zero, unseen and unspoken, so marking the first name widens nothing and nothing wraps.
- */
+/** The Regenerate button and its count, updated as names are marked Similar. */
+let regenerateButtonNode;
 let regenerateCount;
 
 function syncRegenerateCount() {
-  if (!regenerateCount) return;
+  if (!regenerateButtonNode) return;
   const count = state.similar.size;
-  regenerateCount.classList.toggle('regenerate__count--none', count === 0);
-  regenerateCount.setAttribute('aria-hidden', String(count === 0));
-  regenerateCount.replaceChildren(String(count), hiddenText(` like ${count} names`));
+  regenerateCount.textContent = String(count);
+  regenerateButtonNode.classList.toggle('regenerate--with', count > 0);
+  const spoken = count ? `${Copy.RegenerateWith} ${count} similar names` : Copy.RegenerateAll;
+  regenerateButtonNode.setAttribute('aria-label', spoken);
 }
 
 /** Under the domains: the domains as a file. */

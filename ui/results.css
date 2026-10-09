@@ -575,6 +575,12 @@ input:focus-visible {
   grid-area: 1 / 1;
 }
 
+/* "Regenerate all" until names are marked Similar, then "Regenerate with 2", in one cell. */
+.regenerate:not(.regenerate--with) .swap__on,
+.regenerate--with .swap__off {
+  visibility: hidden;
+}
+
 .save[aria-pressed='true'] .swap__off,
 .save:not([aria-pressed='true']) .swap__on {
   visibility: hidden;
@@ -597,19 +603,12 @@ input:focus-visible {
 }
 
 /* How many names Regenerate will take as examples. */
+/* Room for two digits, so the count going from 9 to 10 moves nothing either. */
 .regenerate__count {
-  min-width: 18px;
-  padding: 0 5px;
-  border-radius: var(--ds-radius-pill);
-  background: var(--ds-cyan);
-  color: var(--ds-panel);
-  font-size: 11px;
+  display: inline-block;
+  min-width: 2ch;
   font-weight: 700;
-  text-align: center;
-}
-
-.regenerate__count--none {
-  visibility: hidden;
+  font-variant-numeric: tabular-nums;
 }
 
 /* A name marked as an example: filled in the brand's cyan. */
