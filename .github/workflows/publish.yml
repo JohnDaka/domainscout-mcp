@@ -3,7 +3,8 @@ name: publish
 # Every merge into main can be a release. The pull request's title says which:
 #   feat: …            a minor version (1.5.2 -> 1.6.0)
 #   fix: …, perf: …    a patch version (1.5.2 -> 1.5.3)
-#   feat!: …, or "BREAKING CHANGE" in its description: a major version (1.5.2 -> 2.0.0)
+#   feat!: …, or a line "BREAKING CHANGE: …" in its description: a major version (2.0.0 -> 3.0.0);
+#                      the words anywhere else in a line do not count
 #   docs, build, chore, test, ci, refactor, style, revert: no release
 # and only a change to what the package ships (src/, ui/, assets/, package.json, the lockfile,
 # manifest.json, server.json, README.md, LICENSE, CHANGELOG.md) is released at all. The landing page has its own
@@ -73,7 +74,7 @@ jobs:
             body="$(git log -1 --format=%b "${GITHUB_SHA}")"
           fi
           bump=""
-          if [[ "${title}" =~ ^[a-z]+(\([^\)]*\))?!: ]] || grep -q "BREAKING CHANGE" <<< "${body}"; then
+          if [[ "${title}" =~ ^[a-z]+(\([^\)]*\))?!: ]] || grep -qE "^BREAKING[ -]CHANGE: " <<< "${body}"; then
             bump=major
           elif [[ "${title}" =~ ^feat(\([^\)]*\))?: ]]; then
             bump=minor
