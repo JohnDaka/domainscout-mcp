@@ -55,6 +55,13 @@ jobs:
             const stamp = { version, commit: process.env.GITHUB_SHA, built: new Date().toISOString() };
             require('fs').writeFileSync('site/version.json', JSON.stringify(stamp) + '\n');
           "
+      # The pages are never cached but the stylesheet and scripts are, for hours: each release asks
+      # for them under its own version, so a new page never meets an old stylesheet.
+      - name: Version the assets
+        run: |
+          version=$(node -p "require('./site/package.json').version")
+          sed -i -E "s#(href|src)=\"/(styles\.css|main\.js|version\.js)\"#\1=\"/\2?v=$version\"#g" site/*.html
+          grep -c "?v=$version" site/index.html
       - uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
