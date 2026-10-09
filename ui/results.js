@@ -207,7 +207,7 @@ const BATCH_SIZES = Array.from(
 /** Domains a check takes by default (names times TLDs): a bigger batch is asked with fewer names. */
 const MAX_DOMAINS_PER_CHECK = 500;
 /** A TLD typed into the settings: "studio", or one with a second level such as "co.uk". */
-const TLD_PATTERN = /^[a-z0-9-]{2,24}(.[a-z0-9-]{2,24})?$/;
+const TLD_PATTERN = /^[a-z0-9-]{2,24}(\.[a-z0-9-]{2,24})?$/;
 /** Taken names passed on when asking for other TLDs: enough to go on, short enough to read. */
 const TAKEN_SAMPLE = 30;
 /** Free names given as examples of a style that works. */
@@ -534,7 +534,7 @@ const FALSE = 'false';
 const ENTER_KEY = 'Enter';
 const ESCAPE_KEY = 'Escape';
 /** A dot typed before a TLD, as in ".studio". */
-const LEADING_DOT = /^./;
+const LEADING_DOT = /^\./;
 /** How an inlined image's address starts. */
 const DATA_URI_PREFIX = 'data:';
 /** The icon's size beside the name, in CSS pixels; the image is drawn sharper than that. */
