@@ -2,7 +2,7 @@
   "mcpServers": {
     "domainscout": {
       "command": "npx",
-      "args": ["-y", "@dakaio/domainscout-mcp@1.5.2"],
+      "args": ["-y", "@dakaio/domainscout-mcp@2.0.0"],
       "env": {
         "DOMAINSCOUT_TLDS": "${user_config.tlds}",
         "DOMAINSCOUT_NAMECOM_USERNAME": "${user_config.namecom_username}",
