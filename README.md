@@ -136,7 +136,7 @@ the web and desktop, VS Code, ChatGPT and others), each `check_domains` call sho
 panel, the same as on [the website](https://domainscout.dakaio.com):
 
 - **The free domains** as a price table (domains down the side, registrars across the top, every
-  price a link), a list or cards, in a dark or light theme, switched from the top-right corner.
+  price a link), a list or cards, in a dark or light theme, switched beside the TLD filter.
   The table sorts by any column; a TLD filter narrows every view to one TLD.
 - **Prices** as a range across registrars, with what renewing costs when it differs from the
   first year and what a minimum term costs upfront. Registrars are always in price order,
@@ -145,7 +145,8 @@ panel, the same as on [the website](https://domainscout.dakaio.com):
 - **Save** the names you like and mark the ones to take after as **Similar**, then **Regenerate**:
   the chat brainstorms a new batch like the marked names (or in the same style, when none are
   marked) that leaves out every name checked so far, and the saved domains come along in the
-  new check (the `saved` parameter), still marked as saved. "Try other TLDs" re-checks the taken
+  new check (the `saved` parameter), still marked as saved and listed first. "Saved 3" beside
+  Regenerate shows only the saved domains. "Try other TLDs" re-checks the taken
   names elsewhere, and "Compare in chat" asks the chat to pick one of the saved names; it sees
   what you saved. "Download CSV" saves the free domains with prices and links.
 

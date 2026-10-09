@@ -252,9 +252,9 @@ input:focus-visible {
   box-shadow: var(--ds-thumb-shadow);
 }
 
-/* The summary, or while checking the progress, or an error: the one line read out on change. */
-/* The summary on the left, the TLD filter on the right; they stack when the line runs out. */
-.summary-row {
+/* "Regenerate" on the left; the TLD filter and the toolbar on the right. They stack when the
+   line runs out, and the right group stays right while the button is away. */
+.controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -263,13 +263,22 @@ input:focus-visible {
   margin: 0 0 8px;
 }
 
-.summary-row__main {
+.controls__end {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px 12px;
+  margin-left: auto;
 }
 
+.controls__action {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* The summary, or while checking the progress, or an error: the one line read out on change. */
 .summary {
   margin: 0;
   color: var(--ds-body);
@@ -682,6 +691,29 @@ input:focus-visible {
 /* How many names Regenerate will take as examples. */
 /* Room for two digits, so the count going from 9 to 10 moves nothing either. */
 .regenerate__count {
+  display: inline-block;
+  min-width: 2ch;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Saved 2": quiet with nothing saved, amber once something is, filled while it filters. */
+.saved-jump:disabled {
+  opacity: 0.55;
+}
+
+.saved-jump--some {
+  border-color: var(--ds-amber);
+  color: var(--ds-amber);
+}
+
+.saved-jump--some:hover,
+.saved-jump[aria-pressed='true'] {
+  background: var(--ds-amber-fill);
+}
+
+/* Room for two digits, as on Regenerate. */
+.saved-jump__count {
   display: inline-block;
   min-width: 2ch;
   font-weight: 700;
@@ -1204,7 +1236,8 @@ input:focus-visible {
 }
 
 .save[aria-pressed='true'] .icon,
-.similar[aria-pressed='true'] .icon {
+.similar[aria-pressed='true'] .icon,
+.saved-jump.saved-jump--some .icon {
   fill: currentColor;
 }
 
@@ -1224,6 +1257,24 @@ input:focus-visible {
 
   .matrix .chip-button {
     padding: 3px 6px;
+  }
+
+  /* Too narrow for one line: "Regenerate" and the toolbar first, the filter on a line below. */
+  .controls {
+    column-gap: 6px;
+  }
+
+  .controls__end {
+    display: contents;
+  }
+
+  .toolbar {
+    margin-left: auto;
+  }
+
+  .controls__filter {
+    flex: 1 1 100%;
+    order: 1;
   }
 }
 

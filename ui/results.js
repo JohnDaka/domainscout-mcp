@@ -128,6 +128,7 @@ const Copy = {
   SaveLabel: 'Save',
   Unsave: 'Remove from saved',
   CompareSaved: 'Compare in chat',
+  ShowSaved: 'Show only the saved domains',
   RegenerateAll: 'Regenerate all',
   RegenerateWith: 'Regenerate with',
   SentToChat: 'Sent to chat',
@@ -310,6 +311,8 @@ const state = {
   free: [],
   /** The TLD the free domains are filtered to; all of them while unset. */
   tld: undefined,
+  /** Only the saved domains shown, after a click on "Saved 2". */
+  onlySaved: false,
   /** The table's sort: a registrar's prices or the names, and which way; the tool's order while unset. */
   sort: { column: undefined, direction: SortDirection.Ascending },
   /** The domains the visitor saved, in the order they were saved. */
@@ -556,27 +559,27 @@ const tool = element('p', 'tool');
 tool.append(logo(), element('span', 'tool__who', Copy.ToolWho), Copy.ToolName);
 const layoutGroup = segmented(Copy.Layout, VIEW_OPTIONS, () => state.view, chooseView);
 const themeGroup = segmented(Copy.Theme, THEME_OPTIONS, currentTheme, chooseTheme);
-const toolbar = element('div', 'toolbar');
-toolbar.append(layoutGroup, themeGroup);
-header.append(tool, toolbar);
 /** The one line screen readers are told about: the progress, the summary or an error. */
 const status = element('p', 'summary');
 status.setAttribute('role', 'status');
-/** The summary on the left, the TLD filter on the right, on one line. */
+/** The tool's name on the left, the summary on the right. */
+header.append(tool, status);
 /**
- * The summary and "Regenerate" on the left, the TLD filter on the right, on one line. The button
- * sits beside the status line, not in it: a status line is read out whole on every change.
+ * "Regenerate" on the left; the TLD filter and the toolbar together on the right. The button
+ * sits apart from the status line: a status line is read out whole on every change.
  */
-const summaryRow = element('div', 'summary-row');
-const summaryMain = element('div', 'summary-row__main');
-const regenerateSlot = element('span', 'summary-row__action');
-const filterSlot = element('div', 'summary-row__filter');
-summaryMain.append(status, regenerateSlot);
-summaryRow.append(summaryMain, filterSlot);
+const controls = element('div', 'controls');
+const regenerateSlot = element('span', 'controls__action');
+const controlsEnd = element('div', 'controls__end');
+const filterSlot = element('div', 'controls__filter');
+const toolbar = element('div', 'toolbar');
+toolbar.append(layoutGroup, themeGroup);
+controlsEnd.append(filterSlot, toolbar);
+controls.append(regenerateSlot, controlsEnd);
 const fallbackBox = element('div', 'fallback');
 fallbackBox.hidden = true;
 const content = element('div', 'content');
-panel.append(header, summaryRow, fallbackBox, content);
+panel.append(header, controls, fallbackBox, content);
 document.getElementById('app').append(panel);
 
 function chooseView(view) {
@@ -734,13 +737,14 @@ function renderResult(result) {
   for (const name of names) state.everChecked.add(name);
   state.lastResult = result;
   state.tld = undefined;
+  state.onlySaved = false;
   state.sort = { column: undefined, direction: SortDirection.Ascending };
   // Domains saved on an earlier panel come back marked: they start saved here too.
   state.saved = new Map(free.filter((item) => item.saved).map((item) => [domainKey(item), item]));
   state.similar = new Map();
   showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
-  regenerateSlot.replaceChildren(...(state.can.message ? [regenerateButton()] : []));
+  regenerateSlot.replaceChildren(...(state.can.message ? [regenerateButton()] : []), savedButton());
   shareContext();
 
   const top = [];
@@ -927,6 +931,40 @@ function showNotice(text) {
   fallbackBox.hidden = false;
 }
 
+/**
+ * "Saved 2" beside Regenerate: the saved domains' count, and a filter that shows only them. A
+ * filter rather than a jump down to the saved block: the panel cannot scroll the chat around it.
+ */
+let savedCount;
+
+function savedButton() {
+  const node = button('chip-button saved-jump', undefined, () => {
+    state.onlySaved = !state.onlySaved;
+    syncSavedCount();
+    renderFree();
+  });
+  savedCount = element('span', 'saved-jump__count');
+  node.append(icon(Icon.Star), `${Copy.Saved} `, savedCount);
+  syncSavedCount();
+  return node;
+}
+
+function syncSavedCount() {
+  if (!savedCount?.isConnected) return;
+  const count = state.saved.size;
+  const node = savedCount.parentElement;
+  // The last saved domain gone while only the saved are shown: the whole list comes back.
+  if (!count && state.onlySaved) {
+    state.onlySaved = false;
+    renderFree();
+  }
+  savedCount.textContent = String(count);
+  node.disabled = !count;
+  node.classList.toggle('saved-jump--some', count > 0);
+  node.setAttribute('aria-pressed', String(state.onlySaved));
+  node.setAttribute('aria-label', `${Copy.ShowSaved}: ${count}`);
+}
+
 /** The Regenerate button and its count, updated as names are marked Similar. */
 let regenerateButtonNode;
 let regenerateCount;
@@ -958,9 +996,10 @@ function bottomActions() {
  * row from under the pointer.
  */
 function shownFree() {
-  const filtered = state.tld ? state.free.filter((item) => item.tld === state.tld) : state.free;
-  const ordered = state.view === View.Table ? sorted(filtered) : filtered;
   const isSaved = (item) => state.saved.has(domainKey(item));
+  const ofTld = state.tld ? state.free.filter((item) => item.tld === state.tld) : state.free;
+  const filtered = state.onlySaved ? ofTld.filter(isSaved) : ofTld;
+  const ordered = state.view === View.Table ? sorted(filtered) : filtered;
   return [...ordered.filter(isSaved), ...ordered.filter((item) => !isSaved(item))];
 }
 
@@ -1074,6 +1113,7 @@ function toggleSaved(item) {
 
 /** The saved domains under the free ones: each with a way to let it go, and "Compare in chat". */
 function renderSaved() {
+  syncSavedCount();
   const box = content.querySelector('.shortlist');
   if (!box) return;
   const items = [...state.saved.values()];
