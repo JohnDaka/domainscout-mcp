@@ -145,6 +145,18 @@ const Copy = {
     `Ask the chat to compare the ${count} saved domains and recommend one.`,
   SavedTipKept: 'The domains you saved: they stay through Regenerate.',
   RegenerateHint: 'Regenerate for a new batch.',
+  Settings: 'Settings for Regenerate',
+  SettingsTlds: 'TLDs to check',
+  SettingsSize: 'Names per batch',
+  SettingsAuto: 'Auto',
+  SettingsAutoLabel: 'As many as the last batch',
+  SettingsAddTld: 'Add a TLD',
+  SettingsAddPlaceholder: 'studio, co.uk…',
+  SettingsReset: 'Reset',
+  SettingsBatch: (names, tlds) =>
+    `Next batch: ${names} names × ${tlds} TLDs = ${names * tlds} domains.`,
+  SettingsCapped: (asked) =>
+    ` ${asked} names would be more than the ${MAX_DOMAINS_PER_CHECK} domains a check takes.`,
   OtherTlds: 'Try other TLDs',
   DownloadCsv: 'Download CSV',
   LinkBlocked: "Your chat app didn't open the link. Copy it:",
@@ -165,9 +177,37 @@ const RANGE_DASH = '\u2013';
 
 // ── What the panel asks the chat ──────────────────────────────────────────────────────────────
 
-/** A new batch is as big as the last one, within these bounds. */
+/** A new batch is as big as the last one, within these bounds, unless the settings say otherwise. */
 const REGENERATE_MIN = 20;
 const REGENERATE_MAX = 200;
+/** TLDs the settings offer for the next batch, besides those already checked. */
+const TLD_CHOICES = [
+  'com',
+  'net',
+  'org',
+  'co',
+  'io',
+  'ai',
+  'app',
+  'dev',
+  'xyz',
+  'shop',
+  'store',
+  'tech',
+  'cafe',
+  'me',
+];
+/** Names per batch the settings offer, each twice the one before: 10, 20, 40 and 80. */
+const SMALLEST_BATCH = 10;
+const BATCH_SIZE_COUNT = 4;
+const BATCH_SIZES = Array.from(
+  { length: BATCH_SIZE_COUNT },
+  (_, step) => SMALLEST_BATCH * 2 ** step,
+);
+/** Domains a check takes by default (names times TLDs): a bigger batch is asked with fewer names. */
+const MAX_DOMAINS_PER_CHECK = 500;
+/** A TLD typed into the settings: "studio", or one with a second level such as "co.uk". */
+const TLD_PATTERN = /^[a-z0-9-]{2,24}(.[a-z0-9-]{2,24})?$/;
 /** Taken names passed on when asking for other TLDs: enough to go on, short enough to read. */
 const TAKEN_SAMPLE = 30;
 /** Free names given as examples of a style that works. */
@@ -195,8 +235,7 @@ const Ask = {
    * names to leave out go in the model's context when the host takes it, so the chat stays short;
    * otherwise they are spelled out. The saved domains go along in "saved", so they stay.
    */
-  regenerate: ({ names, saved, tlds, free, similar }) => {
-    const count = Math.min(Math.max(names.length, REGENERATE_MIN), REGENERATE_MAX);
+  regenerate: ({ names, saved, tlds, free, similar, count }) => {
     const examples = [...new Set(free.map(label))].slice(0, STYLE_SAMPLE);
     const liked = examples.length
       ? ` in the same style (names like ${examples.join(', ')} were free)`
@@ -213,8 +252,7 @@ const Ask = {
     return `Regenerate: brainstorm ${count} new domain names${style}. ${avoid} Check them all with DomainScout in ${tldList(tlds)}.${keep}`;
   },
   /** For the in-place path: the names only, to check right here. */
-  names: ({ names, saved, tlds, free, similar }) => {
-    const count = Math.min(Math.max(state.check.names.length, REGENERATE_MIN), REGENERATE_MAX);
+  names: ({ names, saved, tlds, free, similar, count }) => {
     const examples = [...new Set(free.map(label))].slice(0, STYLE_SAMPLE);
     const style = similar.length
       ? `similar to ${similar.join(', ')} (the same style and length)`
@@ -255,6 +293,8 @@ const Theme = {
 const StorageKey = {
   View: 'domainscout.view',
   Theme: 'domainscout.theme',
+  Tlds: 'domainscout.tlds',
+  BatchSize: 'domainscout.batch',
 };
 
 /** The system's theme, until the host says otherwise. */
@@ -267,6 +307,37 @@ function readChoice(key, allowed) {
     return Object.values(allowed).includes(value) ? value : undefined;
   } catch {
     return undefined;
+  }
+}
+
+/** The TLDs kept in the settings; none when nothing was chosen or storage is blocked. */
+function readTlds() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(StorageKey.Tlds) ?? 'null');
+    if (!Array.isArray(value)) return undefined;
+    const tlds = value.filter((tld) => typeof tld === 'string' && TLD_PATTERN.test(tld));
+    return tlds.length ? tlds : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The batch size kept in the settings; none for "Auto". */
+function readBatchSize() {
+  try {
+    const value = Number(window.localStorage.getItem(StorageKey.BatchSize));
+    return BATCH_SIZES.includes(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Forgets a choice, so its default applies again. */
+function dropChoice(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // A sandbox without storage: nothing was kept.
   }
 }
 
@@ -325,6 +396,8 @@ const state = {
   saved: new Map(),
   /** The names the visitor marked as examples for Regenerate. */
   similar: new Map(),
+  /** The next batch's TLDs and size from the settings; the last check's while unset. */
+  settings: { tlds: readTlds(), size: readBatchSize() },
 };
 
 function currentTheme() {
@@ -410,6 +483,7 @@ const Icon = {
   Close: 'close',
   Sort: 'sort',
   Refresh: 'refresh',
+  Settings: 'settings',
 };
 
 /** Icons as SVG path data: drawn with strokes, in the text's color. */
@@ -440,11 +514,27 @@ const ICON_PATHS = new Map()
   .set(Icon.Download, ['M12 4v11', 'M7 10l5 5 5-5', 'M5 20h14'])
   .set(Icon.Close, ['M6 6l12 12', 'M18 6L6 18'])
   .set(Icon.Sort, ['M8 9l4-4 4 4', 'M8 15l4 4 4-4'])
-  .set(Icon.Refresh, ['M20 11a8 8 0 1 0-2.3 5.7', 'M20 4v7h-7']);
+  .set(Icon.Refresh, ['M20 11a8 8 0 1 0-2.3 5.7', 'M20 4v7h-7'])
+  .set(Icon.Settings, [
+    'M4 6h9',
+    'M17 6h3',
+    'M15 4v4',
+    'M4 12h3',
+    'M11 12h9',
+    'M9 10v4',
+    'M4 18h11',
+    'M19 18h1',
+    'M17 16v4',
+  ]);
 
 /** Attribute values used as switches. */
 const TRUE = 'true';
 const FALSE = 'false';
+/** Keys the settings answer to: Enter adds a typed TLD, Escape closes them. */
+const ENTER_KEY = 'Enter';
+const ESCAPE_KEY = 'Escape';
+/** A dot typed before a TLD, as in ".studio". */
+const LEADING_DOT = /^./;
 /** How an inlined image's address starts. */
 const DATA_URI_PREFIX = 'data:';
 /** The icon's size beside the name, in CSS pixels; the image is drawn sharper than that. */
@@ -578,14 +668,36 @@ const controls = element('div', 'controls');
 const regenerateSlot = element('span', 'controls__action');
 const controlsEnd = element('div', 'controls__end');
 const filterSlot = element('div', 'controls__filter');
+/** The settings' switch: a group of one, like the view and theme switches beside it. */
+const settingsGroup = element('div', 'segmented');
+const settingsToggle = button('segmented__option', undefined, () =>
+  openSettings(settingsBox.hidden),
+);
+settingsToggle.title = Copy.Settings;
+settingsToggle.setAttribute('aria-label', Copy.Settings);
+settingsToggle.setAttribute('aria-expanded', FALSE);
+settingsToggle.setAttribute('aria-controls', 'settings');
+settingsToggle.append(icon(Icon.Settings));
+settingsGroup.append(settingsToggle);
+settingsGroup.hidden = true;
 const toolbar = element('div', 'toolbar');
-toolbar.append(layoutGroup, themeGroup);
+toolbar.append(layoutGroup, themeGroup, settingsGroup);
 controlsEnd.append(filterSlot, toolbar);
 controls.append(regenerateSlot, controlsEnd);
+/** The settings for the next batch, under the controls while open. */
+const settingsBox = element('section', 'settings');
+settingsBox.id = 'settings';
+settingsBox.setAttribute('aria-label', Copy.Settings);
+settingsBox.hidden = true;
+settingsBox.addEventListener('keydown', (event) => {
+  if (event.key !== ESCAPE_KEY) return;
+  openSettings(false);
+  settingsToggle.focus();
+});
 const fallbackBox = element('div', 'fallback');
 fallbackBox.hidden = true;
 const content = element('div', 'content');
-panel.append(header, controls, fallbackBox, content);
+panel.append(header, controls, settingsBox, fallbackBox, content);
 document.getElementById('app').append(panel);
 
 function chooseView(view) {
@@ -749,6 +861,8 @@ function renderResult(result) {
   state.similar = new Map();
   showSummary(data, { free, taken, reserved, unknown });
   layoutGroup.hidden = !free.length;
+  settingsGroup.hidden = !state.can.message;
+  if (!settingsBox.hidden) renderSettings();
   regenerateSlot.replaceChildren(...(state.can.message ? [regenerateButton()] : []), savedButton());
   shareContext();
 
@@ -830,7 +944,15 @@ function regenerateButton() {
     const saved = [...state.saved.values()].map((item) => item.domain);
     const similar = [...new Set([...state.similar.values()].map(label))];
     const names = [...state.everChecked];
-    const batch = { ...state.check, names, saved, free: state.free, similar };
+    const batch = {
+      ...state.check,
+      names,
+      saved,
+      free: state.free,
+      similar,
+      tlds: nextTlds(),
+      count: nextCount(),
+    };
     if (state.can.sampling && state.can.serverTools) regenerateInPlace(batch);
     else regenerateThroughChat(batch, node);
   });
@@ -865,8 +987,7 @@ let sentTimer;
 
 /** The skeleton of a batch of the same size, at once, while the new names are on their way. */
 function showRegenerating(batch) {
-  const count = Math.min(Math.max(batch.names.length, REGENERATE_MIN), REGENERATE_MAX);
-  showChecking({ domains: { length: count }, tlds: batch.tlds }, Copy.Regenerating);
+  showChecking({ domains: { length: batch.count }, tlds: batch.tlds }, Copy.Regenerating);
 }
 
 /**
@@ -1052,6 +1173,28 @@ function paged(items, container, build, moreLabel) {
 // ── Filter: one TLD or all ────────────────────────────────────────────────────────────────────
 
 /** "All · .com · .ai" over the free domains, when they are in more than one TLD. */
+/** TLDs the filter shows as pills; with more, it is a menu, so the line stays one line. */
+const FILTER_PILLS_MAX = 5;
+
+/** The filter as a menu: "All · 159", ".com · 5" and so on, in the pills' look. */
+function filterMenu(options, countOf) {
+  const wrap = element('label', 'filter-menu');
+  const select = element('select', 'filter-menu__select');
+  select.setAttribute('aria-label', Copy.TldFilter);
+  for (const option of options) {
+    const item = element('option', undefined, `${option.text} · ${countOf(option.value)}`);
+    item.value = option.value ?? '';
+    item.selected = state.tld === option.value;
+    select.append(item);
+  }
+  select.addEventListener('change', () => {
+    state.tld = select.value || undefined;
+    renderFree();
+  });
+  wrap.append(select, icon(Icon.Chevron));
+  return wrap;
+}
+
 function renderFilters() {
   const box = filterSlot;
   const tlds = [...new Set(state.free.map((item) => item.tld))];
@@ -1059,17 +1202,21 @@ function renderFilters() {
     box.replaceChildren();
     return;
   }
-  const group = element('div', 'filter');
-  group.setAttribute('role', 'group');
-  group.setAttribute('aria-label', Copy.TldFilter);
   const options = [
     { value: undefined, text: Copy.AllTlds },
     ...tlds.map((tld) => ({ value: tld, text: `.${tld}` })),
   ];
+  const countOf = (value) =>
+    value ? state.free.filter((item) => item.tld === value).length : state.free.length;
+  if (tlds.length > FILTER_PILLS_MAX) {
+    box.replaceChildren(filterMenu(options, countOf));
+    return;
+  }
+  const group = element('div', 'filter');
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', Copy.TldFilter);
   for (const option of options) {
-    const count = option.value
-      ? state.free.filter((item) => item.tld === option.value).length
-      : state.free.length;
+    const count = countOf(option.value);
     const node = button('filter__option', option.text, () => {
       state.tld = option.value;
       renderFilters();
@@ -1080,6 +1227,146 @@ function renderFilters() {
     group.append(node);
   }
   box.replaceChildren(group);
+}
+
+// ── Settings: the TLDs and the size of the next batch ─────────────────────────────────────────
+
+/** The next batch's TLDs: the ones chosen in the settings, or the last check's. */
+function nextTlds() {
+  return state.settings.tlds ?? state.check.tlds;
+}
+
+/** As many names as fit the TLDs within one check, beside the saved domains checked with them. */
+function namesThatFit(tlds) {
+  const room = MAX_DOMAINS_PER_CHECK - state.saved.size;
+  return Math.max(1, Math.floor(room / Math.max(tlds.length, 1)));
+}
+
+/** As many names as the last batch, within bounds: the size on "Auto". */
+function lastBatchSize() {
+  return Math.min(Math.max(state.check.names.length, REGENERATE_MIN), REGENERATE_MAX);
+}
+
+/** The size asked for: chosen in the settings, or the last batch's. */
+function askedCount() {
+  return state.settings.size ?? lastBatchSize();
+}
+
+/** The next batch's size: as asked, but never more domains than one check takes. */
+function nextCount() {
+  return Math.min(askedCount(), namesThatFit(nextTlds()));
+}
+
+function openSettings(open) {
+  settingsBox.hidden = !open;
+  settingsToggle.setAttribute('aria-expanded', String(open));
+  settingsToggle.setAttribute('aria-pressed', String(open));
+  if (open) renderSettings();
+  reportSize();
+}
+
+function chooseTlds(tlds) {
+  state.settings.tlds = tlds;
+  keepChoice(StorageKey.Tlds, JSON.stringify(tlds));
+  renderSettings();
+}
+
+function chooseSize(size) {
+  state.settings.size = size;
+  if (size) keepChoice(StorageKey.BatchSize, String(size));
+  else dropChoice(StorageKey.BatchSize);
+  renderSettings();
+}
+
+function resetSettings() {
+  state.settings = { tlds: undefined, size: undefined };
+  dropChoice(StorageKey.Tlds);
+  dropChoice(StorageKey.BatchSize);
+  renderSettings();
+}
+
+/** A row of the settings: its name above, its options below. */
+function settingsRow(name, ...parts) {
+  const row = element('div', 'settings__row');
+  const options = element('div', 'settings__options');
+  options.setAttribute('role', 'group');
+  options.setAttribute('aria-label', name);
+  options.append(...parts);
+  row.append(element('p', 'settings__name', name), options);
+  return row;
+}
+
+/** A pill that is on or off, as in the TLD filter. */
+function pill(text, pressed, choose, label) {
+  const node = button('filter__option', text, choose);
+  node.setAttribute('aria-pressed', String(pressed));
+  if (label) node.title = label;
+  return node;
+}
+
+function renderSettings() {
+  const chosen = nextTlds();
+  const offered = [...new Set([...state.check.tlds, ...TLD_CHOICES, ...chosen])];
+  const toggle = (tld) => {
+    const next = chosen.includes(tld) ? chosen.filter((each) => each !== tld) : [...chosen, tld];
+    // One TLD at least: a batch checked nowhere is no batch.
+    if (next.length) chooseTlds(next);
+  };
+  const tlds = offered.map((tld) => pill(`.${tld}`, chosen.includes(tld), () => toggle(tld)));
+
+  const add = element('input', 'settings__input');
+  add.type = 'text';
+  add.placeholder = Copy.SettingsAddPlaceholder;
+  add.setAttribute('aria-label', Copy.SettingsAddTld);
+  add.autocomplete = 'off';
+  add.spellcheck = false;
+  add.addEventListener('keydown', (event) => {
+    if (event.key !== ENTER_KEY) return;
+    const tld = add.value.trim().toLowerCase().replace(LEADING_DOT, '');
+    if (!TLD_PATTERN.test(tld)) {
+      add.setAttribute('aria-invalid', TRUE);
+      return;
+    }
+    if (!chosen.includes(tld)) chooseTlds([...chosen, tld]);
+    settingsBox.querySelector('.settings__input')?.focus();
+  });
+
+  const auto = pill(
+    `${Copy.SettingsAuto} · ${lastBatchSize()}`,
+    !state.settings.size,
+    () => chooseSize(undefined),
+    Copy.SettingsAutoLabel,
+  );
+  const sizes = BATCH_SIZES.map((size) =>
+    pill(String(size), state.settings.size === size, () => chooseSize(size)),
+  );
+
+  const count = nextCount();
+  const capped = count < askedCount() ? Copy.SettingsCapped(askedCount()) : '';
+  const summary = element(
+    'p',
+    'settings__summary',
+    `${Copy.SettingsBatch(count, chosen.length)}${capped}`,
+  );
+  const reset = button('action', Copy.SettingsReset, resetSettings);
+  const footer = element('div', 'settings__footer');
+  footer.append(summary, reset);
+
+  // Rebuilt on each change, so keep the focus on the control that made it.
+  const focused = document.activeElement;
+  const focusedText = settingsBox.contains(focused) ? focused.textContent : undefined;
+  settingsBox.replaceChildren(
+    settingsRow(Copy.SettingsTlds, ...tlds, add),
+    settingsRow(Copy.SettingsSize, auto, ...sizes),
+    footer,
+  );
+  if (focusedText) {
+    const again = [...settingsBox.querySelectorAll('button')].find(
+      (node) => node.textContent === focusedText,
+    );
+    again?.focus();
+  }
+  reportSize();
 }
 
 // ── Saved: the domains the visitor keeps, shared with the chat ───────────────────────────────

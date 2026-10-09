@@ -320,6 +320,77 @@ input:focus-visible {
   transition-delay: 400ms;
 }
 
+/* The settings for the next batch, open under the controls: the TLDs, the size, the total. */
+.settings {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius);
+  background: var(--ds-raised);
+}
+
+.settings[hidden] {
+  display: none;
+}
+
+.settings__row {
+  display: grid;
+  gap: 6px;
+}
+
+.settings__name {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings__input {
+  width: 120px;
+  padding: 3px 10px;
+  border: 1px dashed var(--ds-panel-border);
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+  color: var(--ds-body);
+  font: inherit;
+  font-size: 12px;
+}
+
+.settings__input:focus {
+  border-style: solid;
+  border-color: var(--ds-cyan);
+  outline: none;
+}
+
+.settings__input[aria-invalid='true'] {
+  border-color: var(--ds-amber);
+}
+
+.settings__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.settings__summary {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+
 /* The summary, or while checking the progress, or an error: the one line read out on change. */
 .summary {
   margin: 0;
@@ -1082,6 +1153,37 @@ input:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* Many TLDs: the filter as a menu in a pill, its arrow drawn over the native one's place. */
+.filter-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-menu__select {
+  appearance: none;
+  padding: 3px 28px 3px 12px;
+  border: 1px solid var(--ds-accent-border);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-accent-fill);
+  color: var(--ds-cyan);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filter-menu__select option {
+  background: var(--ds-tip);
+  color: var(--ds-body);
+}
+
+.filter-menu .icon {
+  position: absolute;
+  right: 10px;
+  color: var(--ds-cyan);
+  pointer-events: none;
 }
 
 .filter__option {
