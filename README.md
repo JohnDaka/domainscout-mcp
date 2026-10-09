@@ -146,7 +146,7 @@ panel, the same as on [the website](https://domainscout.dakaio.com):
   the chat brainstorms a new batch like the marked names (or in the same style, when none are
   marked) that leaves out every name checked so far, and the saved domains come along in the
   new check (the `saved` parameter), still marked as saved and listed first. "Saved 3" beside
-  Regenerate shows only the saved domains. "Try other TLDs" re-checks the taken
+  Regenerate asks the chat to compare the saved domains; both buttons explain themselves on hover. "Try other TLDs" re-checks the taken
   names elsewhere, and "Compare in chat" asks the chat to pick one of the saved names; it sees
   what you saved. "Download CSV" saves the free domains with prices and links.
 

@@ -128,14 +128,22 @@ const Copy = {
   SaveLabel: 'Save',
   Unsave: 'Remove from saved',
   CompareSaved: 'Compare in chat',
-  ShowSaved: 'Show only the saved domains',
   RegenerateAll: 'Regenerate all',
   RegenerateWith: 'Regenerate with',
   SentToChat: 'Sent to chat',
   Regenerating: 'Regenerating: new names on the way…',
   NewBatchBelow: 'Asked the chat for a new batch: it will appear below this panel.',
   NoNewNames: 'The model suggested no new names.',
-  RegenerateLabel: 'New names, none of those checked so far; the saved ones stay',
+  RegenerateTipAll:
+    'A new batch of names in the same style, checked right away. Saved domains stay; names checked before never come back.',
+  RegenerateTipWith: (count) =>
+    `A new batch of names like the ${count} marked Similar, checked right away. Saved domains stay; names checked before never come back.`,
+  SavedTipNone:
+    'Save the domains you like: they stay through Regenerate, and the chat can compare them.',
+  SavedTipOne: 'Save one more domain to compare them in chat.',
+  SavedTipCompare: (count) =>
+    `Ask the chat to compare the ${count} saved domains and recommend one.`,
+  SavedTipKept: 'The domains you saved: they stay through Regenerate.',
   RegenerateHint: 'Regenerate for a new batch.',
   OtherTlds: 'Try other TLDs',
   DownloadCsv: 'Download CSV',
@@ -311,8 +319,6 @@ const state = {
   free: [],
   /** The TLD the free domains are filtered to; all of them while unset. */
   tld: undefined,
-  /** Only the saved domains shown, after a click on "Saved 2". */
-  onlySaved: false,
   /** The table's sort: a registrar's prices or the names, and which way; the tool's order while unset. */
   sort: { column: undefined, direction: SortDirection.Ascending },
   /** The domains the visitor saved, in the order they were saved. */
@@ -737,7 +743,6 @@ function renderResult(result) {
   for (const name of names) state.everChecked.add(name);
   state.lastResult = result;
   state.tld = undefined;
-  state.onlySaved = false;
   state.sort = { column: undefined, direction: SortDirection.Ascending };
   // Domains saved on an earlier panel come back marked: they start saved here too.
   state.saved = new Map(free.filter((item) => item.saved).map((item) => [domainKey(item), item]));
@@ -829,7 +834,6 @@ function regenerateButton() {
     if (state.can.sampling && state.can.serverTools) regenerateInPlace(batch);
     else regenerateThroughChat(batch, node);
   });
-  node.title = Copy.RegenerateLabel;
   // "Regenerate all" and "Regenerate with 2" share one cell, one of them hidden: the button keeps
   // the wider one's width, so marking the first name moves nothing and nothing wraps.
   regenerateCount = element('span', 'regenerate__count');
@@ -931,17 +935,16 @@ function showNotice(text) {
   fallbackBox.hidden = false;
 }
 
-/**
- * "Saved 2" beside Regenerate: the saved domains' count, and a filter that shows only them. A
- * filter rather than a jump down to the saved block: the panel cannot scroll the chat around it.
- */
+/** Saved domains the chat compares: one alone has nothing to be compared with. */
+const MIN_TO_COMPARE = 2;
+
+/** "Saved 2" beside Regenerate: how many domains are saved, and a request to compare them. */
 let savedCount;
 
 function savedButton() {
   const node = button('chip-button saved-jump', undefined, () => {
-    state.onlySaved = !state.onlySaved;
-    syncSavedCount();
-    renderFree();
+    const items = [...state.saved.values()];
+    if (state.can.message && items.length >= MIN_TO_COMPARE) sendToChat(Ask.compare(items));
   });
   savedCount = element('span', 'saved-jump__count');
   node.append(icon(Icon.Star), `${Copy.Saved} `, savedCount);
@@ -953,16 +956,25 @@ function syncSavedCount() {
   if (!savedCount?.isConnected) return;
   const count = state.saved.size;
   const node = savedCount.parentElement;
-  // The last saved domain gone while only the saved are shown: the whole list comes back.
-  if (!count && state.onlySaved) {
-    state.onlySaved = false;
-    renderFree();
-  }
+  const canCompare = state.can.message && count >= MIN_TO_COMPARE;
   savedCount.textContent = String(count);
-  node.disabled = !count;
   node.classList.toggle('saved-jump--some', count > 0);
-  node.setAttribute('aria-pressed', String(state.onlySaved));
-  node.setAttribute('aria-label', `${Copy.ShowSaved}: ${count}`);
+  // Not disabled outright: a disabled button gets no hover, and the tip says what to do.
+  node.setAttribute('aria-disabled', String(!canCompare));
+  let tip = Copy.SavedTipNone;
+  if (canCompare) tip = Copy.SavedTipCompare(count);
+  else if (count && state.can.message) tip = Copy.SavedTipOne;
+  else if (count) tip = Copy.SavedTipKept;
+  setTip(node, `${Copy.Saved} ${count}`, tip);
+}
+
+/**
+ * A short tip under a button on hover and on keyboard focus, drawn by CSS from data-tip; screen
+ * readers get it as the button's description.
+ */
+function setTip(node, name, tip) {
+  node.dataset.tip = tip;
+  node.setAttribute('aria-label', `${name}. ${tip}`);
 }
 
 /** The Regenerate button and its count, updated as names are marked Similar. */
@@ -974,8 +986,12 @@ function syncRegenerateCount() {
   const count = state.similar.size;
   regenerateCount.textContent = String(count);
   regenerateButtonNode.classList.toggle('regenerate--with', count > 0);
-  const spoken = count ? `${Copy.RegenerateWith} ${count} similar names` : Copy.RegenerateAll;
-  regenerateButtonNode.setAttribute('aria-label', spoken);
+  const spoken = count ? `${Copy.RegenerateWith} ${count}` : Copy.RegenerateAll;
+  setTip(
+    regenerateButtonNode,
+    spoken,
+    count ? Copy.RegenerateTipWith(count) : Copy.RegenerateTipAll,
+  );
 }
 
 /** Under the domains: the domains as a file. */
@@ -997,8 +1013,7 @@ function bottomActions() {
  */
 function shownFree() {
   const isSaved = (item) => state.saved.has(domainKey(item));
-  const ofTld = state.tld ? state.free.filter((item) => item.tld === state.tld) : state.free;
-  const filtered = state.onlySaved ? ofTld.filter(isSaved) : ofTld;
+  const filtered = state.tld ? state.free.filter((item) => item.tld === state.tld) : state.free;
   const ordered = state.view === View.Table ? sorted(filtered) : filtered;
   return [...ordered.filter(isSaved), ...ordered.filter((item) => !isSaved(item))];
 }

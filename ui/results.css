@@ -13,6 +13,7 @@
   --ds-panel: #0a0d14;
   --ds-panel-border: #1e2027;
   --ds-raised: #12151c;
+  --ds-tip: #181b21;
   --ds-divider: #181b21;
   --ds-heading: #ffffff;
   --ds-body: #c7c9ea;
@@ -50,6 +51,7 @@
   --ds-panel: #ffffff;
   --ds-panel-border: rgba(15, 18, 40, 0.1);
   --ds-raised: rgba(15, 18, 40, 0.045);
+  --ds-tip: #ffffff;
   --ds-divider: rgba(15, 18, 40, 0.08);
   --ds-heading: #0f1228;
   --ds-body: #3b3f63;
@@ -276,6 +278,46 @@ input:focus-visible {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* What a button does, under it on hover or keyboard focus: after a moment, so passing over the
+   buttons does not flash tips. Above the table, never pushing anything. */
+.controls__action [data-tip] {
+  position: relative;
+}
+
+.controls__action [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 10px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-control);
+  background: var(--ds-tip);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--ds-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--ds-quick),
+    visibility var(--ds-quick);
+}
+
+.controls__action [data-tip]:hover::after,
+.controls__action [data-tip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 400ms;
 }
 
 /* The summary, or while checking the progress, or an error: the one line read out on change. */
@@ -697,9 +739,13 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-/* "Saved 2": quiet with nothing saved, amber once something is, filled while it filters. */
-.saved-jump:disabled {
-  opacity: 0.55;
+/* "Saved 2": quiet with nothing saved, amber once something is. */
+.saved-jump[aria-disabled='true'] {
+  cursor: default;
+}
+
+.saved-jump:not(.saved-jump--some) {
+  color: var(--ds-muted);
 }
 
 .saved-jump--some {
@@ -707,8 +753,7 @@ input:focus-visible {
   color: var(--ds-amber);
 }
 
-.saved-jump--some:hover,
-.saved-jump[aria-pressed='true'] {
+.saved-jump--some[aria-disabled='false']:hover {
   background: var(--ds-amber-fill);
 }
 
