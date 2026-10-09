@@ -781,6 +781,8 @@ function fewFreeNote(free, total) {
  */
 function regenerateButton() {
   const node = button('chip-button regenerate', undefined, () => {
+    // Sent a moment ago: a second click would only ask the chat the same thing again.
+    if (node.classList.contains(SENT_CLASS)) return;
     const saved = [...state.saved.values()].map((item) => item.domain);
     const similar = [...new Set([...state.similar.values()].map(label))];
     sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free, similar }));
