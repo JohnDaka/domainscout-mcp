@@ -9,9 +9,9 @@ RELEASE.md
 # Local folders and agent settings. Of the scripts, only the release commands are shared.
 /docs
 /scripts/*
-!/scripts/release.mjs
 !/scripts/sync-version.mjs
 !/scripts/sync-plugin.mjs
+!/scripts/changelog.mjs
 
 # Local editor and agent settings (the site preview server lives here).
 .claude/

@@ -1,7 +1,8 @@
-// Runs as `npm run plugin`, once the version in package.json is on npm: points the Claude plugin
-// (plugin/) at it. The plugin's manifest takes the version, .mcp.json runs the package at it, and
-// plugin/package.json with its package-lock.json pins it with the registry's hashes, which the
-// plugin directory asks for. Only a published version has hashes, so this comes after the release.
+// Runs as `npm run plugin` (publish.yml's last step), once the version in package.json is on npm:
+// points the Claude plugin (plugin/) at it. The plugin's manifest takes the version, .mcp.json runs
+// the package at it, and plugin/package.json with its package-lock.json pins it with the
+// registry's hashes, which the plugin directory asks for. Only a published version has hashes, so
+// this comes after the release.
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -43,7 +44,7 @@ const pinned = `${name}${VERSION_SEPARATOR}${version}`;
 try {
   npm(['view', pinned, 'version']);
 } catch {
-  console.error(`${pinned} is not on npm yet: release it first (npm run release), then run this.`);
+  console.error(`${pinned} is not on npm yet: publish it first, then run this.`);
   process.exit(1);
 }
 

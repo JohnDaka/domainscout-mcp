@@ -1,29 +1,107 @@
 name: publish
 
-# A `v<version>` tag, pushed by `npm run release` from main. The version is package.json's, and
-# manifest.json and server.json must say the same. The Claude plugin (plugin/) follows once this
-# version is on npm: `npm run plugin` pins it with a lockfile, and Claude's plugin directory reads
-# it from main. One run puts the release everywhere:
-#   1. npm, with trusted publishing;
-#   2. a GitHub Release with the Claude Desktop extension, which the landing page's
+# Every merge into main can be a release. The pull request's title says which:
+#   feat: …            a minor version (1.5.2 -> 1.6.0)
+#   fix: …, perf: …    a patch version (1.5.2 -> 1.5.3)
+#   feat!: …, or "BREAKING CHANGE" in its description: a major version (1.5.2 -> 2.0.0)
+#   docs, build, chore, test, ci, refactor, style, revert: no release
+# and only a change to what the package ships (src/, ui/, assets/, package.json, the lockfile,
+# manifest.json, server.json, README.md, LICENSE) is released at all. The landing page has its own
+# workflow (landing.yml), which puts site/ out on every change to it.
+#
+# One run then puts the release everywhere, in this order:
+#   1. the version raised in package.json, the lockfile, manifest.json and server.json, and the
+#      merged pull requests added to CHANGELOG.md, committed to main as
+#      "release: v<version> [skip ci]" and tagged v<version>;
+#   2. npm, with trusted publishing (npm knows this workflow by its file name: keep it);
+#   3. a GitHub Release with the Claude Desktop extension, which the landing page's
 #      "Add to Claude Desktop" button downloads;
-#   3. the official MCP Registry, once the MCP_REGISTRY_KEY secret is set.
-# A step whose work is already done (a version on npm, a release on GitHub, a version in the
-# Registry) says so and moves on: a re-run or a version published by hand is not an error.
+#   4. the official MCP Registry, once npm serves the version and if MCP_REGISTRY_KEY is set;
+#   5. the Claude plugin (plugin/) pinned to the version with its lockfile, committed to main;
+#      Claude's plugin directory reads it from there.
+# Actions → publish → Run workflow releases main by hand, at the size chosen there. A step whose
+# work is done already (a version on npm, a release on GitHub, a version in the Registry) says so
+# and moves on.
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to raise
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
 concurrency:
   group: publish
   cancel-in-progress: false
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      bump: ${{ steps.plan.outputs.bump }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # The pull request this merge came from: its title and description decide the release.
+      - name: Decide the release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+          MANUAL_BUMP: ${{ inputs.bump }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "bump=${MANUAL_BUMP}" >> "$GITHUB_OUTPUT"
+            echo "::notice::Released by hand: ${MANUAL_BUMP}"
+            exit 0
+          fi
+          pr="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[0] // empty')"
+          if [ -n "${pr}" ]; then
+            title="$(jq -r '.title' <<< "${pr}")"
+            body="$(jq -r '.body // ""' <<< "${pr}")"
+          else
+            title="$(git log -1 --format=%s "${GITHUB_SHA}")"
+            body="$(git log -1 --format=%b "${GITHUB_SHA}")"
+          fi
+          bump=""
+          if [[ "${title}" =~ ^[a-z]+(\([^\)]*\))?!: ]] || grep -q "BREAKING CHANGE" <<< "${body}"; then
+            bump=major
+          elif [[ "${title}" =~ ^feat(\([^\)]*\))?: ]]; then
+            bump=minor
+          elif [[ "${title}" =~ ^(fix|perf)(\([^\)]*\))?: ]]; then
+            bump=patch
+          fi
+          if [ -z "${bump}" ]; then
+            echo "::notice::\"${title}\" is not a feat, fix or perf: no release."
+            exit 0
+          fi
+          base="${BEFORE}"
+          if [ -z "${base}" ] || [ "${base}" = "0000000000000000000000000000000000000000" ]; then
+            base="${GITHUB_SHA}~1"
+          fi
+          shipped='^(src/|ui/|assets/|package\.json$|package-lock\.json$|manifest\.json$|server\.json$|README\.md$|LICENSE$)'
+          if ! git diff --name-only "${base}" "${GITHUB_SHA}" | grep -qE "${shipped}"; then
+            echo "::notice::\"${title}\" changes nothing the package ships: no release."
+            exit 0
+          fi
+          echo "bump=${bump}" >> "$GITHUB_OUTPUT"
+          echo "::notice::\"${title}\": a ${bump} release."
+
   publish:
+    needs: plan
+    if: needs.plan.outputs.bump != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      # The GitHub Release.
+      # The version commits on main, the tag and the GitHub Release.
       contents: write
       # npm trusted publishing: npm takes this workflow's identity instead of a stored token, and
       # the package page shows which commit and workflow built it (provenance).
@@ -35,41 +113,64 @@ jobs:
       # Where server.json's name lives in the Registry.
       MCP_REGISTRY_SERVER: com.dakaio%2Fdomainscout
     steps:
+      # main as it is now, not the merge that started this: a release before it may have moved it.
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           # No registry-url: it writes an .npmrc with a placeholder token, which npm then sends
           # instead of the workflow's identity. npm's own registry is the default anyway.
-      - name: The tag and every version agree
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "::error::Tag ${GITHUB_REF_NAME} is not v${version}"; exit 1; }
-          for other in \
-            "manifest.json:$(node -p "require('./manifest.json').version")" \
-            "server.json:$(node -p "require('./server.json').version")" \
-            "server.json packages:$(node -p "require('./server.json').packages[0].version")"; do
-            test "${other##*:}" = "${version}" || { echo "::error::${other%:*} says ${other##*:}, package.json says ${version}"; exit 1; }
-          done
-          echo "NAME=$(node -p "require('./package.json').name")" >> "$GITHUB_ENV"
-          echo "VERSION=${version}" >> "$GITHUB_ENV"
       - run: npm ci
+      - name: Who commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      # npm version runs the "version" script, which copies the version into manifest.json and
+      # server.json. A release whose last step, the plugin, never ran is finished instead: its tag
+      # is there but the plugin is not on its version, so a re-run raises nothing twice.
+      - name: Raise the version, unless the last release is unfinished
+        run: |
+          current="$(node -p "require('./package.json').version")"
+          plugin="$(node -p "require('./plugin/.claude-plugin/plugin.json').version")"
+          if git rev-parse -q --verify "refs/tags/v${current}" > /dev/null && [ "${plugin}" != "${current}" ]; then
+            echo "::notice::v${current} is tagged but not finished: finishing it."
+            echo "RAISED=false" >> "$GITHUB_ENV"
+          else
+            npm version "${{ needs.plan.outputs.bump }}" --no-git-tag-version
+            node scripts/changelog.mjs
+            echo "RAISED=true" >> "$GITHUB_ENV"
+          fi
+          echo "NAME=$(node -p "require('./package.json').name")" >> "$GITHUB_ENV"
+          echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
       # Types, lint and the tests with their coverage thresholds: below them nothing is published.
       - run: npm run verify
       - run: npm run build
+      # [skip ci]: the commit starts no workflow of its own.
+      - name: Commit and tag the version
+        if: env.RAISED == 'true'
+        run: |
+          git add package.json package-lock.json manifest.json server.json CHANGELOG.md
+          git commit -m "release: v${VERSION} [skip ci]"
+          git pull --rebase origin main
+          git tag "v${VERSION}"
+          git push origin HEAD:main "v${VERSION}"
       # Trusted publishing needs npm 11.5.1 or later. Not 12: npm 12 drops npm-shrinkwrap.json from
       # the package, and the shrinkwrap is what pins the dependencies npx installs.
       - run: npm install --global npm@11
       # The lockfile goes into the package as its shrinkwrap; the repository keeps package-lock.json,
       # which every npm reads.
       - run: cp package-lock.json npm-shrinkwrap.json
+      # --ignore-scripts: prepublishOnly would verify and build again, as was just done above.
       - name: Publish to npm, unless this version is on npm already
         run: |
           if npm view "${NAME}@${VERSION}" version > /dev/null 2>&1; then
             echo "::notice::${NAME}@${VERSION} is on npm already: nothing to publish."
           else
-            npm publish
+            npm publish --ignore-scripts
           fi
       # The bundle holds the build, the production dependencies and the manifest; Claude Desktop
       # runs it with its own Node.
@@ -85,21 +186,21 @@ jobs:
           npx -y @anthropic-ai/mcpb@2 pack bundle domainscout.mcpb
       - name: Publish the GitHub Release, unless it exists already
         run: |
-          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
-            echo "::notice::The release ${GITHUB_REF_NAME} exists already."
+          if gh release view "v${VERSION}" > /dev/null 2>&1; then
+            echo "::notice::The release v${VERSION} exists already."
           else
-            gh release create "${GITHUB_REF_NAME}" domainscout.mcpb \
-              --title "DomainScout ${GITHUB_REF_NAME}" --generate-notes
+            gh release create "v${VERSION}" domainscout.mcpb \
+              --title "DomainScout v${VERSION}" --generate-notes
           fi
         env:
           GH_TOKEN: ${{ github.token }}
-      # The Registry checks the package on npm, and a new version can take a few minutes to appear.
+      # npm can take a few minutes to serve a new version, and both the Registry and the plugin's
+      # lockfile need it served. The loop ends as soon as it is.
       - name: Wait until npm serves this version
-        if: env.MCP_REGISTRY_KEY != ''
         run: |
-          for attempt in $(seq 1 30); do
+          for attempt in $(seq 1 60); do
             npm view "${NAME}@${VERSION}" version > /dev/null 2>&1 && exit 0
-            sleep 20
+            sleep 10
           done
           echo "::error::${NAME}@${VERSION} did not appear on npm in 10 minutes"
           exit 1
@@ -115,3 +216,17 @@ jobs:
             | tar xz mcp-publisher
           ./mcp-publisher login dns --domain dakaio.com --private-key "${MCP_REGISTRY_KEY}"
           ./mcp-publisher publish
+      # The plugin's lockfile can only hash a version npm serves, so it comes last.
+      - name: Point the Claude plugin at this version
+        run: |
+          rm -f npm-shrinkwrap.json mcp-publisher domainscout.mcpb
+          rm -rf bundle
+          npm run plugin
+          git add plugin
+          if git diff --cached --quiet; then
+            echo "::notice::The plugin is on ${VERSION} already."
+            exit 0
+          fi
+          git commit -m "build: Claude plugin ${VERSION} [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -289,17 +289,19 @@ npm run build
 | `src/scout/`, `src/server/`, `src/cli/` | The check as a whole, the MCP server and the command line |
 | `test/` | Vitest tests; the network is faked, except for a local WHOIS server |
 | `examples/` | Real output of the tool |
-| `site/` | The landing page at domainscout.dakaio.com: static HTML, released by a `landing-v<version>` tag (`npm --prefix site run release`) |
+| `site/` | The landing page at domainscout.dakaio.com: static HTML, put out on every change merged into `main` |
 | `server.json`, `manifest.json`, `glama.json` | Listings: the MCP Registry, the Claude Desktop extension, Glama |
 
-Releases: raise the version in a pull request with `npm run bump patch` (or `minor`, or an exact
-version such as `npm run bump 1.2.0`); it updates `package.json`, `package-lock.json`,
-`manifest.json` and `server.json` together. Then run `npm run release` on the merged `main`. It pushes the tag `v<version>`, and
-`.github/workflows/publish.yml` publishes to npm (trusted publishing), creates a GitHub Release
-with the Claude Desktop extension and publishes to the MCP Registry. Once the version is on npm,
-`npm run plugin` points the Claude plugin at it, with a lockfile, in a pull request of its own.
-The landing page goes out the
-same way: `npm run bump:site patch` in a pull request, then `npm --prefix site run release`.
+Releases happen on merge. A pull request's title says what it is (`feat: …`, `fix: …`,
+`docs: …`, `feat!: …`; `.github/workflows/pr-title.yml` checks it), and once it is merged into
+`main`, `.github/workflows/publish.yml` decides: `feat` raises the minor version, `fix` and
+`perf` the patch version, a `!` or "BREAKING CHANGE" the major one, and anything else, or a
+change to nothing the package ships, releases nothing. A release raises the version in
+`package.json`, `manifest.json` and `server.json`, adds the merged pull requests to
+[CHANGELOG.md](CHANGELOG.md), tags it, publishes to npm (trusted
+publishing), creates a GitHub Release with the Claude Desktop extension, publishes to the MCP
+Registry and points the Claude plugin at the new version with a lockfile, committing to `main`
+as it goes. The landing page goes out on every change to `site/` (`.github/workflows/landing.yml`).
 
 ## License
 
