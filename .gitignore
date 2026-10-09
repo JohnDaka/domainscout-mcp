@@ -11,6 +11,7 @@ RELEASE.md
 /scripts/*
 !/scripts/release.mjs
 !/scripts/sync-version.mjs
+!/scripts/sync-plugin.mjs
 
 # Local editor and agent settings (the site preview server lives here).
 .claude/

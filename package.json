@@ -21,7 +21,8 @@
     "assets/icon-128.png",
     "ui",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "npm-shrinkwrap.json"
   ],
   "publishConfig": {
     "access": "public"
@@ -42,7 +43,8 @@
     "prepublishOnly": "npm run verify && npm run build",
     "bump": "npm version --no-git-tag-version",
     "bump:site": "npm --prefix site version --no-git-tag-version",
-    "version": "node scripts/sync-version.mjs && biome format --write manifest.json server.json plugin/.claude-plugin/plugin.json plugin/.mcp.json",
+    "version": "node scripts/sync-version.mjs && biome format --write manifest.json server.json",
+    "plugin": "node scripts/sync-plugin.mjs && biome format --write plugin/.claude-plugin/plugin.json plugin/.mcp.json plugin/package.json",
     "release": "node scripts/release.mjs"
   },
   "engines": {

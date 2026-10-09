@@ -293,10 +293,12 @@ npm run build
 | `server.json`, `manifest.json`, `glama.json` | Listings: the MCP Registry, the Claude Desktop extension, Glama |
 
 Releases: raise the version in a pull request with `npm run bump patch` (or `minor`, or an exact
-version such as `npm run bump 1.2.0`); it updates `package.json`, `package-lock.json`,
+version such as `npm run bump 1.2.0`); it updates `package.json`, `npm-shrinkwrap.json`,
 `manifest.json` and `server.json` together. Then run `npm run release` on the merged `main`. It pushes the tag `v<version>`, and
 `.github/workflows/publish.yml` publishes to npm (trusted publishing), creates a GitHub Release
-with the Claude Desktop extension and publishes to the MCP Registry. The landing page goes out the
+with the Claude Desktop extension and publishes to the MCP Registry. Once the version is on npm,
+`npm run plugin` points the Claude plugin at it, with a lockfile, in a pull request of its own.
+The landing page goes out the
 same way: `npm run bump:site patch` in a pull request, then `npm --prefix site run release`.
 
 ## License

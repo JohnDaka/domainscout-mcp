@@ -1,6 +1,5 @@
 {
   "name": "domainscout",
-  "displayName": "DomainScout",
   "version": "1.5.0",
   "description": "Domain research for AI agents: brainstorm hundreds of names and check them all in one call, with prices and where to buy.",
   "author": {
@@ -12,9 +11,6 @@
   "license": "MIT",
   "keywords": ["domains", "domain search", "domain availability", "naming", "rdap", "whois"],
   "icon": "./icon.png",
-  "documentationUrl": "https://github.com/JohnDaka/domainscout-mcp/tree/main/plugin#readme",
-  "supportUrl": "https://github.com/JohnDaka/domainscout-mcp/issues",
-  "privacyPolicyUrl": "https://domainscout.dakaio.com/privacy.html",
   "userConfig": {
     "tlds": {
       "type": "string",
