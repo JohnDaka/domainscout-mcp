@@ -481,6 +481,7 @@ h3 {
 /* The panel the tool answers with, photographed on a real check; it fades out at the bottom. */
 .hero__panel {
   display: block;
+  margin-top: 20px;
   width: 100%;
   height: auto;
   border-radius: var(--radius-small);
@@ -503,18 +504,6 @@ h3 {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-}
-
-.chat__tool {
-  margin: 20px 0 8px;
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--cyan);
-}
-
-.chat__tool .chat__who {
-  display: inline;
-  margin-right: 8px;
 }
 
 .results {
