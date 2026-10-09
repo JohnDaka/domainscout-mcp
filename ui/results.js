@@ -128,6 +128,7 @@ const Copy = {
   CompareSaved: 'Compare in chat',
   RegenerateAll: 'Regenerate all',
   RegenerateWith: 'Regenerate with',
+  SentToChat: 'Sent to chat',
   RegenerateLabel: 'New names, none of those checked so far; the saved ones stay',
   RegenerateHint: 'Regenerate for a new batch.',
   OtherTlds: 'Try other TLDs',
@@ -182,7 +183,7 @@ const Ask = {
    */
   regenerate: ({ names, saved, tlds, free, similar }) => {
     const count = Math.min(Math.max(names.length, REGENERATE_MIN), REGENERATE_MAX);
-    const examples = free.slice(0, STYLE_SAMPLE).map(label);
+    const examples = [...new Set(free.map(label))].slice(0, STYLE_SAMPLE);
     const liked = examples.length
       ? ` in the same style (names like ${examples.join(', ')} were free)`
       : '';
@@ -627,10 +628,32 @@ function showChecking(input) {
   const tlds = Array.isArray(input?.tlds) && input.tlds.length ? input.tlds : undefined;
   const where = tlds ? ` in ${tldList(tlds)}` : '';
   setStatus(count ? `Checking ${count} names${where}…` : Copy.Checking, StatusKind.Progress);
-  content.replaceChildren(element('div', 'progress'));
+  content.replaceChildren(element('div', 'progress'), skeleton(count));
   filterSlot.replaceChildren();
   regenerateSlot.replaceChildren();
   layoutGroup.hidden = false;
+}
+
+/** Rows the skeleton shows while checking: as many as the names, up to a screenful. */
+const SKELETON_ROWS = 8;
+/** The skeleton's cells: the name, the two buttons, two prices and "N more". */
+const SKELETON_CELLS = ['name', 'button', 'button', 'price', 'price', 'more'];
+
+/**
+ * The shape of the results to come, in shimmering placeholders: the panel already has its size
+ * while the check runs, and the table drops into place without a jump.
+ */
+function skeleton(count) {
+  const box = element('div', 'skeleton');
+  box.setAttribute('aria-hidden', TRUE);
+  const rows = Math.min(Math.max(count, 1), SKELETON_ROWS);
+  for (let index = 0; index < rows; index++) {
+    const row = element('div', 'skeleton__row');
+    for (const kind of SKELETON_CELLS)
+      row.append(element('span', `skeleton__bar skeleton__bar--${kind}`));
+    box.append(row);
+  }
+  return box;
 }
 
 function showMessage(text, kind) {
@@ -759,8 +782,9 @@ function fewFreeNote(free, total) {
 function regenerateButton() {
   const node = button('chip-button regenerate', undefined, () => {
     const saved = [...state.saved.values()].map((item) => item.domain);
-    const similar = [...state.similar.values()].map(label);
+    const similar = [...new Set([...state.similar.values()].map(label))];
     sendToChat(Ask.regenerate({ ...state.check, saved, free: state.free, similar }));
+    showSent(node);
   });
   node.title = Copy.RegenerateLabel;
   // "Regenerate all" and "Regenerate with 2" share one cell, one of them hidden: the button keeps
@@ -769,12 +793,28 @@ function regenerateButton() {
   const withCount = element('span', 'swap__on', `${Copy.RegenerateWith} `);
   withCount.append(regenerateCount);
   const words = element('span', 'swap');
-  words.append(element('span', 'swap__off', Copy.RegenerateAll), withCount);
+  const sent = element('span', 'swap__sent', Copy.SentToChat);
+  words.append(element('span', 'swap__off', Copy.RegenerateAll), withCount, sent);
   node.append(icon(Icon.Refresh), words);
   regenerateButtonNode = node;
   syncRegenerateCount();
   return node;
 }
+
+/**
+ * Says the request went to the chat, for a moment: the new check comes as a new panel under the
+ * message, not in this one, so this panel only confirms it was asked.
+ */
+function showSent(node) {
+  node.classList.add(SENT_CLASS);
+  window.clearTimeout(sentTimer);
+  sentTimer = window.setTimeout(() => node.classList.remove(SENT_CLASS), SENT_SHOWN_MS);
+}
+
+/** The class that shows "Sent to chat" on Regenerate, and for how long. */
+const SENT_CLASS = 'regenerate--sent';
+const SENT_SHOWN_MS = 4000;
+let sentTimer;
 
 /** The Regenerate button and its count, updated as names are marked Similar. */
 let regenerateButtonNode;

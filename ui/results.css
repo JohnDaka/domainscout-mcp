@@ -355,6 +355,65 @@ input:focus-visible {
   animation: slide 1.2s ease-in-out infinite;
 }
 
+/* The skeleton of the table to come: a row per name, its cells as shimmering bars. */
+.skeleton {
+  margin-top: 12px;
+  border: 1px solid var(--ds-panel-border);
+  border-radius: var(--ds-radius-card);
+  overflow: hidden;
+}
+
+.skeleton__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px 80px 64px 64px 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--ds-divider);
+}
+
+.skeleton__row:last-child {
+  border-bottom: 0;
+}
+
+.skeleton__bar {
+  height: 10px;
+  border-radius: var(--ds-radius-pill);
+  background: linear-gradient(
+    90deg,
+    var(--ds-raised) 25%,
+    var(--ds-divider) 50%,
+    var(--ds-raised) 75%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton__bar--name {
+  width: 60%;
+}
+
+.skeleton__row:nth-child(3n + 2) .skeleton__bar--name {
+  width: 45%;
+}
+
+.skeleton__row:nth-child(3n) .skeleton__bar--name {
+  width: 70%;
+}
+
+.skeleton__bar--button {
+  height: 22px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
 @keyframes slide {
   from {
     transform: translateX(-100%);
@@ -578,6 +637,13 @@ input:focus-visible {
 /* "Regenerate all" until names are marked Similar, then "Regenerate with 2", in one cell. */
 .regenerate:not(.regenerate--with) .swap__on,
 .regenerate--with .swap__off {
+  visibility: hidden;
+}
+
+/* "Sent to chat" for a moment after a click, in the same cell. */
+.regenerate:not(.regenerate--sent) .swap__sent,
+.regenerate.regenerate--sent .swap__off,
+.regenerate.regenerate--sent .swap__on {
   visibility: hidden;
 }
 
@@ -1163,6 +1229,10 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .progress {
     display: none;
+  }
+
+  .skeleton__bar {
+    animation: none;
   }
 
   .registrar,
