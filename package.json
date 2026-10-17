@@ -45,7 +45,7 @@
     "bump": "npm version --no-git-tag-version",
     "bump:site": "npm --prefix site version --no-git-tag-version",
     "version": "node scripts/sync-version.mjs && biome format --write manifest.json server.json",
-    "plugin": "node scripts/sync-plugin.mjs && biome format --write plugin/.claude-plugin/plugin.json plugin/.mcp.json plugin/package.json",
+    "plugin": "node scripts/sync-plugin.mjs && biome format --write plugin/.claude-plugin/plugin.json plugin/.mcp.json",
     "release": "node scripts/release.mjs"
   },
   "engines": {

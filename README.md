@@ -300,7 +300,7 @@ change to nothing the package ships, releases nothing. A release raises the vers
 `package.json`, `manifest.json` and `server.json`, adds the merged pull requests to
 [CHANGELOG.md](CHANGELOG.md), tags it, publishes to npm (trusted
 publishing), creates a GitHub Release with the Claude Desktop extension, publishes to the MCP
-Registry and points the Claude plugin at the new version with a lockfile, committing to `main`
+Registry and points the Claude plugin at the new version, committing to `main`
 as it goes. The landing page goes out on every change to `site/` (`.github/workflows/landing.yml`).
 
 ## License
