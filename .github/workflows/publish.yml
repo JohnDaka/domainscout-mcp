@@ -19,7 +19,7 @@ name: publish
 #   3. a GitHub Release with the Claude Desktop extension, which the landing page's
 #      "Add to Claude Desktop" button downloads;
 #   4. the official MCP Registry, once npm serves the version and if MCP_REGISTRY_KEY is set;
-#   5. the Claude plugin (plugin/) pinned to the version with its lockfile, committed to main;
+#   5. the Claude plugin (plugin/) pinned to the version, committed to main;
 #      Claude's plugin directory reads it from there;
 #   6. the landing page (landing.yml), so its version badge names this release.
 # Actions → publish → Run workflow releases main by hand, at the size chosen there. A step whose
@@ -219,7 +219,7 @@ jobs:
             | tar xz mcp-publisher
           ./mcp-publisher login dns --domain dakaio.com --private-key "${MCP_REGISTRY_KEY}"
           ./mcp-publisher publish
-      # The plugin's lockfile can only hash a version npm serves, so it comes last.
+      # Last, so the plugin never points at a version npm does not serve yet.
       - name: Point the Claude plugin at this version
         run: |
           rm -f npm-shrinkwrap.json mcp-publisher domainscout.mcpb
