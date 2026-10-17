@@ -1,6 +1,6 @@
 {
   "name": "domainscout-plugin",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "displayName": "DomainScout",
   "description": "The DomainScout server this Claude plugin runs, pinned with its lockfile.",
   "icon": "./icon.png",
@@ -8,6 +8,6 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "@dakaio/domainscout-mcp": "2.0.1"
+    "@dakaio/domainscout-mcp": "2.0.2"
   }
 }
