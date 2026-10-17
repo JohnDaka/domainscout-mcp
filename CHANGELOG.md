@@ -2,6 +2,12 @@
 
 Every release of `@dakaio/domainscout-mcp`, newest first. Each line is a merged pull request.
 
+## 2.0.2 - 2026-10-17
+
+### Fixes
+
+- The plugin's icon in Claude's directory, and a release for a change to the plugin ([#26](https://github.com/JohnDaka/domainscout-mcp/pull/26))
+
 ## 2.0.1 - 2026-10-09
 
 ### Fixes
