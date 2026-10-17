@@ -7,8 +7,9 @@ name: publish
 #                      the words anywhere else in a line do not count
 #   docs, build, chore, test, ci, refactor, style, revert: no release
 # and only a change to what the package ships (src/, ui/, assets/, package.json, the lockfile,
-# manifest.json, server.json, README.md, LICENSE, CHANGELOG.md) is released at all. The landing page has its own
-# workflow (landing.yml), which puts site/ out on every change to it.
+# manifest.json, server.json, README.md, LICENSE, CHANGELOG.md, and the Claude plugin in plugin/,
+# whose directory only sees a change under a new version) is released at all. The landing page
+# has its own workflow (landing.yml), which puts site/ out on every change to it.
 #
 # One run then puts the release everywhere, in this order:
 #   1. the version raised in package.json, the lockfile, manifest.json and server.json, and the
@@ -89,7 +90,7 @@ jobs:
           if [ -z "${base}" ] || [ "${base}" = "0000000000000000000000000000000000000000" ]; then
             base="${GITHUB_SHA}~1"
           fi
-          shipped='^(src/|ui/|assets/|package\.json$|package-lock\.json$|manifest\.json$|server\.json$|README\.md$|LICENSE$|CHANGELOG\.md$)'
+          shipped='^(src/|ui/|assets/|package\.json$|package-lock\.json$|manifest\.json$|server\.json$|README\.md$|LICENSE$|CHANGELOG\.md$|plugin/)'
           if ! git diff --name-only "${base}" "${GITHUB_SHA}" | grep -qE "${shipped}"; then
             echo "::notice::\"${title}\" changes nothing the package ships: no release."
             exit 0
