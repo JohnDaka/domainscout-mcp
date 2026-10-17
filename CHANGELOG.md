@@ -2,6 +2,12 @@
 
 Every release of `@dakaio/domainscout-mcp`, newest first. Each line is a merged pull request.
 
+## 2.0.3 - 2026-10-17
+
+### Fixes
+
+- The Claude plugin without a package.json, as in 1.4.0, the last version with its icon ([#27](https://github.com/JohnDaka/domainscout-mcp/pull/27))
+
 ## 2.0.2 - 2026-10-17
 
 ### Fixes
